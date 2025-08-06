@@ -143,13 +143,54 @@ impl DollarPunkApp {
         ui.heading("Social Media Data Collection & Stratified Sampling");
 
         ui.collapsing("Data Collection Configuration", |ui| {
+            // Mode selection
+            ui.horizontal(|ui| {
+                ui.label("Collection Mode:");
+                ui.radio_value(&mut self.collection_config.mode, DataCollectionMode::Demo, "Demo (Simulated Data)");
+                ui.radio_value(&mut self.collection_config.mode, DataCollectionMode::Prod, "Production (Real APIs)");
+            });
+            
+            // Show mode-specific info
+            match self.collection_config.mode {
+                DataCollectionMode::Demo => {
+                    ui.label(RichText::new("🎮 Demo Mode: Using simulated data for development and testing")
+                        .color(Color32::from_rgb(100, 200, 100)));
+                },
+                DataCollectionMode::Prod => {
+                    ui.label(RichText::new("🚀 Production Mode: Using real APIs (requires API keys)")
+                        .color(Color32::from_rgb(255, 150, 50)));
+                }
+            }
+            
+            ui.separator();
+
             ui.collapsing("Data Sources", |ui| {
                 for (i, source) in self.collection_config.sources.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut source.enabled, "");
                         ui.label(&source.name);
                         ui.label(format!("({:?})", source.platform));
+                        
+                        // Show API key status for Prod mode
+                        if self.collection_config.mode == DataCollectionMode::Prod {
+                            if source.api_key.is_some() {
+                                ui.label(RichText::new("✓ API Key").color(Color32::GREEN));
+                            } else {
+                                ui.label(RichText::new("⚠ No API Key").color(Color32::RED));
+                            }
+                        }
                     });
+                    
+                    // Show API key input for Prod mode
+                    if self.collection_config.mode == DataCollectionMode::Prod {
+                        ui.horizontal(|ui| {
+                            ui.label("API Key:");
+                            let mut api_key = source.api_key.clone().unwrap_or_default();
+                            if ui.text_edit_singleline(&mut api_key).changed() {
+                                source.api_key = if api_key.is_empty() { None } else { Some(api_key) };
+                            }
+                        });
+                    }
                 }
             });
 

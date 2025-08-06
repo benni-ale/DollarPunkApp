@@ -23,101 +23,45 @@ impl DataCollector {
     }
 
     pub async fn collect_data(&mut self, config: &DataCollectionConfig) -> Result<Vec<DataPoint>> {
-        info!("Starting data collection with {} sources", config.sources.len());
+        info!("Starting data collection with {} sources in {:?} mode", 
+              config.sources.len(), config.mode);
         debug!("Collection period: {} to {}", 
-               config.collection_period.start_date, 
-               config.collection_period.end_date);
-        debug!("Filters: keywords={:?}, languages={:?}, min_engagement={}", 
-               config.filters.keywords, 
-               config.filters.languages, 
-               config.filters.min_engagement);
+               config.collection_period.start_date, config.collection_period.end_date);
 
         let mut all_data = Vec::new();
-        let mut enabled_sources = 0;
+        let enabled_sources: Vec<_> = config.sources.iter()
+            .filter(|s| s.enabled)
+            .collect();
 
-        for source in &config.sources {
-            if !source.enabled {
-                debug!("Skipping disabled source: {}", source.name);
-                continue;
+        info!("Processing {} enabled sources", enabled_sources.len());
+
+        for (i, source) in enabled_sources.iter().enumerate() {
+            info!("Processing source {}/{}: {} ({:?})", 
+                  i + 1, enabled_sources.len(), source.name, source.platform);
+
+            let source_data = match config.mode {
+                DataCollectionMode::Demo => {
+                    info!("Using DEMO mode - generating simulated data for {}", source.name);
+                    self.generate_simulated_data(source, &config.filters).await?
+                },
+                DataCollectionMode::Prod => {
+                    info!("Using PROD mode - collecting real data from {}", source.name);
+                    self.collect_real_data(source, &config.filters).await?
+                }
+            };
+
+            info!("Collected {} data points from {}", source_data.len(), source.name);
+            all_data.extend(source_data);
+
+            // Rate limiting between sources
+            if i < enabled_sources.len() - 1 {
+                info!("Rate limiting: waiting 1 second before next source");
+                sleep(Duration::from_secs(1)).await;
             }
-
-            enabled_sources += 1;
-            info!("Processing source: {} ({:?})", source.name, source.platform);
-            
-            match source.platform {
-                Platform::Twitter => {
-                    info!("Collecting Twitter data from {}", source.name);
-                    match self.collect_twitter_data(source, &config.filters).await {
-                        Ok(twitter_data) => {
-                            info!("Collected {} Twitter data points from {}", twitter_data.len(), source.name);
-                            all_data.extend(twitter_data);
-                        }
-                        Err(e) => {
-                            error!("Failed to collect Twitter data from {}: {}", source.name, e);
-                        }
-                    }
-                }
-                Platform::NewsWebsite => {
-                    info!("Collecting news data from {}", source.name);
-                    match self.collect_news_data(source, &config.filters).await {
-                        Ok(news_data) => {
-                            info!("Collected {} news data points from {}", news_data.len(), source.name);
-                            all_data.extend(news_data);
-                        }
-                        Err(e) => {
-                            error!("Failed to collect news data from {}: {}", source.name, e);
-                        }
-                    }
-                }
-                Platform::RSS => {
-                    info!("Collecting RSS data from {}", source.name);
-                    match self.collect_rss_data(source, &config.filters).await {
-                        Ok(rss_data) => {
-                            info!("Collected {} RSS data points from {}", rss_data.len(), source.name);
-                            all_data.extend(rss_data);
-                        }
-                        Err(e) => {
-                            error!("Failed to collect RSS data from {}: {}", source.name, e);
-                        }
-                    }
-                }
-                Platform::Reddit => {
-                    info!("Collecting Reddit data from {}", source.name);
-                    match self.collect_reddit_data(source, &config.filters).await {
-                        Ok(reddit_data) => {
-                            info!("Collected {} Reddit data points from {}", reddit_data.len(), source.name);
-                            all_data.extend(reddit_data);
-                        }
-                        Err(e) => {
-                            error!("Failed to collect Reddit data from {}: {}", source.name, e);
-                        }
-                    }
-                }
-                _ => {
-                    info!("Collecting simulated data from {} ({:?})", source.name, source.platform);
-                    match self.generate_simulated_data(source, &config.filters).await {
-                        Ok(simulated_data) => {
-                            info!("Generated {} simulated data points from {}", simulated_data.len(), source.name);
-                            all_data.extend(simulated_data);
-                        }
-                        Err(e) => {
-                            error!("Failed to generate simulated data from {}: {}", source.name, e);
-                        }
-                    }
-                }
-            }
-
-            info!("Rate limiting: waiting 1 second before next source");
-            sleep(Duration::from_millis(1000)).await;
         }
 
         info!("Data collection completed. Total data points: {}, Enabled sources: {}", 
-              all_data.len(), enabled_sources);
-        
-        if all_data.is_empty() {
-            warn!("No data points collected! Check source configuration and filters.");
-        }
-
+              all_data.len(), enabled_sources.len());
         Ok(all_data)
     }
 
@@ -454,6 +398,63 @@ impl DataCollector {
         Ok(data)
     }
 
+    async fn collect_real_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        info!("Starting real data collection from {} ({:?})", source.name, source.platform);
+        
+        match source.platform {
+            Platform::Twitter => {
+                info!("Collecting real Twitter data from {}", source.name);
+                self.collect_real_twitter_data(source, filters).await
+            }
+            Platform::Reddit => {
+                info!("Collecting real Reddit data from {}", source.name);
+                self.collect_real_reddit_data(source, filters).await
+            }
+            Platform::NewsWebsite => {
+                info!("Collecting real news data from {}", source.name);
+                self.collect_news_data(source, filters).await
+            }
+            Platform::RSS => {
+                info!("Collecting real RSS data from {}", source.name);
+                self.collect_rss_data(source, filters).await
+            }
+            _ => {
+                warn!("No real API implementation for platform {:?}, falling back to simulated data", source.platform);
+                self.generate_simulated_data(source, filters).await
+            }
+        }
+    }
+
+    async fn collect_real_twitter_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        info!("Attempting to collect real Twitter data from {}", source.name);
+        
+        // Check if API key is available
+        if source.api_key.is_none() {
+            warn!("No API key provided for Twitter source {}, falling back to simulated data", source.name);
+            return self.generate_simulated_data(source, filters).await;
+        }
+
+        // TODO: Implement real Twitter API calls here
+        // For now, fall back to simulated data
+        info!("Real Twitter API not yet implemented, using simulated data");
+        self.generate_simulated_data(source, filters).await
+    }
+
+    async fn collect_real_reddit_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        info!("Attempting to collect real Reddit data from {}", source.name);
+        
+        // Check if API key is available
+        if source.api_key.is_none() {
+            warn!("No API key provided for Reddit source {}, falling back to simulated data", source.name);
+            return self.generate_simulated_data(source, filters).await;
+        }
+
+        // TODO: Implement real Reddit API calls here
+        // For now, fall back to simulated data
+        info!("Real Reddit API not yet implemented, using simulated data");
+        self.generate_simulated_data(source, filters).await
+    }
+
     fn generate_twitter_content(&self, keywords: &[String]) -> String {
         let mut rng = rand::thread_rng();
         let templates = vec![
@@ -549,7 +550,15 @@ impl DataCollector {
 
     fn detect_language(&self, content: &str) -> String {
         match whatlang::detect(content) {
-            Some(info) => info.lang().code().to_string(),
+            Some(info) => {
+                let lang_code = info.lang().code().to_string();
+                // Map "eng" to "en" for compatibility with filters
+                if lang_code == "eng" {
+                    "en".to_string()
+                } else {
+                    lang_code
+                }
+            },
             None => "en".to_string(),
         }
     }

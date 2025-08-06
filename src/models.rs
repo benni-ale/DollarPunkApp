@@ -2,6 +2,12 @@ use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum DataCollectionMode {
+    Demo,   // Dati simulati per sviluppo e test
+    Prod,   // Dati reali dalle API
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataPoint {
     pub id: String,
@@ -98,6 +104,7 @@ pub struct DataCollectionConfig {
     pub sources: Vec<DataSource>,
     pub collection_period: CollectionPeriod,
     pub filters: DataFilters,
+    pub mode: DataCollectionMode,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -176,6 +183,7 @@ impl Default for DataCollectionConfig {
                 exclude_retweets: true,
                 exclude_ads: true,
             },
+            mode: DataCollectionMode::Demo,
         }
     }
 } 
