@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use tokio::time::{sleep, Duration};
 use rand::Rng;
 use rand::prelude::SliceRandom;
+use tracing::{info, warn, error, debug};
 
 #[derive(Clone)]
 pub struct DataCollector {
@@ -15,61 +16,128 @@ pub struct DataCollector {
 
 impl DataCollector {
     pub fn new() -> Self {
+        info!("Initializing DataCollector");
         Self {
             cache: HashMap::new(),
         }
     }
 
     pub async fn collect_data(&mut self, config: &DataCollectionConfig) -> Result<Vec<DataPoint>> {
+        info!("Starting data collection with {} sources", config.sources.len());
+        debug!("Collection period: {} to {}", 
+               config.collection_period.start_date, 
+               config.collection_period.end_date);
+        debug!("Filters: keywords={:?}, languages={:?}, min_engagement={}", 
+               config.filters.keywords, 
+               config.filters.languages, 
+               config.filters.min_engagement);
+
         let mut all_data = Vec::new();
+        let mut enabled_sources = 0;
 
         for source in &config.sources {
             if !source.enabled {
+                debug!("Skipping disabled source: {}", source.name);
                 continue;
             }
 
+            enabled_sources += 1;
+            info!("Processing source: {} ({:?})", source.name, source.platform);
+            
             match source.platform {
                 Platform::Twitter => {
-                    let twitter_data = self.collect_twitter_data(source, &config.filters).await?;
-                    all_data.extend(twitter_data);
+                    info!("Collecting Twitter data from {}", source.name);
+                    match self.collect_twitter_data(source, &config.filters).await {
+                        Ok(twitter_data) => {
+                            info!("Collected {} Twitter data points from {}", twitter_data.len(), source.name);
+                            all_data.extend(twitter_data);
+                        }
+                        Err(e) => {
+                            error!("Failed to collect Twitter data from {}: {}", source.name, e);
+                        }
+                    }
                 }
                 Platform::NewsWebsite => {
-                    let news_data = self.collect_news_data(source, &config.filters).await?;
-                    all_data.extend(news_data);
+                    info!("Collecting news data from {}", source.name);
+                    match self.collect_news_data(source, &config.filters).await {
+                        Ok(news_data) => {
+                            info!("Collected {} news data points from {}", news_data.len(), source.name);
+                            all_data.extend(news_data);
+                        }
+                        Err(e) => {
+                            error!("Failed to collect news data from {}: {}", source.name, e);
+                        }
+                    }
                 }
                 Platform::RSS => {
-                    let rss_data = self.collect_rss_data(source, &config.filters).await?;
-                    all_data.extend(rss_data);
+                    info!("Collecting RSS data from {}", source.name);
+                    match self.collect_rss_data(source, &config.filters).await {
+                        Ok(rss_data) => {
+                            info!("Collected {} RSS data points from {}", rss_data.len(), source.name);
+                            all_data.extend(rss_data);
+                        }
+                        Err(e) => {
+                            error!("Failed to collect RSS data from {}: {}", source.name, e);
+                        }
+                    }
                 }
                 Platform::Reddit => {
-                    let reddit_data = self.collect_reddit_data(source, &config.filters).await?;
-                    all_data.extend(reddit_data);
+                    info!("Collecting Reddit data from {}", source.name);
+                    match self.collect_reddit_data(source, &config.filters).await {
+                        Ok(reddit_data) => {
+                            info!("Collected {} Reddit data points from {}", reddit_data.len(), source.name);
+                            all_data.extend(reddit_data);
+                        }
+                        Err(e) => {
+                            error!("Failed to collect Reddit data from {}: {}", source.name, e);
+                        }
+                    }
                 }
                 _ => {
-                    // Simulated data for other platforms
-                    let simulated_data = self.generate_simulated_data(source, &config.filters).await?;
-                    all_data.extend(simulated_data);
+                    info!("Collecting simulated data from {} ({:?})", source.name, source.platform);
+                    match self.generate_simulated_data(source, &config.filters).await {
+                        Ok(simulated_data) => {
+                            info!("Generated {} simulated data points from {}", simulated_data.len(), source.name);
+                            all_data.extend(simulated_data);
+                        }
+                        Err(e) => {
+                            error!("Failed to generate simulated data from {}: {}", source.name, e);
+                        }
+                    }
                 }
             }
 
-            // Rate limiting
+            info!("Rate limiting: waiting 1 second before next source");
             sleep(Duration::from_millis(1000)).await;
+        }
+
+        info!("Data collection completed. Total data points: {}, Enabled sources: {}", 
+              all_data.len(), enabled_sources);
+        
+        if all_data.is_empty() {
+            warn!("No data points collected! Check source configuration and filters.");
         }
 
         Ok(all_data)
     }
 
     async fn collect_twitter_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting Twitter data collection simulation for {}", source.name);
+        
         // Simulated Twitter data collection
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
+        let mut generated_count = 0;
+        let mut filtered_count = 0;
 
         for i in 0..50 {
             let content = self.generate_twitter_content(&filters.keywords);
             let theme = self.classify_theme(&content);
             let language = self.detect_language(&content);
+            generated_count += 1;
 
             if self.matches_filters(&content, filters) {
+                filtered_count += 1;
                 data.push(DataPoint {
                     id: format!("twitter_{}", i),
                     content,
@@ -90,53 +158,83 @@ impl DataCollector {
             }
         }
 
+        debug!("Twitter collection: generated={}, filtered={}, final={}", 
+               generated_count, filtered_count, data.len());
+
         Ok(data)
     }
 
     async fn collect_news_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting news data collection from {}", source.url);
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
 
         // Try to fetch real news data
         let client = Client::new();
-        if let Ok(response) = client.get(&source.url).send().await {
-            if let Ok(html_content) = response.text().await {
-                let document = Html::parse_document(&html_content);
-                
-                // Extract article titles and content
-                if let Ok(title_selector) = Selector::parse("h1, h2, h3") {
-                    for (i, element) in document.select(&title_selector).enumerate().take(20) {
-                        let title = element.text().collect::<Vec<_>>().join(" ");
-                        let content = self.generate_news_content(&title, &filters.keywords);
-                        let theme = self.classify_theme(&content);
-                        let language = self.detect_language(&content);
+        info!("Making HTTP request to: {}", source.url);
+        
+        match client.get(&source.url).send().await {
+            Ok(response) => {
+                info!("HTTP response status: {}", response.status());
+                if response.status().is_success() {
+                    match response.text().await {
+                        Ok(html_content) => {
+                            debug!("Received HTML content ({} bytes)", html_content.len());
+                            let document = Html::parse_document(&html_content);
+                            
+                            // Extract article titles and content
+                            if let Ok(title_selector) = Selector::parse("h1, h2, h3") {
+                                let elements: Vec<_> = document.select(&title_selector).collect();
+                                debug!("Found {} title elements", elements.len());
+                                
+                                for (i, element) in elements.iter().enumerate().take(20) {
+                                    let title = element.text().collect::<Vec<_>>().join(" ");
+                                    debug!("Processing title {}: '{}'", i, title);
+                                    
+                                    let content = self.generate_news_content(&title, &filters.keywords);
+                                    let theme = self.classify_theme(&content);
+                                    let language = self.detect_language(&content);
 
-                        if self.matches_filters(&content, filters) {
-                            data.push(DataPoint {
-                                id: format!("news_{}", i),
-                                content,
-                                platform: Platform::NewsWebsite,
-                                timestamp: Utc::now() - chrono::Duration::hours(rng.gen_range(0..168)),
-                                theme,
-                                author: format!("journalist_{}", rng.gen_range(100..999)),
-                                url: Some(format!("{}/article/{}", source.url, i)),
-                                engagement_metrics: EngagementMetrics {
-                                    likes: rng.gen_range(0..500),
-                                    shares: rng.gen_range(0..200),
-                                    comments: rng.gen_range(0..100),
-                                    views: rng.gen_range(0..5000),
-                                },
-                                language,
-                                sentiment_score: Some(rng.gen_range(-1.0..1.0)),
-                            });
+                                    if self.matches_filters(&content, filters) {
+                                        data.push(DataPoint {
+                                            id: format!("news_{}", i),
+                                            content,
+                                            platform: Platform::NewsWebsite,
+                                            timestamp: Utc::now() - chrono::Duration::hours(rng.gen_range(0..168)),
+                                            theme,
+                                            author: format!("journalist_{}", rng.gen_range(100..999)),
+                                            url: Some(format!("{}/article/{}", source.url, i)),
+                                            engagement_metrics: EngagementMetrics {
+                                                likes: rng.gen_range(0..500),
+                                                shares: rng.gen_range(0..200),
+                                                comments: rng.gen_range(0..100),
+                                                views: rng.gen_range(0..5000),
+                                            },
+                                            language,
+                                            sentiment_score: Some(rng.gen_range(-1.0..1.0)),
+                                        });
+                                    }
+                                }
+                            } else {
+                                warn!("Failed to parse title selector for {}", source.name);
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to read response text: {}", e);
                         }
                     }
+                } else {
+                    warn!("HTTP request failed with status: {}", response.status());
                 }
+            }
+            Err(e) => {
+                error!("HTTP request failed for {}: {}", source.url, e);
             }
         }
 
         // If no real data, generate simulated data
         if data.is_empty() {
+            info!("No real data collected, generating simulated news data");
             for i in 0..30 {
                 let content = self.generate_news_content("", &filters.keywords);
                 let theme = self.classify_theme(&content);
@@ -164,57 +262,85 @@ impl DataCollector {
             }
         }
 
+        info!("News collection completed: {} data points", data.len());
         Ok(data)
     }
 
     async fn collect_rss_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting RSS data collection from {}", source.url);
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
 
         // Try to fetch RSS feed
         let client = Client::new();
-        if let Ok(response) = client.get(&source.url).send().await {
-            if let Ok(rss_content) = response.text().await {
-                // Simple RSS parsing
-                let document = Html::parse_fragment(&rss_content);
-                
-                if let Ok(item_selector) = Selector::parse("item") {
-                    for (i, element) in document.select(&item_selector).enumerate().take(25) {
-                        let title = element.select(&Selector::parse("title").unwrap())
-                            .next()
-                            .map(|e| e.text().collect::<Vec<_>>().join(" "))
-                            .unwrap_or_default();
-                        
-                        let content = self.generate_rss_content(&title, &filters.keywords);
-                        let theme = self.classify_theme(&content);
-                        let language = self.detect_language(&content);
+        info!("Making HTTP request to RSS feed: {}", source.url);
+        
+        match client.get(&source.url).send().await {
+            Ok(response) => {
+                info!("RSS HTTP response status: {}", response.status());
+                if response.status().is_success() {
+                    match response.text().await {
+                        Ok(rss_content) => {
+                            debug!("Received RSS content ({} bytes)", rss_content.len());
+                            // Simple RSS parsing
+                            let document = Html::parse_fragment(&rss_content);
+                            
+                            if let Ok(item_selector) = Selector::parse("item") {
+                                let elements: Vec<_> = document.select(&item_selector).collect();
+                                debug!("Found {} RSS items", elements.len());
+                                
+                                for (i, element) in elements.iter().enumerate().take(25) {
+                                    let title = element.select(&Selector::parse("title").unwrap())
+                                        .next()
+                                        .map(|e| e.text().collect::<Vec<_>>().join(" "))
+                                        .unwrap_or_default();
+                                    
+                                    debug!("Processing RSS item {}: '{}'", i, title);
+                                    
+                                    let content = self.generate_rss_content(&title, &filters.keywords);
+                                    let theme = self.classify_theme(&content);
+                                    let language = self.detect_language(&content);
 
-                        if self.matches_filters(&content, filters) {
-                            data.push(DataPoint {
-                                id: format!("rss_{}", i),
-                                content,
-                                platform: Platform::RSS,
-                                timestamp: Utc::now() - chrono::Duration::hours(rng.gen_range(0..168)),
-                                theme,
-                                author: format!("rss_author_{}", rng.gen_range(100..999)),
-                                url: Some(format!("{}/feed/{}", source.url, i)),
-                                engagement_metrics: EngagementMetrics {
-                                    likes: rng.gen_range(0..300),
-                                    shares: rng.gen_range(0..150),
-                                    comments: rng.gen_range(0..50),
-                                    views: rng.gen_range(0..3000),
-                                },
-                                language,
-                                sentiment_score: Some(rng.gen_range(-1.0..1.0)),
-                            });
+                                    if self.matches_filters(&content, filters) {
+                                        data.push(DataPoint {
+                                            id: format!("rss_{}", i),
+                                            content,
+                                            platform: Platform::RSS,
+                                            timestamp: Utc::now() - chrono::Duration::hours(rng.gen_range(0..168)),
+                                            theme,
+                                            author: format!("rss_author_{}", rng.gen_range(100..999)),
+                                            url: Some(format!("{}/feed/{}", source.url, i)),
+                                            engagement_metrics: EngagementMetrics {
+                                                likes: rng.gen_range(0..300),
+                                                shares: rng.gen_range(0..150),
+                                                comments: rng.gen_range(0..50),
+                                                views: rng.gen_range(0..3000),
+                                            },
+                                            language,
+                                            sentiment_score: Some(rng.gen_range(-1.0..1.0)),
+                                        });
+                                    }
+                                }
+                            } else {
+                                warn!("Failed to parse RSS item selector for {}", source.name);
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to read RSS response text: {}", e);
                         }
                     }
+                } else {
+                    warn!("RSS HTTP request failed with status: {}", response.status());
                 }
+            }
+            Err(e) => {
+                error!("RSS HTTP request failed for {}: {}", source.url, e);
             }
         }
 
         // Generate simulated RSS data if no real data
         if data.is_empty() {
+            info!("No real RSS data collected, generating simulated RSS data");
             for i in 0..20 {
                 let content = self.generate_rss_content("", &filters.keywords);
                 let theme = self.classify_theme(&content);
@@ -242,19 +368,25 @@ impl DataCollector {
             }
         }
 
+        info!("RSS collection completed: {} data points", data.len());
         Ok(data)
     }
 
     async fn collect_reddit_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting Reddit data collection simulation for {}", source.name);
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
+        let mut generated_count = 0;
+        let mut filtered_count = 0;
 
         for i in 0..40 {
             let content = self.generate_reddit_content(&filters.keywords);
             let theme = self.classify_theme(&content);
             let language = self.detect_language(&content);
+            generated_count += 1;
 
             if self.matches_filters(&content, filters) {
+                filtered_count += 1;
                 data.push(DataPoint {
                     id: format!("reddit_{}", i),
                     content,
@@ -275,19 +407,27 @@ impl DataCollector {
             }
         }
 
+        debug!("Reddit collection: generated={}, filtered={}, final={}", 
+               generated_count, filtered_count, data.len());
+        info!("Reddit collection completed: {} data points", data.len());
         Ok(data)
     }
 
     async fn generate_simulated_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting simulated data generation for {} ({:?})", source.name, source.platform);
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
+        let mut generated_count = 0;
+        let mut filtered_count = 0;
 
         for i in 0..30 {
             let content = self.generate_generic_content(&filters.keywords);
             let theme = self.classify_theme(&content);
             let language = self.detect_language(&content);
+            generated_count += 1;
 
             if self.matches_filters(&content, filters) {
+                filtered_count += 1;
                 data.push(DataPoint {
                     id: format!("{}_{}", source.name.to_lowercase(), i),
                     content,
@@ -308,6 +448,9 @@ impl DataCollector {
             }
         }
 
+        debug!("Simulated data generation: generated={}, filtered={}, final={}", 
+               generated_count, filtered_count, data.len());
+        info!("Simulated data generation completed: {} data points", data.len());
         Ok(data)
     }
 
@@ -420,6 +563,13 @@ impl DataCollector {
         // Check language
         let language = self.detect_language(content);
         let has_language = filters.languages.contains(&language);
+
+        debug!("Filter check for content (first 50 chars): '{}...'", 
+               content.chars().take(50).collect::<String>());
+        debug!("  Keywords: {:?}, has_keyword: {}", filters.keywords, has_keyword);
+        debug!("  Language: {}, allowed_languages: {:?}, has_language: {}", 
+               language, filters.languages, has_language);
+        debug!("  Final result: {}", has_keyword && has_language);
 
         has_keyword && has_language
     }

@@ -2,10 +2,11 @@ use crate::models::*;
 use crate::data_collector::DataCollector;
 use crate::stratification::StratificationEngine;
 use anyhow::Result;
-use chrono::{Local, Utc};
+use chrono::Local;
 use eframe::egui;
 use egui::{Color32, RichText, ScrollArea, Ui};
 use tokio::runtime::Runtime;
+use tracing::{info, error};
 
 pub struct DollarPunkApp {
     // Data collection
@@ -26,6 +27,10 @@ pub struct DollarPunkApp {
     is_collecting: bool,
     collection_progress: f32,
     status_message: String,
+    
+    // Debug and logging
+    debug_logs: Vec<String>,
+    show_debug_logs: bool,
     
     // Runtime for async operations
     runtime: Runtime,
@@ -81,6 +86,8 @@ impl DollarPunkApp {
             is_collecting: false,
             collection_progress: 0.0,
             status_message: "Ready to collect data".to_string(),
+            debug_logs: Vec::new(),
+            show_debug_logs: false,
             runtime: Runtime::new()?,
         })
     }
@@ -133,111 +140,85 @@ impl eframe::App for DollarPunkApp {
 
 impl DollarPunkApp {
     fn show_data_collection_tab(&mut self, ui: &mut Ui) {
-        ui.heading("Data Collection Configuration");
+        ui.heading("Social Media Data Collection & Stratified Sampling");
 
-        // Sources configuration
-        ui.collapsing("Data Sources", |ui| {
-            let mut to_remove = None;
-            for (i, source) in self.collection_config.sources.iter_mut().enumerate() {
+        ui.collapsing("Data Collection Configuration", |ui| {
+            ui.collapsing("Data Sources", |ui| {
+                for (i, source) in self.collection_config.sources.iter_mut().enumerate() {
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut source.enabled, "");
+                        ui.label(&source.name);
+                        ui.label(format!("({:?})", source.platform));
+                    });
+                }
+            });
+
+            ui.collapsing("Filters", |ui| {
+                ui.label("Keywords:");
+                for keyword in &self.collection_config.filters.keywords {
+                    ui.label(format!("• {}", keyword));
+                }
+                
+                ui.label("Languages:");
+                for language in &self.collection_config.filters.languages {
+                    ui.label(format!("• {}", language));
+                }
+                
+                ui.label(format!("Min engagement: {}", self.collection_config.filters.min_engagement));
+            });
+
+            ui.collapsing("Collection Period", |ui| {
                 ui.horizontal(|ui| {
-                    ui.checkbox(&mut source.enabled, "");
-                    ui.label(&source.name);
-                    ui.label(format!("({:?})", source.platform));
-                    if ui.button("Remove").clicked() {
-                        to_remove = Some(i);
+                    ui.label("Start date:");
+                    ui.label(self.collection_config.collection_period.start_date.format("%Y-%m-%d %H:%M").to_string());
+                });
+                
+                ui.horizontal(|ui| {
+                    ui.label("End date:");
+                    ui.label(self.collection_config.collection_period.end_date.format("%Y-%m-%d %H:%M").to_string());
+                });
+                
+                ui.horizontal(|ui| {
+                    ui.label("Interval (hours):");
+                    ui.label(self.collection_config.collection_period.interval_hours.to_string());
+                });
+            });
+        });
+
+        ui.separator();
+
+        // Debug logs section
+        ui.collapsing("Debug Logs", |ui| {
+            ui.checkbox(&mut self.show_debug_logs, "Show detailed debug logs");
+            
+            if self.show_debug_logs {
+                ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                    for log in &self.debug_logs {
+                        ui.label(log);
                     }
                 });
-            }
-            if let Some(index) = to_remove {
-                self.collection_config.sources.remove(index);
-            }
-
-            if ui.button("Add Source").clicked() {
-                self.collection_config.sources.push(DataSource {
-                    name: "New Source".to_string(),
-                    platform: Platform::Other("Custom".to_string()),
-                    url: "https://example.com".to_string(),
-                    api_key: None,
-                    enabled: true,
-                });
-            }
-        });
-
-        // Filters configuration
-        ui.collapsing("Filters", |ui| {
-            ui.label("Keywords (comma-separated):");
-            let mut keywords = self.collection_config.filters.keywords.join(", ");
-            if ui.text_edit_singleline(&mut keywords).changed() {
-                self.collection_config.filters.keywords = keywords
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-            }
-
-            ui.label("Languages (comma-separated):");
-            let mut languages = self.collection_config.filters.languages.join(", ");
-            if ui.text_edit_singleline(&mut languages).changed() {
-                self.collection_config.filters.languages = languages
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-            }
-
-            ui.horizontal(|ui| {
-                ui.label("Min engagement:");
-                ui.add(egui::DragValue::new(&mut self.collection_config.filters.min_engagement));
-            });
-
-            ui.checkbox(&mut self.collection_config.filters.exclude_retweets, "Exclude retweets");
-            ui.checkbox(&mut self.collection_config.filters.exclude_ads, "Exclude ads");
-        });
-
-        // Collection period
-        ui.collapsing("Collection Period", |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Start date:");
-                let start_str = self.collection_config.collection_period.start_date.format("%Y-%m-%d %H:%M").to_string();
-                if ui.button(start_str).clicked() {
-                    // In a real app, you'd show a date picker here
-                    self.collection_config.collection_period.start_date = Utc::now() - chrono::Duration::days(7);
+                
+                if ui.button("Clear Logs").clicked() {
+                    self.debug_logs.clear();
                 }
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("End date:");
-                let end_str = self.collection_config.collection_period.end_date.format("%Y-%m-%d %H:%M").to_string();
-                if ui.button(end_str).clicked() {
-                    self.collection_config.collection_period.end_date = Utc::now();
-                }
-            });
-
-            ui.horizontal(|ui| {
-                ui.label("Interval (hours):");
-                ui.add(egui::DragValue::new(&mut self.collection_config.collection_period.interval_hours));
-            });
+            }
         });
 
         ui.separator();
 
         // Collection controls
         ui.horizontal(|ui| {
-            if !self.is_collecting {
-                if ui.button("Start Collection").clicked() {
-                    self.start_data_collection();
-                }
-            } else {
-                if ui.button("Stop Collection").clicked() {
-                    self.stop_data_collection();
-                }
+            if ui.button("Start Collection").clicked() {
+                self.add_debug_log("Starting data collection...".to_string());
+                self.start_data_collection();
             }
-
+            
             if ui.button("Clear Data").clicked() {
                 self.collected_data.clear();
                 self.strata.clear();
                 self.sampling_result = None;
                 self.status_message = "Data cleared".to_string();
+                self.add_debug_log("Data cleared".to_string());
             }
         });
 
@@ -246,27 +227,8 @@ impl DollarPunkApp {
             ui.add(egui::ProgressBar::new(self.collection_progress).show_percentage());
         }
 
-        // Status
+        // Status message
         ui.label(&self.status_message);
-
-        // Data summary
-        if !self.collected_data.is_empty() {
-            ui.separator();
-            ui.heading("Collected Data Summary");
-            
-            let platform_counts: std::collections::HashMap<_, _> = self.collected_data
-                .iter()
-                .fold(std::collections::HashMap::new(), |mut acc, dp| {
-                    *acc.entry(&dp.platform).or_insert(0) += 1;
-                    acc
-                });
-
-            for (platform, count) in platform_counts {
-                ui.label(format!("{:?}: {} items", platform, count));
-            }
-
-            ui.label(format!("Total: {} data points", self.collected_data.len()));
-        }
     }
 
     fn show_stratification_tab(&mut self, ui: &mut Ui) {
@@ -434,29 +396,78 @@ impl DollarPunkApp {
     }
 
     fn start_data_collection(&mut self) {
+        info!("Starting data collection process");
+        self.add_debug_log("Starting data collection process".to_string());
+        
         self.is_collecting = true;
         self.collection_progress = 0.0;
         self.status_message = "Starting data collection...".to_string();
+
+        info!("Collection config: {} sources, {} keywords, {} languages", 
+              self.collection_config.sources.len(),
+              self.collection_config.filters.keywords.len(),
+              self.collection_config.filters.languages.len());
+
+        self.add_debug_log(format!("Config: {} sources, {} keywords, {} languages", 
+                                   self.collection_config.sources.len(),
+                                   self.collection_config.filters.keywords.len(),
+                                   self.collection_config.filters.languages.len()));
+
+        // Log enabled sources
+        let enabled_sources: Vec<_> = self.collection_config.sources.iter()
+            .filter(|s| s.enabled)
+            .map(|s| &s.name)
+            .collect();
+        info!("Enabled sources: {:?}", enabled_sources);
+        self.add_debug_log(format!("Enabled sources: {:?}", enabled_sources));
 
         // Simulate data collection
         let config = self.collection_config.clone();
         let mut collector = self.data_collector.clone();
         
         // For now, we'll simulate the collection with some sample data
-        self.runtime.block_on(async {
-            match collector.collect_data(&config).await {
-                Ok(data) => {
-                    self.collected_data = data;
-                    self.status_message = format!("Collected {} data points", self.collected_data.len());
+        let result = self.runtime.block_on(async {
+            info!("Executing data collection in async runtime");
+            
+            collector.collect_data(&config).await
+        });
+        
+        // Handle the result outside the async block
+        match result {
+            Ok(data) => {
+                info!("Data collection successful: {} data points collected", data.len());
+                self.add_debug_log(format!("Data collection successful: {} data points collected", data.len()));
+                
+                self.collected_data = data;
+                self.status_message = format!("Collected {} data points", self.collected_data.len());
+                
+                // Log breakdown by platform
+                let mut platform_counts = std::collections::HashMap::new();
+                for point in &self.collected_data {
+                    *platform_counts.entry(&point.platform).or_insert(0) += 1;
                 }
-                Err(e) => {
-                    self.status_message = format!("Collection failed: {}", e);
+                
+                // Add debug logs for platform breakdown
+                let platform_logs: Vec<String> = platform_counts.iter()
+                    .map(|(platform, count)| format!("  {:?}: {} points", platform, count))
+                    .collect();
+                
+                for log_entry in platform_logs {
+                    info!("{}", log_entry);
+                    self.add_debug_log(log_entry);
                 }
             }
-        });
+            Err(e) => {
+                error!("Data collection failed: {}", e);
+                self.add_debug_log(format!("Data collection failed: {}", e));
+                self.status_message = format!("Collection failed: {}", e);
+            }
+        }
         
         self.is_collecting = false;
         self.collection_progress = 1.0;
+        info!("Data collection process completed");
+        self.add_debug_log("Data collection process completed".to_string());
     }
 
     fn stop_data_collection(&mut self) {
@@ -496,6 +507,17 @@ impl DollarPunkApp {
             } else {
                 println!("Exported to: {}", filepath);
             }
+        }
+    }
+
+    fn add_debug_log(&mut self, message: String) {
+        let timestamp = Local::now().format("%H:%M:%S").to_string();
+        let log_entry = format!("[{}] {}", timestamp, message);
+        self.debug_logs.push(log_entry);
+        
+        // Keep only last 100 logs
+        if self.debug_logs.len() > 100 {
+            self.debug_logs.remove(0);
         }
     }
 } 
