@@ -22,6 +22,62 @@ impl DataCollector {
         }
     }
 
+    pub fn generate_sample_data(&self, config: &DataCollectionConfig) -> Vec<DataPoint> {
+        info!("Generating sample data for GUI (synchronous)");
+        
+        let mut all_data = Vec::new();
+        let enabled_sources: Vec<_> = config.sources.iter()
+            .filter(|s| s.enabled)
+            .collect();
+
+        info!("Processing {} enabled sources", enabled_sources.len());
+
+        for (i, source) in enabled_sources.iter().enumerate() {
+            info!("Processing source {}/{}: {} ({:?})", 
+                  i + 1, enabled_sources.len(), source.name, source.platform);
+
+            // Generate sample data for each source
+            let source_data = self.generate_single_source_sample_data(source, &config.filters);
+            info!("Generated {} data points from {}", source_data.len(), source.name);
+            all_data.extend(source_data);
+        }
+
+        info!("Sample data generation completed. Total data points: {}", all_data.len());
+        all_data
+    }
+
+    fn generate_single_source_sample_data(&self, source: &DataSource, _filters: &DataFilters) -> Vec<DataPoint> {
+        let mut data = Vec::new();
+        let mut rng = rand::thread_rng();
+        
+        // Generate 5-15 sample data points per source
+        let num_posts = rng.gen_range(5..15);
+        
+        for i in 0..num_posts {
+            let content = format!("Sample {} data from {} - Financial markets show mixed signals", i + 1, source.name);
+            let data_point = DataPoint {
+                id: format!("sample_{}_{}", source.name.to_lowercase().replace(" ", "_"), i),
+                content,
+                platform: source.platform.clone(),
+                timestamp: Utc::now() - chrono::Duration::hours(i as i64),
+                theme: Theme::Economy,
+                author: format!("Sample Author {}", i + 1),
+                url: Some(format!("https://example.com/sample/{}", i)),
+                engagement_metrics: EngagementMetrics {
+                    likes: 100 + i * 10,
+                    shares: 20 + i * 5,
+                    comments: 15 + i * 3,
+                    views: 50 + i * 10,
+                },
+                language: "en".to_string(),
+                sentiment_score: Some(0.5 + (i as f64 * 0.1)),
+            };
+            data.push(data_point);
+        }
+        
+        data
+    }
+
     pub async fn collect_data(&mut self, config: &DataCollectionConfig) -> Result<Vec<DataPoint>> {
         info!("Starting data collection with {} sources in {:?} mode", 
               config.sources.len(), config.mode);

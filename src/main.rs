@@ -1,9 +1,10 @@
 mod models;
 mod data_collector;
 mod stratification;
-mod gui;
 mod config;
 mod cli;
+mod gui;
+mod database;
 
 use anyhow::Result;
 
