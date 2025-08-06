@@ -3,6 +3,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
+use tracing::info;
 
 pub struct StratificationEngine {
     config: StratificationConfig,
@@ -14,6 +15,7 @@ impl StratificationEngine {
     }
 
     pub fn create_strata(&self, data: &[DataPoint]) -> Vec<Stratum> {
+        info!("Creating strata for {} data points", data.len());
         let mut strata = Vec::new();
         let mut stratum_map: HashMap<String, Vec<DataPoint>> = HashMap::new();
 
@@ -33,6 +35,8 @@ impl StratificationEngine {
                 .push(data_point.clone());
         }
 
+        info!("Found {} unique strata", stratum_map.len());
+
         // Create stratum objects
         for (key, data_points) in stratum_map {
             let parts: Vec<&str> = key.split('_').collect();
@@ -48,6 +52,8 @@ impl StratificationEngine {
                     &time_period,
                 );
 
+                info!("Stratum {}: {} points -> target {} samples", key, data_points.len(), target_sample_size);
+
                 strata.push(Stratum {
                     platform,
                     theme,
@@ -58,6 +64,7 @@ impl StratificationEngine {
             }
         }
 
+        info!("Created {} strata successfully", strata.len());
         strata
     }
 
@@ -137,7 +144,23 @@ impl StratificationEngine {
         let min_size = self.config.min_samples_per_stratum;
         let max_size = self.config.max_samples_per_stratum.unwrap_or(usize::MAX);
 
-        base_size.clamp(min_size, std::cmp::min(max_size, stratum_size))
+        // Ensure min_size doesn't exceed max_size or stratum_size
+        let effective_min = min_size.min(max_size).min(stratum_size);
+        let effective_max = max_size.min(stratum_size);
+
+        info!("Target calculation: stratum_size={}, base_size={}, min_size={}, max_size={}, effective_min={}, effective_max={}", 
+              stratum_size, base_size, min_size, max_size, effective_min, effective_max);
+
+        // Ensure min <= max before using clamp
+        if effective_min <= effective_max {
+            let result = base_size.clamp(effective_min, effective_max);
+            info!("  Result: {}", result);
+            result
+        } else {
+            // Fallback: use stratum_size if min > max
+            info!("  Fallback: using stratum_size {}", stratum_size);
+            stratum_size
+        }
     }
 
     fn get_time_period_weight(&self, time_period: &str) -> f64 {
