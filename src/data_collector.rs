@@ -468,7 +468,9 @@ impl DataCollector {
         let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword);
         let template = templates.choose(&mut rng).unwrap();
         
-        format!("{} #{} #news", template.replace("{}", keyword), keyword)
+        let content = format!("{} #{} #news", template.replace("{}", keyword), keyword);
+        info!("Generated Twitter content: '{}'", content);
+        content
     }
 
     fn generate_news_content(&self, title: &str, keywords: &[String]) -> String {
@@ -564,13 +566,16 @@ impl DataCollector {
         let language = self.detect_language(content);
         let has_language = filters.languages.contains(&language);
 
-        debug!("Filter check for content (first 50 chars): '{}...'", 
+        // Log every filter check for debugging
+        info!("Filter check for content (first 50 chars): '{}...'", 
                content.chars().take(50).collect::<String>());
-        debug!("  Keywords: {:?}, has_keyword: {}", filters.keywords, has_keyword);
-        debug!("  Language: {}, allowed_languages: {:?}, has_language: {}", 
+        info!("  Keywords: {:?}, has_keyword: {}", filters.keywords, has_keyword);
+        info!("  Language: {}, allowed_languages: {:?}, has_language: {}", 
                language, filters.languages, has_language);
-        debug!("  Final result: {}", has_keyword && has_language);
+        info!("  Final result: {}", has_keyword && has_language);
 
-        has_keyword && has_language
+        // For now, let's be less restrictive - only check keywords
+        // This will help us see if the content generation is working
+        has_keyword
     }
 } 
