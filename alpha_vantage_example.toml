@@ -1,0 +1,56 @@
+# Esempio di configurazione per Alpha Vantage
+# Copia questo file e rinominalo in config.toml, poi aggiungi la tua API key
+
+[data_collection]
+mode = "Prod"  # Usa "Demo" per dati simulati, "Prod" per dati reali
+
+[data_collection.collection_period]
+start_date = "2024-01-01T00:00:00Z"
+end_date = "2024-12-31T23:59:59Z"
+interval_hours = 24
+
+[data_collection.filters]
+keywords = ["finance", "economy", "crypto", "stocks", "earnings", "fed", "inflation"]
+languages = ["en"]
+min_engagement = 10
+exclude_retweets = true
+exclude_ads = true
+
+# Configurazione delle fonti dati
+[[data_collection.sources]]
+name = "Alpha Vantage News"
+platform = "AlphaVantage"
+url = "https://www.alphavantage.co/query"
+api_key = "YOUR_ALPHA_VANTAGE_API_KEY_HERE"  # Sostituisci con la tua API key
+enabled = true
+
+[[data_collection.sources]]
+name = "Reuters Finance"
+platform = "NewsWebsite"
+url = "https://www.reuters.com/business/finance/"
+api_key = ""
+enabled = true
+
+[[data_collection.sources]]
+name = "Bloomberg RSS"
+platform = "RSS"
+url = "https://feeds.bloomberg.com/markets/news.rss"
+api_key = ""
+enabled = true
+
+# Configurazione della stratificazione
+[stratification]
+min_samples_per_stratum = 10
+max_samples_per_stratum = 100
+
+[stratification.platform_weights]
+Twitter = 1.0
+AlphaVantage = 1.5  # Peso maggiore per Alpha Vantage dato che ha sentiment analysis
+NewsWebsite = 1.0
+RSS = 1.0
+
+[stratification.theme_weights]
+Economy = 1.5
+Technology = 1.0
+Politics = 0.8
+Other = 0.5 

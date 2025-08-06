@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum DataCollectionMode {
     Demo,   // Dati simulati per sviluppo e test
     Prod,   // Dati reali dalle API
@@ -23,6 +24,7 @@ pub struct DataPoint {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Platform {
     Twitter,
     Facebook,
@@ -33,10 +35,12 @@ pub enum Platform {
     RSS,
     YouTube,
     TikTok,
+    AlphaVantage, // Nuova piattaforma per Alpha Vantage
     Other(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
 pub enum Theme {
     Politics,
     Economy,
@@ -134,6 +138,7 @@ pub struct DataFilters {
 
 // Market event structures for enhanced demo mode
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum MarketEventType {
     Earnings,
     FedDecision,
@@ -151,6 +156,46 @@ pub struct MarketEvent {
     pub description: String,
 }
 
+// Alpha Vantage specific structures
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlphaVantageNewsItem {
+    pub title: String,
+    pub url: String,
+    pub time_published: String,
+    pub authors: Vec<String>,
+    pub summary: String,
+    pub banner_image: Option<String>,
+    pub source: String,
+    pub category_within_source: String,
+    pub source_domain: String,
+    pub topics: Vec<AlphaVantageTopic>,
+    pub overall_sentiment_score: f64,
+    pub overall_sentiment_label: String,
+    pub ticker_sentiment: Vec<AlphaVantageTickerSentiment>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlphaVantageTopic {
+    pub topic: String,
+    pub relevance_score: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlphaVantageTickerSentiment {
+    pub ticker: String,
+    pub relevance_score: String,
+    pub ticker_sentiment_score: String,
+    pub ticker_sentiment_label: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AlphaVantageNewsResponse {
+    pub items: String, // Number of items returned
+    pub sentiment_score_definition: String,
+    pub relevance_score_definition: String,
+    pub feed: Vec<AlphaVantageNewsItem>,
+}
+
 impl Default for EngagementMetrics {
     fn default() -> Self {
         Self {
@@ -158,6 +203,18 @@ impl Default for EngagementMetrics {
             shares: 0,
             comments: 0,
             views: 0,
+        }
+    }
+}
+
+impl Default for DataFilters {
+    fn default() -> Self {
+        Self {
+            keywords: vec!["economy".to_string(), "finance".to_string(), "crypto".to_string()],
+            languages: vec!["en".to_string()],
+            min_engagement: 10,
+            exclude_retweets: true,
+            exclude_ads: true,
         }
     }
 }

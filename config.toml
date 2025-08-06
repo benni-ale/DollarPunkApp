@@ -1,0 +1,57 @@
+[data_collection]
+mode = "demo"
+
+[[data_collection.sources]]
+name = "Alpha Vantage News"
+platform = "alphavantage"
+url = "https://www.alphavantage.co/query"
+api_key = "YOUR_ALPHA_VANTAGE_API_KEY_HERE"
+enabled = true
+
+[[data_collection.sources]]
+name = "Reuters Finance"
+platform = "newswebsite"
+url = "https://www.reuters.com/business/finance/"
+enabled = true
+
+[[data_collection.sources]]
+name = "Bloomberg RSS"
+platform = "rss"
+url = "https://feeds.bloomberg.com/markets/news.rss"
+enabled = true
+
+[data_collection.collection_period]
+start_date = "2025-07-30T09:23:55.832119+00:00"
+end_date = "2025-08-06T09:23:55.832144700+00:00"
+interval_hours = 24
+
+[data_collection.filters]
+keywords = [
+    "finance",
+    "economy",
+    "crypto",
+    "stocks",
+    "earnings",
+    "fed",
+    "inflation",
+]
+languages = ["en"]
+min_engagement = 10
+exclude_retweets = true
+exclude_ads = true
+
+[stratification]
+min_samples_per_stratum = 10
+max_samples_per_stratum = 100
+
+[stratification.platform_weights]
+newswebsite = 1.0
+alphavantage = 1.5
+rss = 1.0
+twitter = 1.0
+
+[stratification.theme_weights]
+politics = 0.8
+technology = 1.0
+other = 0.5
+economy = 1.5

@@ -1198,6 +1198,10 @@ impl DataCollector {
                 info!("Collecting real RSS data from {}", source.name);
                 self.collect_rss_data(source, filters).await
             }
+            Platform::AlphaVantage => {
+                info!("Collecting real Alpha Vantage news data from {}", source.name);
+                self.collect_alpha_vantage_news(source, filters).await
+            }
             _ => {
                 warn!("No real API implementation for platform {:?}, falling back to simulated data", source.platform);
                 self.generate_simulated_data(source, filters).await
@@ -1366,5 +1370,209 @@ impl DataCollector {
         // For now, let's be less restrictive - only check keywords
         // This will help us see if the content generation is working
         has_keyword
+    }
+
+    pub async fn collect_alpha_vantage_news(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        info!("Starting Alpha Vantage news collection for {}", source.name);
+        
+        // Check if API key is available
+        let api_key = match &source.api_key {
+            Some(key) => key,
+            None => {
+                warn!("No API key provided for Alpha Vantage source {}, falling back to simulated data", source.name);
+                return self.generate_simulated_data(source, filters).await;
+            }
+        };
+
+        let mut data = Vec::new();
+        let client = Client::new();
+        
+        // Alpha Vantage News API endpoint
+        let base_url = "https://www.alphavantage.co/query";
+        
+        // Build query parameters
+        let mut params = vec![
+            ("function", "NEWS_SENTIMENT"),
+            ("apikey", api_key),
+            ("limit", "50"), // Get up to 50 news items
+        ];
+        
+        // Add topics if keywords are provided
+        if !filters.keywords.is_empty() {
+            // Use the first keyword as the main topic
+            let topic = &filters.keywords[0];
+            params.push(("topics", topic));
+        }
+        
+        // Add time_from parameter (last 7 days)
+        let time_from = (Utc::now() - chrono::Duration::days(7))
+            .format("%Y%m%dT%H%M%S")
+            .to_string();
+        params.push(("time_from", &time_from));
+        
+        info!("Making Alpha Vantage API request with params: {:?}", params);
+        
+        match client.get(base_url).query(&params).send().await {
+            Ok(response) => {
+                info!("Alpha Vantage API response status: {}", response.status());
+                
+                if response.status().is_success() {
+                    match response.json::<serde_json::Value>().await {
+                        Ok(json_response) => {
+                            debug!("Alpha Vantage API response: {:?}", json_response);
+                            
+                            // Check for API errors
+                            if let Some(error_message) = json_response.get("Error Message") {
+                                error!("Alpha Vantage API error: {}", error_message);
+                                return self.generate_simulated_data(source, filters).await;
+                            }
+                            
+                            if let Some(note) = json_response.get("Note") {
+                                warn!("Alpha Vantage API note: {}", note);
+                                return self.generate_simulated_data(source, filters).await;
+                            }
+                            
+                            // Parse the feed
+                            if let Some(feed) = json_response.get("feed") {
+                                if let Ok(news_items) = serde_json::from_value::<Vec<AlphaVantageNewsItem>>(feed.clone()) {
+                                    info!("Successfully parsed {} Alpha Vantage news items", news_items.len());
+                                    
+                                    for (i, news_item) in news_items.iter().enumerate() {
+                                        // Create content combining title and summary
+                                        let content = format!("{} - {}", news_item.title, news_item.summary);
+                                        
+                                        // Check if content matches our filters
+                                        if self.matches_filters(&content, filters) {
+                                            // Parse timestamp
+                                            let timestamp = match chrono::DateTime::parse_from_rfc3339(&news_item.time_published) {
+                                                Ok(dt) => dt.with_timezone(&Utc),
+                                                Err(_) => Utc::now() - chrono::Duration::hours(i as i64),
+                                            };
+                                            
+                                            // Determine theme based on topics and category
+                                            let theme = self.classify_theme_from_alpha_vantage(news_item);
+                                            
+                                            // Use the sentiment score from Alpha Vantage
+                                            let sentiment_score = Some(news_item.overall_sentiment_score);
+                                            
+                                            // Create engagement metrics (simulated since Alpha Vantage doesn't provide these)
+                                            let engagement_metrics = self.generate_alpha_vantage_engagement(news_item);
+                                            
+                                            data.push(DataPoint {
+                                                id: format!("alphavantage_{}", i),
+                                                content,
+                                                platform: Platform::AlphaVantage,
+                                                timestamp,
+                                                theme,
+                                                author: news_item.authors.join(", "),
+                                                url: Some(news_item.url.clone()),
+                                                engagement_metrics,
+                                                language: "en".to_string(), // Alpha Vantage primarily provides English content
+                                                sentiment_score,
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    error!("Failed to parse Alpha Vantage news feed");
+                                }
+                            } else {
+                                warn!("No 'feed' field found in Alpha Vantage response");
+                            }
+                        }
+                        Err(e) => {
+                            error!("Failed to parse Alpha Vantage JSON response: {}", e);
+                        }
+                    }
+                } else {
+                    error!("Alpha Vantage API request failed with status: {}", response.status());
+                }
+            }
+            Err(e) => {
+                error!("Alpha Vantage API request failed: {}", e);
+            }
+        }
+        
+        // If no real data collected, generate simulated data
+        if data.is_empty() {
+            info!("No real Alpha Vantage data collected, generating simulated data");
+            return self.generate_simulated_data(source, filters).await;
+        }
+        
+        info!("Alpha Vantage news collection completed: {} data points", data.len());
+        Ok(data)
+    }
+
+    fn classify_theme_from_alpha_vantage(&self, news_item: &AlphaVantageNewsItem) -> Theme {
+        let title_lower = news_item.title.to_lowercase();
+        let _summary_lower = news_item.summary.to_lowercase();
+        let category_lower = news_item.category_within_source.to_lowercase();
+        
+        // Check for specific financial/economic terms
+        if title_lower.contains("earnings") || title_lower.contains("revenue") || title_lower.contains("profit") {
+            return Theme::Economy;
+        }
+        
+        if title_lower.contains("fed") || title_lower.contains("federal reserve") || title_lower.contains("interest rate") {
+            return Theme::Economy;
+        }
+        
+        if title_lower.contains("inflation") || title_lower.contains("cpi") || title_lower.contains("gdp") {
+            return Theme::Economy;
+        }
+        
+        if title_lower.contains("crypto") || title_lower.contains("bitcoin") || title_lower.contains("ethereum") {
+            return Theme::Economy;
+        }
+        
+        if title_lower.contains("stock") || title_lower.contains("market") || title_lower.contains("trading") {
+            return Theme::Economy;
+        }
+        
+        if title_lower.contains("tech") || title_lower.contains("ai") || title_lower.contains("software") {
+            return Theme::Technology;
+        }
+        
+        // Check category
+        match category_lower.as_str() {
+            "top news" | "earnings" | "ipo" | "mergers & acquisitions" => Theme::Economy,
+            "technology" | "innovation" => Theme::Technology,
+            "politics" | "government" => Theme::Politics,
+            _ => Theme::Economy, // Default to economy for financial news
+        }
+    }
+
+    fn generate_alpha_vantage_engagement(&self, news_item: &AlphaVantageNewsItem) -> EngagementMetrics {
+        let mut rng = rand::thread_rng();
+        
+        // Base engagement for news articles
+        let base_likes = rng.gen_range(50..500);
+        let base_shares = rng.gen_range(20..200);
+        let base_comments = rng.gen_range(5..50);
+        let base_views = rng.gen_range(1000..10000);
+        
+        // Adjust based on sentiment (positive news gets more engagement)
+        let sentiment_multiplier = if news_item.overall_sentiment_score > 0.3 {
+            rng.gen_range(1.2..1.8) // Positive news
+        } else if news_item.overall_sentiment_score < -0.3 {
+            rng.gen_range(1.1..1.5) // Negative news can also get engagement
+        } else {
+            rng.gen_range(0.8..1.2) // Neutral news
+        };
+        
+        // Adjust based on source credibility
+        let source_multiplier = match news_item.source.to_lowercase().as_str() {
+            "reuters" | "bloomberg" | "cnbc" | "marketwatch" => rng.gen_range(1.3..1.7),
+            "yahoo finance" | "seeking alpha" => rng.gen_range(1.1..1.4),
+            _ => rng.gen_range(0.9..1.2),
+        };
+        
+        let final_multiplier = sentiment_multiplier * source_multiplier;
+        
+        EngagementMetrics {
+            likes: (base_likes as f64 * final_multiplier) as u32,
+            shares: (base_shares as f64 * final_multiplier) as u32,
+            comments: (base_comments as f64 * final_multiplier) as u32,
+            views: (base_views as f64 * final_multiplier) as u32,
+        }
     }
 } 
