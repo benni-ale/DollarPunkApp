@@ -132,6 +132,25 @@ pub struct DataFilters {
     pub exclude_ads: bool,
 }
 
+// Market event structures for enhanced demo mode
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum MarketEventType {
+    Earnings,
+    FedDecision,
+    EconomicData,
+    CryptoSurge,
+    MarketCrash,
+    Merger,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketEvent {
+    pub event_type: MarketEventType,
+    pub impact: f64, // -1.0 to 1.0, negative = bearish, positive = bullish
+    pub affected_sectors: Vec<String>,
+    pub description: String,
+}
+
 impl Default for EngagementMetrics {
     fn default() -> Self {
         Self {

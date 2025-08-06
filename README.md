@@ -1,167 +1,140 @@
 # DollarPunk - Social Media Data Collection & Stratification
 
-DollarPunk è un'applicazione GUI in Rust per raccogliere dati da social media e news, applicare stratificazione e campionamento bilanciato per l'analisi del sentiment.
+DollarPunk è un'applicazione desktop per la raccolta e stratificazione di dati dai social media, progettata per analisi finanziarie e di mercato.
 
-## Caratteristiche
+## Caratteristiche Principali
 
-- **Raccolta Dati Multi-Piattaforma**: Supporto per Twitter, Facebook, Reddit, RSS feeds e siti di news
-- **Stratificazione Avanzata**: Raggruppamento per piattaforma, tema e periodo temporale
-- **Campionamento Bilanciato**: Algoritmi di campionamento per garantire rappresentatività
-- **Interfaccia Grafica Moderna**: GUI intuitiva costruita con egui
-- **Esportazione Dati**: Esportazione in CSV e JSON per analisi successive
-- **Filtri Personalizzabili**: Filtri per keywords, lingue, engagement e altro
+### 🎮 Modalità Demo Avanzata
+La modalità demo è stata completamente riprogettata per generare dati **realistici e applicabili nella vita reale**:
+
+#### **Contenuti Realistici**
+- **Eventi di mercato reali**: Earnings, decisioni Fed, dati economici, rally crypto, crash di mercato, fusioni
+- **Aziende reali**: Apple, Tesla, Microsoft, Amazon, Google, Meta, NVIDIA, AMD, Intel
+- **Progetti crypto reali**: Bitcoin, Ethereum, Cardano, Solana, Polkadot, Chainlink
+- **Scenari finanziari realistici**: Prezzi azionari, indicatori economici, tassi di interesse, inflazione
+
+#### **Pattern Temporali Realistici**
+- **Orari di mercato**: Maggiore attività durante gli orari di trading (9:30 AM - 4:00 PM ET)
+- **Effetti weekend**: Ridotta attività nei fine settimana
+- **Distribuzione temporale**: Post più recenti hanno maggiore engagement
+
+#### **Metriche di Engagement Sofisticate**
+- **Pattern per piattaforma**: Twitter (alto engagement), Reddit (molti commenti), News (molte condivisioni)
+- **Fattori virali**: 5% chance di post virali, 15% chance di post trending
+- **Correlazione sentiment**: Contenuti positivi/negativi influenzano l'engagement
+- **Fattori temporali**: Post recenti ottengono più engagement
+
+#### **Analisi del Sentiment Avanzata**
+- **Sentiment basato su temi**: Economia (misto), Tech (positivo), Politica (negativo)
+- **Keyword analysis**: "breaking", "surge", "crash", "growth", "beat", "miss"
+- **Sentiment di mercato**: "bullish", "bearish", "neutral"
+- **Sentiment crypto**: Adozione istituzionale, regolamentazione
+
+#### **Eventi di Mercato Correlati**
+- **Eventi che influenzano multipli post**: 30% dei post sono correlati a eventi di mercato
+- **Volatilità di mercato**: Influenza il volume di post generati
+- **Correlazioni tra piattaforme**: Eventi simili su diverse piattaforme
+
+### 📊 Stratificazione Intelligente
+- Creazione automatica di strati basati su piattaforma, tema e periodo temporale
+- Campionamento bilanciato per garantire rappresentatività
+- Statistiche dettagliate sulla distribuzione dei dati
+
+### 🎯 Filtri Avanzati
+- Filtri per parole chiave, lingue, engagement minimo
+- Esclusione di retweet e pubblicità
+- Configurazione flessibile per diverse esigenze analitiche
+
+### 📈 Esportazione Dati
+- Esportazione in formato CSV e JSON
+- Timestamp automatici per i file esportati
+- Statistiche complete sui dati campionati
 
 ## Installazione
 
 ### Prerequisiti
+- Rust 1.70+ (https://rustup.rs/)
+- Windows 10/11, macOS, o Linux
 
-- Rust 1.70+ e Cargo
-- Connessione internet per la raccolta dati
-
-### Build
-
+### Compilazione
 ```bash
-# Clona il repository
-git clone <repository-url>
+git clone https://github.com/yourusername/DollarPunk.git
 cd DollarPunk
-
-# Build dell'applicazione
 cargo build --release
+```
 
-# Esegui l'applicazione
-cargo run --release
+### Esecuzione
+```bash
+cargo run
 ```
 
 ## Utilizzo
 
 ### 1. Configurazione Raccolta Dati
+- Seleziona la **modalità Demo** per testare con dati realistici
+- Configura le fonti dati (Twitter, Reddit, News, RSS)
+- Imposta filtri per parole chiave e lingue
+- Definisci il periodo di raccolta
 
-Nella tab "Data Collection":
-
-- **Data Sources**: Configura le fonti di dati (Twitter, RSS, siti news, etc.)
-- **Filters**: Imposta keywords, lingue e filtri di engagement
-- **Collection Period**: Definisci il periodo di raccolta dati
-
-### 2. Avvio Raccolta
-
-- Clicca "Start Collection" per iniziare la raccolta
-- Monitora il progresso e lo stato nella barra di stato
-- I dati raccolti vengono mostrati nel riepilogo
+### 2. Raccolta Dati
+- Clicca "Start Collection" per avviare la raccolta
+- Monitora il progresso in tempo reale
+- Visualizza i log dettagliati per debugging
 
 ### 3. Stratificazione
+- Configura i pesi per piattaforme e temi
+- Imposta parametri di campionamento
+- Crea gli strati e campiona i dati
 
-Nella tab "Stratification":
+### 4. Analisi Risultati
+- Visualizza statistiche sulla stratificazione
+- Esplora i dati campionati
+- Esporta i risultati per analisi esterne
 
-- **Platform Weights**: Imposta i pesi per le diverse piattaforme
-- **Theme Weights**: Configura i pesi per i temi (Economia, Politica, etc.)
-- **Sampling Parameters**: Definisci i parametri di campionamento
+## Esempi di Dati Demo Generati
 
-### 4. Campionamento
-
-- Clicca "Create Strata" per creare gli strati
-- Clicca "Sample Data" per eseguire il campionamento bilanciato
-- Visualizza i risultati nella tab "Results"
-
-### 5. Esportazione
-
-- I dati campionati vengono automaticamente esportati in CSV
-- Opzione per esportazione aggiuntiva in JSON
-- I file vengono salvati nella cartella `./exports/`
-
-## Struttura del Progetto
-
+### Twitter - Contenuti Realistici
 ```
-src/
-├── main.rs              # Entry point dell'applicazione
-├── models.rs            # Modelli di dati e strutture
-├── data_collector.rs    # Logica di raccolta dati
-├── stratification.rs    # Engine di stratificazione e campionamento
-└── gui.rs              # Interfaccia grafica
+"BREAKING: Apple stock surges 15% after earnings beat! Q4 revenue up 25% YoY. Analysts upgrading price targets. #finance #stocks #earnings"
+
+"CPI data: 3.2% YoY inflation, higher than expected. Core inflation at 4.1%. Market implications? #economy #inflation #markets"
+
+"Bitcoin just hit $45K! 🚀 Market cap now $850B. Institutional adoption accelerating. #crypto #bitcoin #markets"
 ```
 
-## Configurazione Avanzata
+### Reddit - Discussioni Realistiche
+```
+"What's everyone's thoughts on Tesla? I've been following it for a while and the recent developments are interesting."
 
-### Fonti Dati Personalizzate
+"Discussion: crypto market analysis and predictions for Q1. What are your positions?"
 
-Puoi aggiungere nuove fonti di dati modificando la configurazione:
-
-```rust
-DataSource {
-    name: "My Custom Source",
-    platform: Platform::Other("Custom"),
-    url: "https://example.com",
-    api_key: Some("your-api-key"),
-    enabled: true,
-}
+"BREAKING: Microsoft just announced AI partnership. How will this affect the market?"
 ```
 
-### Filtri Personalizzati
+### News - Articoli Professionali
+```
+"Market Analysis: tech sector shows strong momentum as investors focus on growth opportunities. Expert analysis suggests continued upward trend."
 
-Configura filtri per:
-- Keywords specifiche
-- Lingue (it, en, etc.)
-- Engagement minimo
-- Esclusione retweet/ads
+"Economic Update: inflation indicators point to robust recovery. Central bank policies supporting market stability."
 
-### Stratificazione Personalizzata
-
-Modifica i pesi per:
-- Piattaforme diverse
-- Temi specifici
-- Periodi temporali
-
-## Formato Dati Esportati
-
-### CSV Output
-
-```csv
-id,content,platform,theme,author,timestamp,language,likes,shares,comments,views,sentiment_score,url
+"Technology Trends: AI innovation driving market transformation. Industry leaders adapt to changing landscape."
 ```
 
-### JSON Output
+## Architettura Tecnica
 
-```json
-[
-  {
-    "id": "twitter_123",
-    "content": "Sample content...",
-    "platform": "Twitter",
-    "theme": "Economy",
-    "author": "user_1234",
-    "timestamp": "2024-01-01T12:00:00Z",
-    "language": "en",
-    "engagement_metrics": {
-      "likes": 100,
-      "shares": 50,
-      "comments": 25,
-      "views": 1000
-    },
-    "sentiment_score": 0.5,
-    "url": "https://twitter.com/..."
-  }
-]
-```
+### Componenti Principali
+- **GUI**: Interfaccia grafica con egui
+- **Data Collector**: Raccolta dati da multiple fonti
+- **Stratification Engine**: Algoritmi di stratificazione
+- **Models**: Strutture dati e configurazioni
 
-## Analisi del Sentiment
-
-I dati esportati includono:
-- **Sentiment Score**: Valore da -1.0 (negativo) a +1.0 (positivo)
-- **Engagement Metrics**: Likes, shares, comments, views
-- **Metadata**: Piattaforma, tema, autore, timestamp
-
-## Limitazioni Attuali
-
-- Raccolta dati simulata per alcune piattaforme (richiede API keys reali)
-- Rate limiting implementato per rispettare i limiti delle API
-- Supporto limitato per alcune piattaforme social
-
-## Sviluppo Futuro
-
-- [ ] Integrazione API reali per Twitter, Facebook, etc.
-- [ ] Analisi del sentiment più avanzata
-- [ ] Visualizzazioni grafiche dei risultati
-- [ ] Supporto per più lingue nell'interfaccia
-- [ ] Database per caching dei dati
+### Tecnologie Utilizzate
+- **Rust**: Linguaggio principale
+- **egui**: Framework GUI
+- **tokio**: Runtime asincrono
+- **serde**: Serializzazione JSON
+- **chrono**: Gestione date e orari
+- **rand**: Generazione numeri casuali
 
 ## Contribuire
 
@@ -175,12 +148,20 @@ I dati esportati includono:
 
 Questo progetto è rilasciato sotto licenza MIT. Vedi il file `LICENSE` per i dettagli.
 
-## Supporto
+## Roadmap
 
-Per domande o problemi:
-- Apri una issue su GitHub
-- Contatta il team di sviluppo
+### Prossime Funzionalità
+- [ ] Integrazione API reali (Twitter, Reddit, News)
+- [ ] Analisi sentiment con ML
+- [ ] Dashboard interattiva per visualizzazioni
+- [ ] Supporto per più lingue
+- [ ] Esportazione in più formati (Excel, Parquet)
+- [ ] Schedulazione automatica della raccolta
+- [ ] Alert e notifiche per eventi di mercato
 
----
-
-**DollarPunk** - Potente strumento per l'analisi dei social media e news con stratificazione avanzata. 
+### Miglioramenti Demo
+- [ ] Più eventi di mercato specifici
+- [ ] Correlazioni tra eventi e sentiment
+- [ ] Pattern stagionali e ciclici
+- [ ] Simulazione di trend di mercato
+- [ ] Eventi geopolitici e loro impatto 

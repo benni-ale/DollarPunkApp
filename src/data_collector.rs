@@ -1,6 +1,6 @@
 use crate::models::*;
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use reqwest::Client;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
@@ -41,8 +41,8 @@ impl DataCollector {
 
             let source_data = match config.mode {
                 DataCollectionMode::Demo => {
-                    info!("Using DEMO mode - generating simulated data for {}", source.name);
-                    self.generate_simulated_data(source, &config.filters).await?
+                    info!("Using DEMO mode - generating realistic simulated data for {}", source.name);
+                    self.generate_realistic_demo_data(source, &config.filters).await?
                 },
                 DataCollectionMode::Prod => {
                     info!("Using PROD mode - collecting real data from {}", source.name);
@@ -63,6 +63,786 @@ impl DataCollector {
         info!("Data collection completed. Total data points: {}, Enabled sources: {}", 
               all_data.len(), enabled_sources.len());
         Ok(all_data)
+    }
+
+    async fn generate_realistic_demo_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+        debug!("Starting realistic demo data generation for {} ({:?})", source.name, source.platform);
+        let mut data = Vec::new();
+        let mut rng = rand::thread_rng();
+        let mut generated_count = 0;
+        let mut filtered_count = 0;
+
+        // Generate more realistic number of posts based on platform and market conditions
+        let base_num_posts = match source.platform {
+            Platform::Twitter => rng.gen_range(80..150),
+            Platform::Reddit => rng.gen_range(60..120),
+            Platform::NewsWebsite => rng.gen_range(40..80),
+            Platform::RSS => rng.gen_range(30..60),
+            _ => rng.gen_range(50..100),
+        };
+
+        // Market volatility affects post volume
+        let market_volatility = rng.gen_range(0.0..1.0);
+        let volatility_multiplier = if market_volatility > 0.7 {
+            // High volatility = more posts
+            rng.gen_range(1.3..1.8)
+        } else if market_volatility > 0.4 {
+            // Moderate volatility = normal posts
+            rng.gen_range(0.9..1.2)
+        } else {
+            // Low volatility = fewer posts
+            rng.gen_range(0.6..1.0)
+        };
+
+        let num_posts = (base_num_posts as f64 * volatility_multiplier) as usize;
+
+        // Generate market events that affect multiple posts
+        let market_events = self.generate_market_events();
+        
+        for i in 0..num_posts {
+            // Determine if this post is related to a market event
+            let is_event_related = rng.gen_range(0.0..1.0) < 0.3; // 30% chance
+            let event_context = if is_event_related && !market_events.is_empty() {
+                market_events.choose(&mut rng)
+            } else {
+                None
+            };
+
+            let content = if let Some(event) = event_context {
+                self.generate_event_related_content(&source.platform, &filters.keywords, event)
+            } else {
+                self.generate_realistic_content(&source.platform, &filters.keywords)
+            };
+            
+            let theme = self.classify_theme_realistic(&content);
+            let language = self.detect_language(&content);
+            let sentiment = self.generate_realistic_sentiment(&content, &theme);
+            generated_count += 1;
+
+            if self.matches_filters(&content, filters) {
+                filtered_count += 1;
+                data.push(DataPoint {
+                    id: format!("{}_{}", source.name.to_lowercase().replace(" ", "_"), i),
+                    content,
+                    platform: source.platform.clone(),
+                    timestamp: self.generate_realistic_timestamp(),
+                    theme,
+                    author: self.generate_realistic_author(&source.platform),
+                    url: Some(self.generate_realistic_url(&source.platform, i)),
+                    engagement_metrics: self.generate_realistic_engagement(&source.platform, &sentiment),
+                    language,
+                    sentiment_score: Some(sentiment),
+                });
+            }
+        }
+
+        debug!("Realistic demo generation: generated={}, filtered={}, final={}", 
+               generated_count, filtered_count, data.len());
+        info!("Realistic demo generation completed: {} data points", data.len());
+        Ok(data)
+    }
+
+    fn generate_market_events(&self) -> Vec<MarketEvent> {
+        let mut rng = rand::thread_rng();
+        let mut events = Vec::new();
+        
+        // Generate 2-5 market events
+        let num_events = rng.gen_range(2..6);
+        
+        for _ in 0..num_events {
+            let event_type = match rng.gen_range(0..6) {
+                0 => MarketEventType::Earnings,
+                1 => MarketEventType::FedDecision,
+                2 => MarketEventType::EconomicData,
+                3 => MarketEventType::CryptoSurge,
+                4 => MarketEventType::MarketCrash,
+                _ => MarketEventType::Merger,
+            };
+            
+            events.push(MarketEvent {
+                event_type: event_type.clone(),
+                impact: rng.gen_range(-0.8..0.8),
+                affected_sectors: {
+                    let count = rng.gen_range(1..3);
+                    vec!["tech", "finance", "crypto", "energy"].choose_multiple(&mut rng, count).map(|s| s.to_string()).collect()
+                },
+                description: self.generate_event_description(&event_type),
+            });
+        }
+        
+        events
+    }
+
+    fn generate_event_description(&self, event_type: &MarketEventType) -> String {
+        let mut rng = rand::thread_rng();
+        
+        match event_type {
+            MarketEventType::Earnings => {
+                let companies = ["Apple", "Tesla", "Microsoft", "Amazon", "Google"];
+                let company = companies.choose(&mut rng).unwrap();
+                format!("{} Q4 earnings beat expectations", company)
+            },
+            MarketEventType::FedDecision => {
+                let actions = ["rate hike", "rate cut", "no change", "QE announcement"];
+                let action = actions.choose(&mut rng).unwrap();
+                format!("Federal Reserve announces {}", action)
+            },
+            MarketEventType::EconomicData => {
+                let indicators = ["CPI", "GDP", "unemployment", "retail sales"];
+                let indicator = indicators.choose(&mut rng).unwrap();
+                format!("{} data released", indicator)
+            },
+            MarketEventType::CryptoSurge => {
+                let cryptos = ["Bitcoin", "Ethereum", "Solana"];
+                let crypto = cryptos.choose(&mut rng).unwrap();
+                format!("{} price surge", crypto)
+            },
+            MarketEventType::MarketCrash => {
+                let triggers = ["inflation fears", "recession concerns", "geopolitical tensions"];
+                let trigger = triggers.choose(&mut rng).unwrap();
+                format!("Market selloff due to {}", trigger)
+            },
+            MarketEventType::Merger => {
+                let companies = ["Microsoft", "Amazon", "Google", "Meta"];
+                let company1 = companies.choose(&mut rng).unwrap();
+                let company2 = companies.choose(&mut rng).unwrap();
+                format!("{} acquires {}", company1, company2)
+            },
+        }
+    }
+
+    fn generate_event_related_content(&self, _platform: &Platform, _keywords: &[String], event: &MarketEvent) -> String {
+        let mut rng = rand::thread_rng();
+        
+        match &event.event_type {
+            MarketEventType::Earnings => {
+                let templates = vec![
+                    "BREAKING: {} earnings reaction across markets. Analysts updating price targets.",
+                    "{} earnings impact: sector rotation happening. Money flowing into/out of tech.",
+                    "Post-earnings analysis: {} performance affecting market sentiment.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+            MarketEventType::FedDecision => {
+                let templates = vec![
+                    "Fed decision impact: {} affecting all markets. Bond yields moving.",
+                    "Market reaction to {}: risk assets under pressure/surging.",
+                    "Post-Fed analysis: {} implications for inflation and growth.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+            MarketEventType::EconomicData => {
+                let templates = vec![
+                    "Economic data release: {} moving markets. Inflation/growth implications.",
+                    "Market digesting {}: risk sentiment shifting. Sector rotation expected.",
+                    "{} impact: Fed policy expectations adjusting. Rate hike/cut probability changing.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+            MarketEventType::CryptoSurge => {
+                let templates = vec![
+                    "Crypto rally: {} driving altcoin season. DeFi tokens surging.",
+                    "{} momentum: institutional adoption accelerating. Traditional finance taking notice.",
+                    "Crypto market update: {} leading the charge. Risk-on sentiment in digital assets.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+            MarketEventType::MarketCrash => {
+                let templates = vec![
+                    "Market volatility: {} causing flight to safety. Bonds and gold rallying.",
+                    "Risk-off sentiment: {} triggering selloff. Defensive sectors outperforming.",
+                    "Market stress: {} impact on correlations. Diversification failing.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+            MarketEventType::Merger => {
+                let templates = vec![
+                    "Merger news: {} creating sector opportunities. Antitrust concerns rising.",
+                    "Corporate action: {} implications for competition. Market consolidation trend.",
+                    "Deal analysis: {} strategic rationale. Synergy expectations and execution risk.",
+                ];
+                let template = templates.choose(&mut rng).unwrap();
+                template.replace("{}", &event.description)
+            },
+        }
+    }
+
+    fn generate_realistic_content(&self, platform: &Platform, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        match platform {
+            Platform::Twitter => self.generate_realistic_twitter_content(keywords),
+            Platform::Reddit => self.generate_realistic_reddit_content(keywords),
+            Platform::NewsWebsite => self.generate_realistic_news_content(keywords),
+            Platform::RSS => self.generate_realistic_rss_content(keywords),
+            _ => self.generate_realistic_generic_content(keywords),
+        }
+    }
+
+    fn generate_realistic_twitter_content(&self, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        // Real-world companies and market events
+        let companies = vec!["Apple", "Tesla", "Microsoft", "Amazon", "Google", "Meta", "Netflix", "NVIDIA", "AMD", "Intel"];
+        let crypto_projects = vec!["Bitcoin", "Ethereum", "Cardano", "Solana", "Polkadot", "Chainlink", "Uniswap", "Aave"];
+        let sectors = vec!["tech", "finance", "healthcare", "energy", "consumer", "industrial", "materials"];
+        let countries = vec!["US", "EU", "China", "Japan", "UK", "Canada", "Australia"];
+        
+        // Real-world financial and economic scenarios
+        let scenarios = vec![
+            // Market movements with real companies
+            ("BREAKING: {} stock surges {}% after earnings beat! Q4 revenue up {}% YoY. Analysts upgrading price targets.", "finance"),
+            ("{} announces major AI partnership with {}. Stock up {}% in pre-market. Tech sector rally continues.", "technology"),
+            ("Federal Reserve raises rates by {} basis points. Market reaction: {}. Impact on {} stocks?", "economy"),
+            
+            // Economic indicators with realistic values
+            ("CPI data: {}% YoY inflation, {} than expected. Core inflation at {}%. Market implications?", "economy"),
+            ("Jobs report: {}K new jobs, unemployment at {}%. {} sector leading job growth.", "economy"),
+            ("GDP Q4 growth: {}% annualized. {} sector strongest performer. Recession fears easing.", "economy"),
+            
+            // Crypto developments with real projects
+            ("{} just hit ${}K! 🚀 Market cap now ${}B. Institutional adoption accelerating.", "crypto"),
+            ("{} {} upgrade live! Gas fees down {}%. DeFi TVL reaches ${}B. Bullish!", "crypto"),
+            ("New {} regulation in {}. Impact on {} market? Institutional flows continue.", "crypto"),
+            
+            // Company-specific news
+            ("{} earnings: EPS ${}, revenue ${}B. Beat estimates by {}%. Stock up {}% AH.", "finance"),
+            ("{} acquires {} for ${}B. Strategic move into {} market. Competition heating up!", "finance"),
+            ("{} launches new {} product. Early reviews positive. Market share implications?", "technology"),
+            
+            // Market analysis
+            ("S&P 500 up {}% today. {} sector leading gains. VIX down to {}. Risk-on sentiment.", "finance"),
+            ("{} market analysis: Technical breakout at ${}. Support at ${}. Target: ${}.", "finance"),
+            ("Portfolio update: {}% in growth, {}% in value, {}% in bonds. Rebalancing needed?", "finance"),
+            
+            // Real-world events
+            ("Oil prices hit ${} per barrel. {} production cuts. Energy sector implications?", "economy"),
+            ("{} central bank announces {} policy. Currency impact: {} vs USD. Trade implications?", "economy"),
+            ("Supply chain update: {} delays easing. {} sector recovery. Inflation pressure?", "economy"),
+        ];
+
+        let (template, default_keyword) = scenarios.choose(&mut rng).unwrap();
+        let default_keyword_str = default_keyword.to_string();
+        let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword_str);
+        
+        // Fill template with realistic values and real company names
+        let content = match template {
+            t if t.contains("stock surges") => {
+                let company = companies.choose(&mut rng).unwrap();
+                let percent = rng.gen_range(5..25);
+                let revenue_growth = rng.gen_range(10..50);
+                t.replace("{} stock surges", &format!("{} stock surges", company))
+                 .replace("{}% after earnings beat! Q4 revenue up {}% YoY", &format!("{}% after earnings beat! Q4 revenue up {}% YoY", percent, revenue_growth))
+            },
+            t if t.contains("announces major AI partnership") => {
+                let company1 = companies.choose(&mut rng).unwrap();
+                let company2 = companies.choose(&mut rng).unwrap();
+                let percent = rng.gen_range(3..15);
+                t.replace("{} announces major AI partnership with {}", &format!("{} announces major AI partnership with {}", company1, company2))
+                 .replace("Stock up {}% in pre-market", &format!("Stock up {}% in pre-market", percent))
+            },
+            t if t.contains("raises rates by") => {
+                let bps = rng.gen_range(25..100);
+                let reaction = ["bullish", "mixed", "cautious", "bearish"].choose(&mut rng).unwrap();
+                let sector = sectors.choose(&mut rng).unwrap();
+                t.replace("raises rates by {} basis points", &format!("raises rates by {} basis points", bps))
+                 .replace("Market reaction: {}", &format!("Market reaction: {}", reaction))
+                 .replace("Impact on {} stocks?", &format!("Impact on {} stocks?", sector))
+            },
+            t if t.contains("CPI data:") => {
+                let inflation = rng.gen_range(20..80) as f64 / 10.0;
+                let comparison = ["higher", "lower"].choose(&mut rng).unwrap();
+                let core = rng.gen_range(15..70) as f64 / 10.0;
+                t.replace("CPI data: {}% YoY inflation, {} than expected", &format!("CPI data: {:.1}% YoY inflation, {} than expected", inflation, comparison))
+                 .replace("Core inflation at {}%", &format!("Core inflation at {:.1}%", core))
+            },
+            t if t.contains("Jobs report:") => {
+                let jobs = rng.gen_range(100..500);
+                let unemployment = rng.gen_range(30..60) as f64 / 10.0;
+                let sector = sectors.choose(&mut rng).unwrap();
+                t.replace("Jobs report: {}K new jobs, unemployment at {}%", &format!("Jobs report: {}K new jobs, unemployment at {:.1}%", jobs, unemployment))
+                 .replace("{} sector leading job growth", &format!("{} sector leading job growth", sector))
+            },
+            t if t.contains("just hit $") && t.contains("K!") => {
+                let crypto = crypto_projects.choose(&mut rng).unwrap();
+                let price = rng.gen_range(30..80);
+                let market_cap = rng.gen_range(100..1000);
+                t.replace("{} just hit ${}K!", &format!("{} just hit ${}K!", crypto, price))
+                 .replace("Market cap now ${}B", &format!("Market cap now ${}B", market_cap))
+            },
+            t if t.contains("earnings: EPS $") => {
+                let company = companies.choose(&mut rng).unwrap();
+                let eps = rng.gen_range(10..50) as f64 / 10.0;
+                let revenue = rng.gen_range(10..100);
+                let beat = rng.gen_range(5..20);
+                let stock_move = rng.gen_range(2..12);
+                t.replace("{} earnings: EPS ${}, revenue ${}B", &format!("{} earnings: EPS ${:.2}, revenue ${}B", company, eps, revenue))
+                 .replace("Beat estimates by {}%", &format!("Beat estimates by {}%", beat))
+                 .replace("Stock up {}% AH", &format!("Stock up {}% AH", stock_move))
+            },
+            t if t.contains("Oil prices hit $") => {
+                let oil_price = rng.gen_range(60..120);
+                let country = countries.choose(&mut rng).unwrap();
+                t.replace("Oil prices hit ${} per barrel", &format!("Oil prices hit ${} per barrel", oil_price))
+                 .replace("{} production cuts", &format!("{} production cuts", country))
+            },
+            t if t.contains("central bank announces") => {
+                let country = countries.choose(&mut rng).unwrap();
+                let policy = ["rate hike", "rate cut", "QE", "tightening"].choose(&mut rng).unwrap();
+                let currency_move = rng.gen_range(-5..5);
+                t.replace("{} central bank announces {} policy", &format!("{} central bank announces {} policy", country, policy))
+                 .replace("Currency impact: {} vs USD", &format!("Currency impact: {}% vs USD", currency_move))
+            },
+            _ => {
+                // Generic replacement for remaining templates
+                let mut content = template.to_string();
+                for _ in 0..content.matches("{}").count() {
+                    if content.contains("{}") {
+                        content = content.replacen("{}", &keyword, 1);
+                    }
+                }
+                content
+            }
+        };
+
+        // Add realistic hashtags and mentions
+        let hashtags = vec![
+            format!("#{}", keyword),
+            "#markets".to_string(),
+            "#investing".to_string(),
+            "#finance".to_string(),
+            "#economy".to_string(),
+            "#crypto".to_string(),
+            "#stocks".to_string(),
+            "#trading".to_string(),
+            "#wallstreet".to_string(),
+            "#fintech".to_string(),
+        ];
+        
+        let hashtag_count = rng.gen_range(2..5);
+        let selected_hashtags: Vec<_> = hashtags.choose_multiple(&mut rng, hashtag_count).collect();
+        let hashtag_string = selected_hashtags.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(" ");
+        
+        format!("{} {}", content, hashtag_string)
+    }
+
+    fn generate_realistic_reddit_content(&self, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        let scenarios = vec![
+            // Discussion posts
+            ("What's everyone's thoughts on {}? I've been following it for a while and the recent developments are interesting.", "finance"),
+            ("Discussion: {} market analysis and predictions for Q1. What are your positions?", "crypto"),
+            ("{} sector deep dive: fundamentals vs technical analysis. Which approach do you prefer?", "economy"),
+            
+            // News sharing
+            ("BREAKING: {} just announced {}. How will this affect the market?", "finance"),
+            ("New report on {}: key findings and market implications. Worth reading!", "economy"),
+            ("{} regulation update: what this means for investors and traders.", "crypto"),
+            
+            // Personal experiences
+            ("My experience with {} investing: lessons learned and portfolio performance.", "finance"),
+            ("Just completed my first {} trade. Here's what I learned and my strategy moving forward.", "crypto"),
+            ("{} market volatility: how I'm adjusting my investment strategy.", "economy"),
+            
+            // Analysis requests
+            ("Can someone explain the recent {} movements? Looking for technical analysis.", "finance"),
+            ("{} fundamentals check: is this a good entry point or wait for pullback?", "crypto"),
+            ("Economic indicators for {}: what should we watch for in the coming weeks?", "economy"),
+        ];
+
+        let (template, default_keyword) = scenarios.choose(&mut rng).unwrap();
+        let default_keyword_str = default_keyword.to_string();
+        let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword_str);
+        
+        template.replace("{}", keyword)
+    }
+
+    fn generate_realistic_news_content(&self, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        let scenarios = vec![
+            // Market analysis
+            ("Market Analysis: {} sector shows strong momentum as investors focus on growth opportunities. Expert analysis suggests continued upward trend.", "finance"),
+            ("Economic Update: {} indicators point to robust recovery. Central bank policies supporting market stability.", "economy"),
+            ("Technology Trends: {} innovation driving market transformation. Industry leaders adapt to changing landscape.", "technology"),
+            
+            // Breaking news
+            ("BREAKING: Major developments in {} market as regulatory changes take effect. Impact on global markets analyzed.", "crypto"),
+            ("Exclusive: {} company announces strategic partnership. Market reaction and future prospects examined.", "finance"),
+            ("Economic Policy: New measures affecting {} sector announced. Expert opinions on market implications.", "economy"),
+            
+            // Research reports
+            ("Research Report: {} market analysis reveals key trends and investment opportunities. Comprehensive coverage of sector performance.", "finance"),
+            ("Industry Study: {} sector growth projections for 2024. Data-driven insights for investors.", "technology"),
+            ("Economic Forecast: {} indicators suggest market direction. Professional analysis and predictions.", "economy"),
+        ];
+
+        let (template, default_keyword) = scenarios.choose(&mut rng).unwrap();
+        let default_keyword_str = default_keyword.to_string();
+        let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword_str);
+        
+        template.replace("{}", keyword)
+    }
+
+    fn generate_realistic_rss_content(&self, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        let scenarios = vec![
+            // RSS feed content
+            ("RSS Update: {} market developments and analysis. Latest news and expert commentary on sector trends.", "finance"),
+            ("Feed Alert: {} economic indicators released. Market impact and investor sentiment analysis.", "economy"),
+            ("RSS Report: {} technology sector updates. Innovation trends and market opportunities.", "technology"),
+            ("Feed News: {} cryptocurrency developments. Regulatory updates and market analysis.", "crypto"),
+        ];
+
+        let (template, default_keyword) = scenarios.choose(&mut rng).unwrap();
+        let default_keyword_str = default_keyword.to_string();
+        let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword_str);
+        
+        template.replace("{}", keyword)
+    }
+
+    fn generate_realistic_generic_content(&self, keywords: &[String]) -> String {
+        let mut rng = rand::thread_rng();
+        
+        let scenarios = vec![
+            ("Market Update: {} sector performance analysis and future outlook.", "finance"),
+            ("Economic Review: {} indicators and market implications.", "economy"),
+            ("Technology Report: {} innovations and market impact.", "technology"),
+        ];
+
+        let (template, default_keyword) = scenarios.choose(&mut rng).unwrap();
+        let default_keyword_str = default_keyword.to_string();
+        let keyword = keywords.choose(&mut rng).unwrap_or(&default_keyword_str);
+        
+        template.replace("{}", keyword)
+    }
+
+    fn generate_realistic_timestamp(&self) -> DateTime<Utc> {
+        let mut rng = rand::thread_rng();
+        let now = Utc::now();
+        
+        // Generate timestamps with realistic market patterns
+        let base_hours_ago = rng.gen_range(0..168); // 7 days
+        
+        // Adjust for market hours (more activity during trading hours)
+        let market_hour_multiplier = if rng.gen_range(0.0..1.0) < 0.7 {
+            // 70% chance of being during market hours (9:30 AM - 4:00 PM ET)
+            rng.gen_range(0.8..1.2)
+        } else {
+            // 30% chance of being outside market hours
+            rng.gen_range(1.5..3.0)
+        };
+        
+        // Weekend effect (less activity on weekends)
+        let weekend_multiplier = if rng.gen_range(0.0..1.0) < 0.3 {
+            // 30% chance of weekend activity
+            rng.gen_range(1.5..2.5)
+        } else {
+            // 70% chance of weekday activity
+            rng.gen_range(0.8..1.2)
+        };
+        
+        let adjusted_hours = (base_hours_ago as f64 * market_hour_multiplier * weekend_multiplier) as i64;
+        let minutes_ago = rng.gen_range(0..60);
+        
+        now - chrono::Duration::hours(adjusted_hours) - chrono::Duration::minutes(minutes_ago)
+    }
+
+    fn generate_realistic_author(&self, platform: &Platform) -> String {
+        let mut rng = rand::thread_rng();
+        
+        match platform {
+            Platform::Twitter => {
+                let prefixes = vec!["trader", "analyst", "investor", "fintech", "crypto", "market"];
+                let suffixes = vec!["pro", "guru", "expert", "daily", "news", "insights"];
+                let prefix = prefixes.choose(&mut rng).unwrap();
+                let suffix = suffixes.choose(&mut rng).unwrap();
+                let number = rng.gen_range(100..999);
+                format!("{}_{}_{}", prefix, suffix, number)
+            },
+            Platform::Reddit => {
+                let adjectives = vec!["smart", "wise", "crypto", "finance", "market", "trading"];
+                let nouns = vec!["trader", "investor", "analyst", "enthusiast", "expert"];
+                let adj = adjectives.choose(&mut rng).unwrap();
+                let noun = nouns.choose(&mut rng).unwrap();
+                let number = rng.gen_range(1000..9999);
+                format!("{}_{}_{}", adj, noun, number)
+            },
+            Platform::NewsWebsite => {
+                let first_names = vec!["John", "Sarah", "Michael", "Emma", "David", "Lisa"];
+                let last_names = vec!["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia"];
+                let first = first_names.choose(&mut rng).unwrap();
+                let last = last_names.choose(&mut rng).unwrap();
+                format!("{} {}", first, last)
+            },
+            Platform::RSS => {
+                let sources = vec!["Reuters", "Bloomberg", "CNBC", "MarketWatch", "Yahoo Finance"];
+                sources.choose(&mut rng).unwrap().to_string()
+            },
+            _ => {
+                format!("user_{}", rng.gen_range(1000..9999))
+            }
+        }
+    }
+
+    fn generate_realistic_url(&self, platform: &Platform, post_id: usize) -> String {
+        let mut rng = rand::thread_rng();
+        
+        match platform {
+            Platform::Twitter => {
+                let user_id = rng.gen_range(100000000..999999999);
+                let status_id = rng.gen_range(1000000000000000000..9999999999999999999u64);
+                format!("https://twitter.com/user_{}/status/{}", user_id, status_id)
+            },
+            Platform::Reddit => {
+                let subreddit = ["finance", "investing", "cryptocurrency", "stocks", "wallstreetbets"].choose(&mut rng).unwrap();
+                let post_id = rng.gen_range(1000000000..9999999999u64);
+                format!("https://reddit.com/r/{}/comments/{}", subreddit, post_id)
+            },
+            Platform::NewsWebsite => {
+                let domains = ["reuters.com", "bloomberg.com", "cnbc.com", "marketwatch.com"];
+                let domain = domains.choose(&mut rng).unwrap();
+                format!("https://www.{}/article/{}", domain, post_id)
+            },
+            Platform::RSS => {
+                let feeds = ["feeds.reuters.com", "feeds.bloomberg.com", "feeds.cnbc.com"];
+                let feed = feeds.choose(&mut rng).unwrap();
+                format!("https://{}/feed/{}", feed, post_id)
+            },
+            _ => {
+                format!("https://example.com/post/{}", post_id)
+            }
+        }
+    }
+
+    fn generate_realistic_engagement(&self, platform: &Platform, sentiment: &f64) -> EngagementMetrics {
+        let mut rng = rand::thread_rng();
+        
+        // More sophisticated engagement patterns based on platform and content type
+        let (base_likes, base_shares, base_comments, base_views) = match platform {
+            Platform::Twitter => {
+                // Twitter: High likes, moderate shares, low comments, high views
+                let likes = rng.gen_range(50..800);
+                let shares = rng.gen_range(10..150);
+                let comments = rng.gen_range(5..80);
+                let views = rng.gen_range(1000..15000);
+                (likes, shares, comments, views)
+            },
+            Platform::Reddit => {
+                // Reddit: High upvotes, low shares, high comments, moderate views
+                let likes = rng.gen_range(100..3000);
+                let shares = rng.gen_range(5..100);
+                let comments = rng.gen_range(20..500);
+                let views = rng.gen_range(5000..80000);
+                (likes, shares, comments, views)
+            },
+            Platform::NewsWebsite => {
+                // News: Moderate likes, high shares, low comments, high views
+                let likes = rng.gen_range(20..300);
+                let shares = rng.gen_range(10..200);
+                let comments = rng.gen_range(2..30);
+                let views = rng.gen_range(500..8000);
+                (likes, shares, comments, views)
+            },
+            Platform::RSS => {
+                // RSS: Low engagement overall, but consistent
+                let likes = rng.gen_range(10..150);
+                let shares = rng.gen_range(2..25);
+                let comments = rng.gen_range(1..15);
+                let views = rng.gen_range(200..3000);
+                (likes, shares, comments, views)
+            },
+            _ => {
+                let likes = rng.gen_range(30..400);
+                let shares = rng.gen_range(5..80);
+                let comments = rng.gen_range(3..50);
+                let views = rng.gen_range(1000..10000);
+                (likes, shares, comments, views)
+            }
+        };
+        
+        // Sentiment affects engagement with more nuanced patterns
+        let sentiment_multiplier = if *sentiment > 0.5 {
+            // Very positive content gets high engagement
+            rng.gen_range(1.5..2.5)
+        } else if *sentiment > 0.2 {
+            // Positive content gets moderate boost
+            rng.gen_range(1.2..1.8)
+        } else if *sentiment < -0.5 {
+            // Very negative content can also get high engagement (controversy)
+            rng.gen_range(1.3..2.0)
+        } else if *sentiment < -0.2 {
+            // Negative content gets reduced engagement
+            rng.gen_range(0.6..1.2)
+        } else {
+            // Neutral content
+            rng.gen_range(0.8..1.4)
+        };
+        
+        // Add viral factor (some posts go viral)
+        let viral_factor = if rng.gen_range(0.0..1.0) < 0.05 {
+            // 5% chance of viral post
+            rng.gen_range(3.0..10.0)
+        } else if rng.gen_range(0.0..1.0) < 0.15 {
+            // 15% chance of trending post
+            rng.gen_range(1.5..3.0)
+        } else {
+            1.0
+        };
+        
+        // Time-based engagement (recent posts get more engagement)
+        let time_factor = rng.gen_range(0.8..1.3);
+        
+        let final_multiplier = sentiment_multiplier * viral_factor * time_factor;
+        
+        EngagementMetrics {
+            likes: (base_likes as f64 * final_multiplier) as u32,
+            shares: (base_shares as f64 * final_multiplier) as u32,
+            comments: (base_comments as f64 * final_multiplier) as u32,
+            views: (base_views as f64 * final_multiplier) as u32,
+        }
+    }
+
+    fn generate_realistic_sentiment(&self, content: &str, theme: &Theme) -> f64 {
+        let mut rng = rand::thread_rng();
+        let content_lower = content.to_lowercase();
+        
+        // More sophisticated base sentiment based on theme and market context
+        let base_sentiment = match theme {
+            Theme::Economy => {
+                // Economic sentiment varies based on market conditions
+                if content_lower.contains("inflation") || content_lower.contains("recession") {
+                    rng.gen_range(-0.6..0.2) // Generally negative for inflation/recession news
+                } else if content_lower.contains("growth") || content_lower.contains("recovery") {
+                    rng.gen_range(0.2..0.8) // Positive for growth news
+                } else if content_lower.contains("fed") || content_lower.contains("rates") {
+                    rng.gen_range(-0.4..0.4) // Mixed for Fed news
+                } else {
+                    rng.gen_range(-0.3..0.6) // General economic news
+                }
+            },
+            Theme::Technology => {
+                if content_lower.contains("ai") || content_lower.contains("innovation") {
+                    rng.gen_range(0.3..0.9) // Very positive for AI/innovation
+                } else if content_lower.contains("regulation") || content_lower.contains("antitrust") {
+                    rng.gen_range(-0.2..0.4) // Mixed for regulation news
+                } else {
+                    rng.gen_range(0.1..0.8) // Generally positive for tech
+                }
+            },
+            Theme::Politics => {
+                if content_lower.contains("election") || content_lower.contains("policy") {
+                    rng.gen_range(-0.8..0.3) // Very polarized
+                } else {
+                    rng.gen_range(-0.6..0.2) // Generally negative
+                }
+            },
+            Theme::Sports => rng.gen_range(-0.2..0.7), // Sports can be mixed
+            Theme::Entertainment => rng.gen_range(0.0..0.8), // Entertainment tends to be positive
+            Theme::Health => {
+                if content_lower.contains("breakthrough") || content_lower.contains("cure") {
+                    rng.gen_range(0.4..0.8) // Positive for medical breakthroughs
+                } else {
+                    rng.gen_range(-0.1..0.5) // Mixed for general health news
+                }
+            },
+            Theme::Science => rng.gen_range(0.2..0.8), // Science news tends to be positive
+            Theme::Environment => {
+                if content_lower.contains("climate") || content_lower.contains("pollution") {
+                    rng.gen_range(-0.5..0.2) // Generally negative for environmental issues
+                } else if content_lower.contains("renewable") || content_lower.contains("green") {
+                    rng.gen_range(0.2..0.7) // Positive for renewable energy
+                } else {
+                    rng.gen_range(-0.3..0.4) // Mixed
+                }
+            },
+            Theme::Education => rng.gen_range(0.1..0.7), // Education tends to be positive
+            _ => rng.gen_range(-0.2..0.6),
+        };
+        
+        // Sophisticated keyword-based sentiment adjustments
+        let sentiment_adjustment = if content_lower.contains("breaking") || content_lower.contains("surge") || content_lower.contains("🚀") || content_lower.contains("rally") {
+            rng.gen_range(0.2..0.4) // Positive for breaking news and rallies
+        } else if content_lower.contains("crash") || content_lower.contains("plunge") || content_lower.contains("collapse") {
+            rng.gen_range(-0.5..-0.2) // Very negative for crashes
+        } else if content_lower.contains("drop") || content_lower.contains("fall") || content_lower.contains("decline") {
+            rng.gen_range(-0.3..-0.1) // Negative for declines
+        } else if content_lower.contains("growth") || content_lower.contains("up") || content_lower.contains("gain") || content_lower.contains("rise") {
+            rng.gen_range(0.1..0.3) // Positive for growth
+        } else if content_lower.contains("beat") || content_lower.contains("exceed") || content_lower.contains("outperform") {
+            rng.gen_range(0.2..0.4) // Positive for beats
+        } else if content_lower.contains("miss") || content_lower.contains("disappoint") || content_lower.contains("underperform") {
+            rng.gen_range(-0.3..-0.1) // Negative for misses
+        } else if content_lower.contains("volatility") || content_lower.contains("uncertainty") {
+            rng.gen_range(-0.2..0.1) // Slightly negative for uncertainty
+        } else if content_lower.contains("stability") || content_lower.contains("recovery") {
+            rng.gen_range(0.1..0.3) // Positive for stability
+        } else {
+            0.0
+        };
+        
+        // Market-specific sentiment patterns
+        let market_sentiment = if content_lower.contains("bull") || content_lower.contains("bullish") {
+            rng.gen_range(0.3..0.6)
+        } else if content_lower.contains("bear") || content_lower.contains("bearish") {
+            rng.gen_range(-0.4..-0.1)
+        } else if content_lower.contains("neutral") || content_lower.contains("sideways") {
+            rng.gen_range(-0.1..0.1)
+        } else {
+            0.0
+        };
+        
+        // Crypto-specific sentiment
+        let crypto_sentiment = if content_lower.contains("bitcoin") || content_lower.contains("ethereum") {
+            if content_lower.contains("adoption") || content_lower.contains("institutional") {
+                rng.gen_range(0.2..0.5) // Positive for adoption news
+            } else if content_lower.contains("regulation") || content_lower.contains("ban") {
+                rng.gen_range(-0.3..0.1) // Mixed for regulation
+            } else {
+                rng.gen_range(-0.1..0.3) // Slightly positive for general crypto news
+            }
+        } else {
+            0.0
+        };
+        
+        let final_sentiment: f64 = base_sentiment + sentiment_adjustment + market_sentiment + crypto_sentiment;
+        final_sentiment.max(-1.0).min(1.0)
+    }
+
+    fn classify_theme_realistic(&self, content: &str) -> Theme {
+        let content_lower = content.to_lowercase();
+        
+        // More sophisticated theme classification
+        if content_lower.contains("bitcoin") || content_lower.contains("crypto") || content_lower.contains("ethereum") || content_lower.contains("blockchain") {
+            Theme::Economy // Crypto is part of economy
+        } else if content_lower.contains("stock") || content_lower.contains("market") || content_lower.contains("trading") || content_lower.contains("invest") || content_lower.contains("finance") {
+            Theme::Economy
+        } else if content_lower.contains("tech") || content_lower.contains("ai") || content_lower.contains("software") || content_lower.contains("innovation") {
+            Theme::Technology
+        } else if content_lower.contains("politic") || content_lower.contains("government") || content_lower.contains("election") {
+            Theme::Politics
+        } else if content_lower.contains("sport") || content_lower.contains("football") || content_lower.contains("basketball") {
+            Theme::Sports
+        } else if content_lower.contains("movie") || content_lower.contains("entertain") || content_lower.contains("celebrity") {
+            Theme::Entertainment
+        } else if content_lower.contains("health") || content_lower.contains("medical") || content_lower.contains("covid") {
+            Theme::Health
+        } else if content_lower.contains("scien") || content_lower.contains("research") || content_lower.contains("study") {
+            Theme::Science
+        } else if content_lower.contains("environ") || content_lower.contains("climate") || content_lower.contains("green") {
+            Theme::Environment
+        } else if content_lower.contains("educat") || content_lower.contains("school") || content_lower.contains("university") {
+            Theme::Education
+        } else {
+            Theme::Economy // Default to economy for financial content
+        }
     }
 
     async fn collect_twitter_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {

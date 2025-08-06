@@ -165,7 +165,7 @@ impl DollarPunkApp {
             ui.separator();
 
             ui.collapsing("Data Sources", |ui| {
-                for (i, source) in self.collection_config.sources.iter_mut().enumerate() {
+                for (_i, source) in self.collection_config.sources.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut source.enabled, "");
                         ui.label(&source.name);
