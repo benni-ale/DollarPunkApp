@@ -19,7 +19,7 @@ mkdir output
 
 ### Interactive Dashboard (Recommended)
 
-Start both the ingestion service and the monitoring dashboard:
+Start the unified application:
 
 ```bash
 docker-compose up --build
@@ -30,15 +30,13 @@ Then open your browser and go to: **http://localhost:5000**
 The dashboard provides:
 - 📊 Real-time statistics
 - 📈 Interactive charts (articles per ticker, sentiment distribution)
-- 🎮 Start/Stop controls
+- 🎮 Start/Stop controls for ingestion
 - 📰 Latest articles preview
 - 📋 Live logs
 - ⚡ Auto-refresh every 5 seconds
 
-### Using Docker Compose (Ingestion Only)
-```bash
-docker-compose up dollarpunk-ingest --build
-```
+### Single Command
+Just run `docker-compose up --build` and everything is ready!
 
 ### Using Docker directly
 ```bash

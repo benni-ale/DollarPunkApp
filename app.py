@@ -23,8 +23,21 @@ ingestion_status = {
 def get_news_stats():
     """Get statistics from the news data file"""
     try:
-        with open("output/news_data.json", "r", encoding="utf-8") as f:
+        # The file should be available at /app/output/news_data.json due to volume mounting
+        file_path = "/app/output/news_data.json"
+        
+        if not os.path.exists(file_path):
+            print(f"File not found at: {file_path}")
+            return {
+                "total_articles": 0,
+                "tickers": {},
+                "sentiment_distribution": {},
+                "latest_articles": []
+            }
+        
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+            print(f"Successfully loaded {len(data)} articles from: {file_path}")
         
         stats = {
             "total_articles": len(data),
@@ -86,16 +99,29 @@ def api_stats():
         "ingestion_status": ingestion_status
     })
 
+def run_ingestion():
+    """Run the ingestion process in a separate thread"""
+    try:
+        # Import and run the ingestion
+        from ingest import run_ingestion as ingest_run
+        ingest_run()
+        print("Ingestion completed successfully")
+        ingestion_status["is_running"] = False
+        ingestion_status["progress"] = 100
+    except Exception as e:
+        print(f"Ingestion error: {e}")
+        ingestion_status["is_running"] = False
+
 @app.route('/api/start_ingestion', methods=['POST'])
 def start_ingestion():
     if ingestion_status["is_running"]:
         return jsonify({"error": "Ingestion already running"}), 400
     
     try:
-        # Start Docker container in background
-        subprocess.Popen([
-            "docker-compose", "up", "-d"
-        ], cwd=os.getcwd())
+        # Start ingestion in a separate thread
+        ingestion_thread = threading.Thread(target=run_ingestion)
+        ingestion_thread.daemon = True
+        ingestion_thread.start()
         
         ingestion_status["is_running"] = True
         ingestion_status["start_time"] = datetime.now().isoformat()
@@ -108,11 +134,7 @@ def start_ingestion():
 @app.route('/api/stop_ingestion', methods=['POST'])
 def stop_ingestion():
     try:
-        # Stop Docker container
-        subprocess.run([
-            "docker-compose", "down"
-        ], cwd=os.getcwd())
-        
+        # Stop ingestion by setting flag
         ingestion_status["is_running"] = False
         ingestion_status["progress"] = 0
         ingestion_status["current_ticker"] = None
@@ -130,6 +152,42 @@ def get_logs():
         return jsonify({"logs": result.stdout})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug')
+def debug_info():
+    """Debug endpoint to check file paths and data"""
+    import os
+    debug_info = {
+        "current_working_dir": os.getcwd(),
+        "files_in_output": [],
+        "file_exists": {},
+        "data_sample": None
+    }
+    
+    # Check output directory
+    output_paths = ["output", "/app/output", "./output"]
+    for path in output_paths:
+        try:
+            if os.path.exists(path):
+                debug_info["files_in_output"].extend(os.listdir(path))
+                debug_info["file_exists"][path] = True
+            else:
+                debug_info["file_exists"][path] = False
+        except Exception as e:
+            debug_info["file_exists"][path] = f"Error: {str(e)}"
+    
+    # Try to read a sample of the data
+    try:
+        with open("output/news_data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            debug_info["data_sample"] = {
+                "total_articles": len(data),
+                "first_article": data[0] if data else None
+            }
+    except Exception as e:
+        debug_info["data_sample"] = f"Error reading file: {str(e)}"
+    
+    return jsonify(debug_info)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000) 

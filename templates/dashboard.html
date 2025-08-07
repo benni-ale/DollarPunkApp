@@ -42,6 +42,9 @@
                 <button id="stopBtn" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-lg font-semibold transition-colors">
                     ⏹️ Stop Ingestion
                 </button>
+                <button id="debugBtn" class="bg-yellow-500 hover:bg-yellow-600 px-6 py-3 rounded-lg font-semibold transition-colors">
+                    🔍 Debug Info
+                </button>
                 <div id="statusIndicator" class="flex items-center gap-2">
                     <div id="statusDot" class="w-3 h-3 rounded-full bg-gray-400"></div>
                     <span id="statusText">Stopped</span>
@@ -267,6 +270,15 @@
                     } else {
                         console.log('Ingestion stopped');
                     }
+                });
+        });
+
+        document.getElementById('debugBtn').addEventListener('click', () => {
+            fetch('/api/debug')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Debug info:', data);
+                    alert('Debug info logged to console. Check browser console for details.');
                 });
         });
 
