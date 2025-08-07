@@ -2,6 +2,7 @@ mod models;
 mod data_collector;
 mod stratification;
 mod gui;
+mod alpha_vantage;
 
 use anyhow::Result;
 

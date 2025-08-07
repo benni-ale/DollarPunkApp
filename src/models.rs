@@ -27,6 +27,7 @@ pub enum Platform {
     RSS,
     YouTube,
     TikTok,
+    AlphaVantage,
     Other(String),
 }
 

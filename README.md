@@ -5,6 +5,7 @@ DollarPunk è un'applicazione GUI in Rust per raccogliere dati da social media e
 ## Caratteristiche
 
 - **Raccolta Dati Multi-Piattaforma**: Supporto per Twitter, Facebook, Reddit, RSS feeds e siti di news
+- **Integrazione Alpha Vantage**: Raccolta dati news finanziari con sentiment analysis
 - **Stratificazione Avanzata**: Raggruppamento per piattaforma, tema e periodo temporale
 - **Campionamento Bilanciato**: Algoritmi di campionamento per garantire rappresentatività
 - **Interfaccia Grafica Moderna**: GUI intuitiva costruita con egui
@@ -17,6 +18,7 @@ DollarPunk è un'applicazione GUI in Rust per raccogliere dati da social media e
 
 - Rust 1.70+ e Cargo
 - Connessione internet per la raccolta dati
+- API Key Alpha Vantage (opzionale, per dati news finanziari)
 
 ### Build
 
@@ -30,6 +32,9 @@ cargo build --release
 
 # Esegui l'applicazione
 cargo run --release
+
+# Esegui l'esempio Alpha Vantage
+cargo run --example alpha_vantage_example
 ```
 
 ## Utilizzo
@@ -80,6 +85,23 @@ src/
 ```
 
 ## Configurazione Avanzata
+
+### Integrazione Alpha Vantage
+
+Per utilizzare l'integrazione con Alpha Vantage per dati news finanziari:
+
+1. **Ottieni una API Key**: Registrati su [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+2. **Imposta la variabile d'ambiente**:
+   ```bash
+   export ALPHA_VANTAGE_API_KEY="your_api_key_here"
+   ```
+3. **Configura nel codice**:
+   ```rust
+   let mut collector = DataCollector::new()
+       .with_alpha_vantage("your_api_key_here".to_string());
+   ```
+
+Vedi la [documentazione completa](docs/ALPHA_VANTAGE_INTEGRATION.md) per dettagli.
 
 ### Fonti Dati Personalizzate
 

@@ -38,6 +38,13 @@ impl DollarPunkApp {
         // Add some default sources
         collection_config.sources = vec![
             DataSource {
+                name: "Alpha Vantage News".to_string(),
+                platform: Platform::AlphaVantage,
+                url: "https://www.alphavantage.co/query".to_string(),
+                api_key: None, // Usata dal file .env
+                enabled: true,
+            },
+            DataSource {
                 name: "Twitter Finance".to_string(),
                 platform: Platform::Twitter,
                 url: "https://twitter.com".to_string(),
@@ -71,7 +78,7 @@ impl DollarPunkApp {
         
         Ok(Self {
             collection_config,
-            data_collector: DataCollector::new(),
+            data_collector: DataCollector::new().with_alpha_vantage_from_env(),
             stratification_config,
             stratification_engine: None,
             collected_data: Vec::new(),
@@ -365,6 +372,73 @@ impl DollarPunkApp {
     fn show_results_tab(&mut self, ui: &mut Ui) {
         ui.heading("Sampling Results");
 
+        // Sezione Alpha Vantage News
+        if !self.collected_data.is_empty() {
+            let alpha_vantage_news: Vec<&DataPoint> = self.collected_data
+                .iter()
+                .filter(|dp| matches!(dp.platform, Platform::AlphaVantage))
+                .collect();
+
+            if !alpha_vantage_news.is_empty() {
+                ui.collapsing(
+                    format!("📰 Alpha Vantage News ({} articoli)", alpha_vantage_news.len()),
+                    |ui| {
+                        ui.label(RichText::new("News finanziarie da Alpha Vantage").color(Color32::BLUE));
+                        
+                        // Statistiche sentiment
+                        let sentiment_scores: Vec<f64> = alpha_vantage_news
+                            .iter()
+                            .filter_map(|n| n.sentiment_score)
+                            .collect();
+                        
+                        if !sentiment_scores.is_empty() {
+                            let avg_sentiment = sentiment_scores.iter().sum::<f64>() / sentiment_scores.len() as f64;
+                            let positive_count = sentiment_scores.iter().filter(|&&s| s > 0.1).count();
+                            let negative_count = sentiment_scores.iter().filter(|&&s| s < -0.1).count();
+                            let neutral_count = sentiment_scores.len() - positive_count - negative_count;
+                            
+                            ui.label(format!("😊 Sentiment medio: {:.3}", avg_sentiment));
+                            ui.label(format!("✅ Positivi: {} ({:.1}%)", positive_count,
+                                (positive_count as f64 / sentiment_scores.len() as f64) * 100.0));
+                            ui.label(format!("❌ Negativi: {} ({:.1}%)", negative_count,
+                                (negative_count as f64 / sentiment_scores.len() as f64) * 100.0));
+                            ui.label(format!("⚖️  Neutri: {} ({:.1}%)", neutral_count,
+                                (neutral_count as f64 / sentiment_scores.len() as f64) * 100.0));
+                        }
+                        
+                        ui.separator();
+                        
+                        // Lista news
+                        ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
+                            for (i, news) in alpha_vantage_news.iter().take(10).enumerate() {
+                                ui.collapsing(
+                                    format!("{}. {}", i + 1, &news.content[..news.content.len().min(60)]),
+                                    |ui| {
+                                        ui.label(format!("📝 Titolo: {}", news.content.split(" - ").next().unwrap_or("N/A")));
+                                        ui.label(format!("👤 Autore: {}", news.author));
+                                        ui.label(format!("🏷️  Tema: {:?}", news.theme));
+                                        ui.label(format!("🌍 Lingua: {}", news.language));
+                                        ui.label(format!("📅 Data: {}", news.timestamp.format("%Y-%m-%d %H:%M")));
+                                        
+                                        if let Some(sentiment) = news.sentiment_score {
+                                            let sentiment_label = if sentiment > 0.1 { "😊 Positivo" }
+                                                else if sentiment < -0.1 { "😞 Negativo" }
+                                                else { "😐 Neutro" };
+                                            ui.label(format!("😊 Sentiment: {:.3} ({})", sentiment, sentiment_label));
+                                        }
+                                        
+                                        if let Some(url) = &news.url {
+                                            ui.label(format!("🔗 URL: {}", url));
+                                        }
+                                    },
+                                );
+                            }
+                        });
+                    },
+                );
+            }
+        }
+
         if let Some(result) = &self.sampling_result {
             ui.label(format!("Total original data: {}", result.stratification_stats.total_original));
             ui.label(format!("Total sampled: {}", result.stratification_stats.total_sampled));
@@ -415,6 +489,35 @@ impl DollarPunkApp {
 
     fn show_settings_tab(&mut self, ui: &mut Ui) {
         ui.heading("Application Settings");
+
+        ui.collapsing("Alpha Vantage Configuration", |ui| {
+            ui.label("Alpha Vantage API Integration");
+            ui.label("Status: Configured via .env file");
+            
+            // Mostra se Alpha Vantage è configurato
+            if self.data_collector.alpha_vantage_client.is_some() {
+                ui.label(RichText::new("✅ Alpha Vantage: CONFIGURATO").color(Color32::GREEN));
+                ui.label("API Key: Caricata dal file .env");
+                ui.label("Rate Limit: 5 richieste/minuto (free tier)");
+                ui.label("Funzionalità: News finanziarie con sentiment analysis");
+            } else {
+                ui.label(RichText::new("⚠️ Alpha Vantage: NON CONFIGURATO").color(Color32::YELLOW));
+                ui.label("Per abilitare Alpha Vantage:");
+                ui.label("1. Crea un file .env nella root del progetto");
+                ui.label("2. Aggiungi: ALPHA_VANTAGE_API_KEY=la_tua_api_key");
+                ui.label("3. Riavvia l'applicazione");
+                ui.label("🔗 Ottieni API key gratuita: https://www.alphavantage.co/support/#api-key");
+            }
+            
+            ui.separator();
+            
+            ui.label("Funzionalità Alpha Vantage:");
+            ui.label("• News finanziarie in tempo reale");
+            ui.label("• Analisi del sentiment automatica");
+            ui.label("• Dati di mercato (prezzi, variazioni)");
+            ui.label("• Filtri per keywords e lingue");
+            ui.label("• Rate limiting automatico");
+        });
 
         ui.collapsing("About", |ui| {
             ui.label("DollarPunk - Social Media Data Collection & Stratification");

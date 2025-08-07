@@ -1,4 +1,5 @@
 use crate::models::*;
+use crate::alpha_vantage::{AlphaVantageClient, AlphaVantageConfig};
 use anyhow::Result;
 use chrono::Utc;
 use reqwest::Client;
@@ -11,13 +12,43 @@ use rand::prelude::SliceRandom;
 #[derive(Clone)]
 pub struct DataCollector {
     cache: HashMap<String, DataPoint>,
+    pub alpha_vantage_client: Option<AlphaVantageClient>,
 }
 
 impl DataCollector {
     pub fn new() -> Self {
         Self {
             cache: HashMap::new(),
+            alpha_vantage_client: None,
         }
+    }
+
+    pub fn with_alpha_vantage(mut self, api_key: String) -> Self {
+        let config = AlphaVantageConfig {
+            api_key,
+            ..Default::default()
+        };
+        self.alpha_vantage_client = Some(AlphaVantageClient::new(config));
+        self
+    }
+
+    pub fn with_alpha_vantage_from_env(mut self) -> Self {
+        // Carica l'API key dal file .env
+        if let Ok(api_key) = std::env::var("ALPHA_VANTAGE_API_KEY") {
+            if !api_key.is_empty() && api_key != "your_api_key_here" {
+                let config = AlphaVantageConfig {
+                    api_key,
+                    ..Default::default()
+                };
+                self.alpha_vantage_client = Some(AlphaVantageClient::new(config));
+                println!("✅ Alpha Vantage configurato con API key dal file .env");
+            } else {
+                eprintln!("⚠️  API key Alpha Vantage non valida nel file .env");
+            }
+        } else {
+            eprintln!("⚠️  Variabile ALPHA_VANTAGE_API_KEY non trovata nel file .env");
+        }
+        self
     }
 
     pub async fn collect_data(&mut self, config: &DataCollectionConfig) -> Result<Vec<DataPoint>> {
@@ -33,9 +64,46 @@ impl DataCollector {
                     let twitter_data = self.collect_twitter_data(source, &config.filters).await?;
                     all_data.extend(twitter_data);
                 }
+                Platform::AlphaVantage => {
+                    // Usa Alpha Vantage per raccogliere news finanziarie
+                    if let Some(ref mut alpha_client) = self.alpha_vantage_client {
+                        match alpha_client.collect_news_data(&config.filters).await {
+                            Ok(alpha_news) => {
+                                println!("✅ Alpha Vantage: raccolte {} news", alpha_news.len());
+                                all_data.extend(alpha_news);
+                            }
+                            Err(e) => {
+                                eprintln!("❌ Errore Alpha Vantage: {}", e);
+                                // Fallback a news simulate se Alpha Vantage fallisce
+                                let simulated_data = self.generate_simulated_data(source, &config.filters).await?;
+                                all_data.extend(simulated_data);
+                            }
+                        }
+                    } else {
+                        eprintln!("⚠️  Alpha Vantage non configurato. Usa .with_alpha_vantage() per abilitarlo.");
+                        // Fallback a news simulate
+                        let simulated_data = self.generate_simulated_data(source, &config.filters).await?;
+                        all_data.extend(simulated_data);
+                    }
+                }
                 Platform::NewsWebsite => {
-                    let news_data = self.collect_news_data(source, &config.filters).await?;
-                    all_data.extend(news_data);
+                    // Try Alpha Vantage first if available
+                    if let Some(ref mut alpha_client) = self.alpha_vantage_client {
+                        match alpha_client.collect_news_data(&config.filters).await {
+                            Ok(alpha_news) if !alpha_news.is_empty() => {
+                                all_data.extend(alpha_news);
+                                continue; // Skip regular news collection if Alpha Vantage worked
+                            }
+                            _ => {
+                                // Fall back to regular news collection
+                                let news_data = self.collect_news_data(source, &config.filters).await?;
+                                all_data.extend(news_data);
+                            }
+                        }
+                    } else {
+                        let news_data = self.collect_news_data(source, &config.filters).await?;
+                        all_data.extend(news_data);
+                    }
                 }
                 Platform::RSS => {
                     let rss_data = self.collect_rss_data(source, &config.filters).await?;
@@ -59,7 +127,7 @@ impl DataCollector {
         Ok(all_data)
     }
 
-    async fn collect_twitter_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+    async fn collect_twitter_data(&self, _source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
         // Simulated Twitter data collection
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
@@ -245,7 +313,7 @@ impl DataCollector {
         Ok(data)
     }
 
-    async fn collect_reddit_data(&self, source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
+    async fn collect_reddit_data(&self, _source: &DataSource, filters: &DataFilters) -> Result<Vec<DataPoint>> {
         let mut data = Vec::new();
         let mut rng = rand::thread_rng();
 
