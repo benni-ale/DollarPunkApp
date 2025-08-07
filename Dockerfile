@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY ingest.py .
+COPY app.py .
+COPY templates/ ./templates/
 
 # Create output directory
 RUN mkdir -p /app/output
