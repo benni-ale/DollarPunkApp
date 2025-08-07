@@ -25,6 +25,7 @@ url = "2.4"
 uuid = { version = "1.0", features = ["v4", "serde"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "mysql", "chrono", "uuid", "json"] }
 whatlang = "0.16"
+dotenvy = "0.15"
 
 [[bin]]
 name = "dollar-punk"

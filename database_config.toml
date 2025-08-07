@@ -1,0 +1,17 @@
+[database]
+# Configurazione MySQL
+url = "mysql://username:password@localhost/dollarpunk"
+
+# Alternative comuni:
+# url = "mysql://root:password@localhost/dollarpunk"
+# url = "mysql://admin:admin123@localhost/dollarpunk"
+# url = "mysql://dollarpunk:password@localhost/dollarpunk"
+
+# Per XAMPP/WAMP (spesso senza password):
+# url = "mysql://root:@localhost/dollarpunk"
+
+# Per Docker:
+# url = "mysql://root:password@127.0.0.1:3306/dollarpunk"
+
+# Per server remoto:
+# url = "mysql://username:password@your-server.com:3306/dollarpunk" 

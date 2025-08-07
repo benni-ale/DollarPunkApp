@@ -1295,6 +1295,7 @@ dependencies = [
  "chrono",
  "clap",
  "config",
+ "dotenvy",
  "eframe",
  "egui",
  "rand",

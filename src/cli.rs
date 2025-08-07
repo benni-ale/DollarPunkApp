@@ -1,9 +1,12 @@
 use crate::config::{AppConfig, utils};
 use crate::data_collector::DataCollector;
+use crate::database::DatabaseManager;
 use crate::models::*;
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
+use std::env;
+use dotenvy::dotenv;
 
 #[derive(Parser)]
 #[command(name = "dollar-punk")]
@@ -29,6 +32,14 @@ enum Commands {
         /// Modalità demo (senza chiamate API reali)
         #[arg(long)]
         demo: bool,
+        
+        /// URL del database MySQL (se non specificato, usa la variabile d'ambiente DATABASE)
+        #[arg(long)]
+        database_url: Option<String>,
+        
+        /// Salva i dati nel database
+        #[arg(long)]
+        save_to_db: bool,
     },
     
     /// Crea un file di configurazione di esempio
@@ -54,16 +65,46 @@ enum Commands {
         /// Modalità demo
         #[arg(long)]
         demo: bool,
+        
+        /// URL del database MySQL (se non specificato, usa la variabile d'ambiente DATABASE)
+        #[arg(long)]
+        database_url: Option<String>,
+        
+        /// Salva i dati nel database
+        #[arg(long)]
+        save_to_db: bool,
     },
 }
 
 impl Cli {
+    fn get_database_url(database_url: Option<String>) -> Result<String> {
+        // Se fornito come parametro, usalo
+        if let Some(url) = database_url {
+            return Ok(url);
+        }
+        
+        // Altrimenti, leggi dalla variabile d'ambiente DATABASE
+        match env::var("DATABASE") {
+            Ok(url) => Ok(url),
+            Err(_) => {
+                println!("❌ Nessun URL database specificato");
+                println!("💡 Specifica --database-url o imposta la variabile d'ambiente DATABASE");
+                println!("   Esempio: DATABASE=mysql://username:password@localhost/dollarpunk");
+                anyhow::bail!("Database URL non trovato");
+            }
+        }
+    }
+
     pub async fn run() -> Result<()> {
+        // Carica il file .env se esiste
+        let _ = dotenv();
+        
         let cli = Cli::parse();
         
         match cli.command {
-            Commands::TestAlphaVantage { config, api_key, demo } => {
-                Self::test_alpha_vantage(config, api_key, demo).await
+            Commands::TestAlphaVantage { config, api_key, demo, database_url, save_to_db } => {
+                let db_url = Self::get_database_url(database_url)?;
+                Self::test_alpha_vantage(config, api_key, demo, db_url, save_to_db).await
             }
             Commands::CreateConfig { output } => {
                 Self::create_config(output)
@@ -71,21 +112,28 @@ impl Cli {
             Commands::ValidateConfig { config } => {
                 Self::validate_config(config)
             }
-            Commands::CollectData { config, demo } => {
-                Self::collect_data(config, demo).await
+            Commands::CollectData { config, demo, database_url, save_to_db } => {
+                let db_url = Self::get_database_url(database_url)?;
+                Self::collect_data(config, demo, db_url, save_to_db).await
             }
         }
     }
     
-    async fn test_alpha_vantage(config_path: PathBuf, api_key: Option<String>, demo: bool) -> Result<()> {
+    async fn test_alpha_vantage(config_path: PathBuf, api_key: Option<String>, demo: bool, database_url: String, save_to_db: bool) -> Result<()> {
         println!("🧪 Test Alpha Vantage Integration");
         println!("==================================");
+        println!("🗄️  Database URL: {}", database_url);
         
         // Carica configurazione
         let mut app_config = AppConfig::load_or_default(&config_path);
         
-        // Imposta API key se fornita
-        if let Some(key) = api_key {
+        // Imposta API key se fornita o dal file .env
+        let api_key_to_use = api_key.or_else(|| {
+            // Leggi dalla variabile d'ambiente ALPHA_VANTAGE_API_KEY
+            env::var("ALPHA_VANTAGE_API_KEY").ok()
+        });
+        
+        if let Some(key) = api_key_to_use {
             utils::set_alpha_vantage_api_key(&mut app_config, key);
         }
         
@@ -129,6 +177,64 @@ impl Cli {
                 
                 // Analisi rapida
                 Self::quick_analysis(&data_points);
+                
+                // Salva nel database se richiesto
+                if save_to_db {
+                    println!("\n💾 Salvando dati nel database...");
+                    match DatabaseManager::new(&database_url).await {
+                        Ok(db_manager) => {
+                            // Crea una sessione di raccolta
+                            let session_name = format!("Alpha Vantage Test - {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+                            match db_manager.create_session(&session_name, Some("Test session for Alpha Vantage integration")).await {
+                                Ok(session_id) => {
+                                    println!("✅ Sessione creata: {}", session_id);
+                                    
+                                    // Inserisci i dati in modo idempotente
+                                    match db_manager.upsert_data_points(&data_points).await {
+                                        Ok(result) => {
+                                            println!("✅ Dati salvati nel database!");
+                                            println!("   Inseriti: {} punti", result.inserted);
+                                            println!("   Aggiornati: {} punti", result.updated);
+                                            println!("   Totali: {} punti", result.total);
+                                            
+                                            // Aggiorna lo stato della sessione
+                                            let _ = db_manager.update_session_status(&session_id, "completed", Some(result.total as i32)).await;
+                                            
+                                            // Mostra statistiche del database
+                                            match db_manager.get_statistics().await {
+                                                Ok(stats) => {
+                                                    println!("\n📊 Statistiche Database:");
+                                                    println!("   Totale punti: {}", stats.total_points);
+                                                    println!("   Punti oggi: {}", stats.today_points);
+                                                    println!("   Sentiment medio: {:.3}", stats.average_sentiment.unwrap_or(0.0));
+                                                    
+                                                    println!("\n📈 Distribuzione per piattaforma:");
+                                                    for (platform, count) in &stats.platform_counts {
+                                                        println!("   {}: {}", platform, count);
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    println!("⚠️  Errore nel recuperare statistiche: {}", e);
+                                                }
+                                            }
+                                        }
+                                        Err(e) => {
+                                            println!("❌ Errore nel salvare dati: {}", e);
+                                            let _ = db_manager.update_session_status(&session_id, "failed", None).await;
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    println!("❌ Errore nella creazione sessione: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            println!("❌ Errore nella connessione al database: {}", e);
+                            println!("💡 Assicurati che il database MySQL sia in esecuzione e l'URL sia corretto");
+                        }
+                    }
+                }
                 
             }
             Err(e) => {
@@ -192,10 +298,18 @@ impl Cli {
         Ok(())
     }
     
-    async fn collect_data(config_path: PathBuf, demo: bool) -> Result<()> {
+    async fn collect_data(config_path: PathBuf, demo: bool, database_url: String, save_to_db: bool) -> Result<()> {
         println!("📊 Raccolta dati completa...");
+        println!("🗄️  Database URL: {}", database_url);
         
         let mut app_config = AppConfig::load_or_default(&config_path);
+        
+        // Carica API key dal file .env se disponibile
+        let _ = dotenv();
+        if let Ok(api_key) = env::var("ALPHA_VANTAGE_API_KEY") {
+            utils::set_alpha_vantage_api_key(&mut app_config, api_key);
+            println!("🔑 API Key Alpha Vantage caricata dal file .env");
+        }
         
         if demo {
             app_config.data_collection.mode = DataCollectionMode::Demo;
@@ -223,6 +337,64 @@ impl Cli {
                 
                 if !data_points.is_empty() {
                     Self::detailed_analysis(&data_points);
+                    
+                    // Salva nel database se richiesto
+                    if save_to_db {
+                        println!("\n💾 Salvando dati nel database...");
+                        match DatabaseManager::new(&database_url).await {
+                            Ok(db_manager) => {
+                                // Crea una sessione di raccolta
+                                let session_name = format!("Data Collection - {}", chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"));
+                                match db_manager.create_session(&session_name, Some("Complete data collection session")).await {
+                                    Ok(session_id) => {
+                                        println!("✅ Sessione creata: {}", session_id);
+                                        
+                                        // Inserisci i dati in modo idempotente
+                                        match db_manager.upsert_data_points(&data_points).await {
+                                            Ok(result) => {
+                                                println!("✅ Dati salvati nel database!");
+                                                println!("   Inseriti: {} punti", result.inserted);
+                                                println!("   Aggiornati: {} punti", result.updated);
+                                                println!("   Totali: {} punti", result.total);
+                                                
+                                                // Aggiorna lo stato della sessione
+                                                let _ = db_manager.update_session_status(&session_id, "completed", Some(result.total as i32)).await;
+                                                
+                                                // Mostra statistiche del database
+                                                match db_manager.get_statistics().await {
+                                                    Ok(stats) => {
+                                                        println!("\n📊 Statistiche Database:");
+                                                        println!("   Totale punti: {}", stats.total_points);
+                                                        println!("   Punti oggi: {}", stats.today_points);
+                                                        println!("   Sentiment medio: {:.3}", stats.average_sentiment.unwrap_or(0.0));
+                                                        
+                                                        println!("\n📈 Distribuzione per piattaforma:");
+                                                        for (platform, count) in &stats.platform_counts {
+                                                            println!("   {}: {}", platform, count);
+                                                        }
+                                                    }
+                                                    Err(e) => {
+                                                        println!("⚠️  Errore nel recuperare statistiche: {}", e);
+                                                    }
+                                                }
+                                            }
+                                            Err(e) => {
+                                                println!("❌ Errore nel salvare dati: {}", e);
+                                                let _ = db_manager.update_session_status(&session_id, "failed", None).await;
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        println!("❌ Errore nella creazione sessione: {}", e);
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                println!("❌ Errore nella connessione al database: {}", e);
+                                println!("💡 Assicurati che il database MySQL sia in esecuzione e l'URL sia corretto");
+                            }
+                        }
+                    }
                 }
             }
             Err(e) => {

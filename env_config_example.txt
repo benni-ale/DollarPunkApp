@@ -1,0 +1,9 @@
+# Configurazione Database MySQL
+DATABASE=mysql://benni_ale:Luisa47-@localhost/dollarpunk
+
+# API Key Alpha Vantage
+# Ottieni una API key gratuita da: https://www.alphavantage.co/support/#api-key
+ALPHA_VANTAGE_API_KEY=demo
+
+# Per usare una vera API key, sostituisci "demo" con la tua chiave:
+# ALPHA_VANTAGE_API_KEY=your_real_api_key_here 
