@@ -47,6 +47,20 @@ The application creates timestamped files in the `output/` directory with the fo
 
 Each run creates a new file with the current timestamp.
 
+## Simple Analysis
+
+To analyze your data, run:
+```bash
+python simple_analyze.py
+```
+
+This will show:
+- Total articles and unique URLs
+- Duplicate rate
+- Distribution by ticker and sentiment
+- Top sources
+- Sample articles
+
 ## Environment Variables
 
 - `ALPHA_VANTAGE_API_KEY`: Your Alpha Vantage API key (required)

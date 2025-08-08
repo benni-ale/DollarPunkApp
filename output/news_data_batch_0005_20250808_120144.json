@@ -1,0 +1,222 @@
+[
+  {
+    "title": "What's Behind Marvell Technology Stock's Recent Surge?",
+    "url": "https://www.fool.com/investing/2025/08/08/whats-behind-marvell-stocks-recent-surge/",
+    "time_published": "20250808T110000",
+    "authors": [
+      "David Jagielski"
+    ],
+    "summary": "Strong, continued tech spending on artificial intelligence should be great news for Marvell's growth prospects.",
+    "banner_image": "https://g.foolcdn.com/image/?url=https%3A%2F%2Fg.foolcdn.com%2Feditorial%2Fimages%2F827757%2Fimage-of-an-artificial-intelligence-chip.jpg&op=resize&w=700",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.986714"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.5"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.744043"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.5"
+      }
+    ],
+    "overall_sentiment_score": 0.214365,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "MSFT",
+        "relevance_score": "0.127119",
+        "ticker_sentiment_score": "0.118017",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "MRVL",
+        "relevance_score": "0.127119",
+        "ticker_sentiment_score": "-0.125539",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "MSFT",
+    "ingestion_timestamp": "2025-08-08T12:01:05.812706"
+  },
+  {
+    "title": "Exodus Announces Plan to Expand Blockchains for its Common Stock Tokens with Superstate",
+    "url": "https://www.globenewswire.com/news-release/2025/08/08/3130074/0/en/Exodus-Announces-Plan-to-Expand-Blockchains-for-its-Common-Stock-Tokens-with-Superstate.html",
+    "time_published": "20250808T112000",
+    "authors": [
+      "Inc.",
+      "Exodus Movement"
+    ],
+    "summary": "OMAHA, Neb., Aug. 08, 2025 ( GLOBE NEWSWIRE ) -- Exodus Movement, Inc. ( NYSE American: EXOD ) ( \"Exodus\" ) , a leading self-custodial cryptocurrency platform, today announced a partnership with Superstate to create common stock tokens to digitally represent Exodus' Class A shares on additional ...",
+    "banner_image": "https://ml.globenewswire.com/Resource/Download/7994e273-7033-4aaf-8204-2237b2a59ecf",
+    "source": "GlobeNewswire",
+    "category_within_source": "n/a",
+    "source_domain": "www.globenewswire.com",
+    "topics": [
+      {
+        "topic": "Technology",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Blockchain",
+        "relevance_score": "0.310843"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "1.0"
+      }
+    ],
+    "overall_sentiment_score": 0.266204,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "GOOG",
+        "relevance_score": "0.041682",
+        "ticker_sentiment_score": "0.05531",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "META",
+        "relevance_score": "0.041682",
+        "ticker_sentiment_score": "0.05531",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "CRYPTO:ETH",
+        "relevance_score": "0.083251",
+        "ticker_sentiment_score": "0.163953",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "CRYPTO:ALGO",
+        "relevance_score": "0.041682",
+        "ticker_sentiment_score": "0.117212",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "GOOG",
+    "ingestion_timestamp": "2025-08-08T12:01:18.639725"
+  },
+  {
+    "title": "5 Top Stocks to Buy in August",
+    "url": "https://www.fool.com/investing/2025/08/08/5-top-stocks-to-buy-in-august/",
+    "time_published": "20250808T104500",
+    "authors": [
+      "Keith Speights",
+      "Demitri Kalogeropoulos",
+      "and Neha Chamaria",
+      "Daniel Foelber",
+      "Anders Bylund"
+    ],
+    "summary": "Even with the S&P 500 near an all-time high, there are plenty of compelling growth, dividend, and value stocks to buy now.",
+    "banner_image": "https://g.foolcdn.com/image/?url=https%3A%2F%2Fg.foolcdn.com%2Feditorial%2Fimages%2F827683%2Fsummer-sale-sign-on-beach-1201x795-11e462d.jpg&op=resize&w=700",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Life Sciences",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Economy - Monetary",
+        "relevance_score": "0.310843"
+      },
+      {
+        "topic": "Retail & Wholesale",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.997335"
+      }
+    ],
+    "overall_sentiment_score": 0.205923,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "NFLX",
+        "relevance_score": "0.215319",
+        "ticker_sentiment_score": "0.124038",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.114961",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "COST",
+        "relevance_score": "0.151676",
+        "ticker_sentiment_score": "0.183409",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "AVGO",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.114961",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "QCOM",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.055584",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "VRTX",
+        "relevance_score": "0.087027",
+        "ticker_sentiment_score": "0.059983",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "TXN",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.055584",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "ARM",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.055584",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "ASML",
+        "relevance_score": "0.215319",
+        "ticker_sentiment_score": "0.049655",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "WMT",
+        "relevance_score": "0.021797",
+        "ticker_sentiment_score": "0.123714",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T12:01:31.452718"
+  }
+]

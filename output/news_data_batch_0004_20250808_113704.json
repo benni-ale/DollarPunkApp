@@ -1,0 +1,496 @@
+[
+  {
+    "title": "What Trump and Apple's Recent Announcement Means for Semiconductor Investors",
+    "url": "https://www.fool.com/investing/2025/08/08/what-trump-and-apples-recent-announcement-means-fo/",
+    "time_published": "20250808T100000",
+    "authors": [
+      "Jose Najarro"
+    ],
+    "summary": "Apple just announced a massive manufacturing partnership with various semiconductor companies.",
+    "banner_image": "https://g.foolcdn.com/editorial/images/828443/gettyimages-1998660059.jpg",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Technology",
+        "relevance_score": "1.0"
+      }
+    ],
+    "overall_sentiment_score": 0.09214,
+    "overall_sentiment_label": "Neutral",
+    "ticker_sentiment": [
+      {
+        "ticker": "AAPL",
+        "relevance_score": "0.971845",
+        "ticker_sentiment_score": "0.236606",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      }
+    ],
+    "source_ticker": "AAPL",
+    "ingestion_timestamp": "2025-08-08T11:36:00.671309"
+  },
+  {
+    "title": "Prediction: Dogecoin Will Be Worth $0.40 in 1 Year",
+    "url": "https://www.fool.com/investing/2025/08/08/prediction-dogecoin-will-be-worth-040-in-1-year/",
+    "time_published": "20250808T105000",
+    "authors": [
+      "Leo Sun"
+    ],
+    "summary": "This little meme coin could double on the right developments.",
+    "banner_image": "https://g.foolcdn.com/image/?url=https%3A%2F%2Fg.foolcdn.com%2Feditorial%2Fimages%2F828180%2Fshiba-inu-dog-doge-dogecoin.jpeg&op=resize&w=700",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Economy - Monetary",
+        "relevance_score": "0.310843"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.891286"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Blockchain",
+        "relevance_score": "0.682689"
+      }
+    ],
+    "overall_sentiment_score": 0.136512,
+    "overall_sentiment_label": "Neutral",
+    "ticker_sentiment": [
+      {
+        "ticker": "RDDT",
+        "relevance_score": "0.059194",
+        "ticker_sentiment_score": "0.216034",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "TSLA",
+        "relevance_score": "0.059194",
+        "ticker_sentiment_score": "0.110125",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "CRYPTO:BTC",
+        "relevance_score": "0.344074",
+        "ticker_sentiment_score": "0.074565",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "CRYPTO:ETH",
+        "relevance_score": "0.118064",
+        "ticker_sentiment_score": "-0.028439",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "CRYPTO:DOGE",
+        "relevance_score": "0.734661",
+        "ticker_sentiment_score": "0.090505",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "TSLA",
+    "ingestion_timestamp": "2025-08-08T11:36:13.382345"
+  },
+  {
+    "title": "China's SMIC downplays impact of Trump's proposed 100% tariff on chip imports",
+    "url": "https://www.scmp.com/tech/tech-war/article/3321238/chinas-smic-downplays-impact-trumps-plan-impose-100-tariff-chip-imports",
+    "time_published": "20250808T110007",
+    "authors": [
+      "Wency Chen"
+    ],
+    "summary": "Semiconductor Manufacturing International Corp (SMIC), mainland China's largest contract chipmaker, on Friday downplayed the potential impact of US President Donald Trump's proposed 100 per cent tariff on imported chips, as stout domestic demand is expected to continue.",
+    "banner_image": "https://cdn.i-scmp.com/sites/default/files/styles/1020x680/public/d8/images/canvas/2025/08/08/585b76cc-494a-480f-bb43-d245683878f5_f6a544b7.jpg?itok=O6oQtBB9&v=1754647244",
+    "source": "South China Morning Post",
+    "category_within_source": "Money",
+    "source_domain": "www.scmp.com",
+    "topics": [
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.905476"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "1.0"
+      }
+    ],
+    "overall_sentiment_score": 0.092566,
+    "overall_sentiment_label": "Neutral",
+    "ticker_sentiment": [
+      {
+        "ticker": "HHUSF",
+        "relevance_score": "0.066598",
+        "ticker_sentiment_score": "-0.08415",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "MU",
+        "relevance_score": "0.066598",
+        "ticker_sentiment_score": "0.075126",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "SSNLF",
+        "relevance_score": "0.066598",
+        "ticker_sentiment_score": "0.075126",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.066598",
+        "ticker_sentiment_score": "0.075126",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "TSM",
+        "relevance_score": "0.066598",
+        "ticker_sentiment_score": "0.075126",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T11:36:51.733948"
+  },
+  {
+    "title": "Should You Double Down on These 3 Dow Jones Dividend Stocks Near All-Time Highs?",
+    "url": "https://www.fool.com/investing/2025/08/08/buy-dow-jones-dividend-stocks-all-time-highs/",
+    "time_published": "20250808T103000",
+    "authors": [
+      "Scott Levine",
+      "and Lee Samaha",
+      "Daniel Foelber"
+    ],
+    "summary": "Buying and holding blue chip dividend stocks can be a great way to boost the quality of your passive income stream.",
+    "banner_image": "https://g.foolcdn.com/image/?url=https%3A%2F%2Fg.foolcdn.com%2Feditorial%2Fimages%2F827018%2Fabstract-graphic-of-beams-of-light-coursing-through-a-city-skyline-illustrating-the-growing-interconnection-of-the-physical-and-digital-world.jpg&op=resize&w=700",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Economy - Monetary",
+        "relevance_score": "0.310843"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.995077"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.5"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.875462"
+      },
+      {
+        "topic": "Finance",
+        "relevance_score": "0.5"
+      }
+    ],
+    "overall_sentiment_score": 0.334448,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "JCI",
+        "relevance_score": "0.0367",
+        "ticker_sentiment_score": "0.102721",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.0367",
+        "ticker_sentiment_score": "0.176416",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "KO",
+        "relevance_score": "0.419153",
+        "ticker_sentiment_score": "0.416342",
+        "ticker_sentiment_label": "Bullish"
+      },
+      {
+        "ticker": "MA",
+        "relevance_score": "0.0367",
+        "ticker_sentiment_score": "0.055272",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "HON",
+        "relevance_score": "0.181956",
+        "ticker_sentiment_score": "0.120669",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "BRK-A",
+        "relevance_score": "0.0367",
+        "ticker_sentiment_score": "0.053269",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "AXP",
+        "relevance_score": "0.509922",
+        "ticker_sentiment_score": "0.357634",
+        "ticker_sentiment_label": "Bullish"
+      },
+      {
+        "ticker": "EMR",
+        "relevance_score": "0.0367",
+        "ticker_sentiment_score": "0.102721",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T11:36:51.733974"
+  },
+  {
+    "title": "1 Incredible Artificial Intelligence  ( AI )  Chip Stock to Buy Before It Soars 85%  ( Hint: Not Nvidia ) , According to a Select Wall Street Analyst",
+    "url": "https://www.fool.com/investing/2025/08/08/1-incredible-artificial-intelligence-ai-chip-stock/",
+    "time_published": "20250808T100000",
+    "authors": [
+      "Adam Levy"
+    ],
+    "summary": "This important component maker is poised to take share of a growing market.",
+    "banner_image": "https://g.foolcdn.com/editorial/images/828106/gettyimages-ai-artificial-intelligence-chip-semiconductor-circuit.jpeg",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.796627"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.998932"
+      },
+      {
+        "topic": "Economy - Macro",
+        "relevance_score": "0.158519"
+      }
+    ],
+    "overall_sentiment_score": 0.257856,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "AMD",
+        "relevance_score": "0.075279",
+        "ticker_sentiment_score": "0.151538",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "MU",
+        "relevance_score": "0.075279",
+        "ticker_sentiment_score": "0.171005",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.149889",
+        "ticker_sentiment_score": "0.23512",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "FOREX:AMD",
+        "relevance_score": "0.149889",
+        "ticker_sentiment_score": "0.152453",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T11:36:51.733980"
+  },
+  {
+    "title": "Bull of the Day: Modine Manufacturing  ( MOD ) ",
+    "url": "https://www.zacks.com/commentary/2679215/bull-of-the-day-modine-manufacturing-mod",
+    "time_published": "20250808T092000",
+    "authors": [
+      "Kevin Cook"
+    ],
+    "summary": "Century-old expertise in heat transfer is growing datacenter business at 45% to serve AI economy ...",
+    "banner_image": "https://staticx-tuner.zacks.com/images/articles/main/3a/111300.jpg",
+    "source": "Zacks Commentary",
+    "category_within_source": "n/a",
+    "source_domain": "www.zacks.com",
+    "topics": [
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.108179"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.5"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.938793"
+      },
+      {
+        "topic": "Finance",
+        "relevance_score": "0.5"
+      }
+    ],
+    "overall_sentiment_score": 0.254322,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.124164",
+        "ticker_sentiment_score": "0.088485",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "MOD",
+        "relevance_score": "0.205458",
+        "ticker_sentiment_score": "0.124626",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "BAC",
+        "relevance_score": "0.041538",
+        "ticker_sentiment_score": "0.011766",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "GS",
+        "relevance_score": "0.041538",
+        "ticker_sentiment_score": "0.011766",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T11:36:51.733985"
+  },
+  {
+    "title": "The Zacks Analyst Blog Highlights NVIDIA, Palantir, Coca-Cola, Kewaunee Scientific and Natural Health Trends",
+    "url": "https://www.zacks.com/stock/news/2682854/the-zacks-analyst-blog-highlights-nvidia-palantir-coca-cola-kewaunee-scientific-and-natural-health-trends",
+    "time_published": "20250808T091800",
+    "authors": [
+      "Zacks Equity Research"
+    ],
+    "summary": "NVIDIA, Palantir, Coca-Cola, Kewaunee Scientific, and Natural Health Trends show strong market momentum, each leveraging unique growth drivers despite sector-specific challenges.",
+    "banner_image": "https://staticx-tuner.zacks.com/images/articles/main/24/67.jpg",
+    "source": "Zacks Commentary",
+    "category_within_source": "n/a",
+    "source_domain": "www.zacks.com",
+    "topics": [
+      {
+        "topic": "Life Sciences",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Retail & Wholesale",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.108179"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.25"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.77141"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.25"
+      }
+    ],
+    "overall_sentiment_score": 0.239577,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.108958",
+        "ticker_sentiment_score": "0.045672",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "KO",
+        "relevance_score": "0.144926",
+        "ticker_sentiment_score": "0.04269",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "KEQU",
+        "relevance_score": "0.144926",
+        "ticker_sentiment_score": "0.091455",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "NHTC",
+        "relevance_score": "0.144926",
+        "ticker_sentiment_score": "0.081047",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "PLTR",
+        "relevance_score": "0.108958",
+        "ticker_sentiment_score": "0.045672",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T11:36:51.733988"
+  },
+  {
+    "title": "The Zacks Analyst Blog Highlights Meta Platforms, Alphabet, Amazon and Snap",
+    "url": "https://www.zacks.com/stock/news/2682886/the-zacks-analyst-blog-highlights-meta-platforms-alphabet-amazon-and-snap",
+    "time_published": "20250808T092900",
+    "authors": [
+      "Zacks Equity Research"
+    ],
+    "summary": "Meta Platforms' AI-driven engagement gains and ad conversion boosts have lifted shares 7% in a month, but high valuation and heavy spending keep its Zacks Rank at Hold.",
+    "banner_image": "https://staticx-tuner.zacks.com/images/articles/main/92/486.jpg",
+    "source": "Zacks Commentary",
+    "category_within_source": "n/a",
+    "source_domain": "www.zacks.com",
+    "topics": [
+      {
+        "topic": "Retail & Wholesale",
+        "relevance_score": "0.5"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.503496"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.714479"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.5"
+      }
+    ],
+    "overall_sentiment_score": 0.353385,
+    "overall_sentiment_label": "Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "META",
+        "relevance_score": "0.797004",
+        "ticker_sentiment_score": "0.543283",
+        "ticker_sentiment_label": "Bullish"
+      },
+      {
+        "ticker": "AMZN",
+        "relevance_score": "0.30158",
+        "ticker_sentiment_score": "0.304016",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      }
+    ],
+    "source_ticker": "AMZN",
+    "ingestion_timestamp": "2025-08-08T11:37:04.564589"
+  }
+]

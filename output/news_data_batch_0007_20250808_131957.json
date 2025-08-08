@@ -1,0 +1,208 @@
+[
+  {
+    "title": "Apple's BlackBerry Moment Looms, 3 Bold AI Moves, Warns Dan Ives - Alphabet  ( NASDAQ:GOOG ) , Apple  ( NASDAQ:AAPL ) ",
+    "url": "https://www.benzinga.com/markets/tech/25/08/46996349/apples-blackberry-moment-looms-without-these-3-bold-ai-moves-warns-dan-ives",
+    "time_published": "20250808T123335",
+    "authors": [
+      "Surbhi Jain"
+    ],
+    "summary": "Apple must buy Perplexity, hire top AI minds, and go all-in on Google Gemini, says Dan Ives. Wedbush maintains Outperform with $270 target but warns Apple risks a \"BlackBerry Moment\" in AI. The market's back, and these 3 income stocks are thriving. See them here→",
+    "banner_image": "https://cdn.benzinga.com/files/images/story/2025/08/08/Dublin--Ireland---11---11---2015-Apple-C.jpeg?width=1200&height=800&fit=crop",
+    "source": "Benzinga",
+    "category_within_source": "Trading",
+    "source_domain": "www.benzinga.com",
+    "topics": [
+      {
+        "topic": "Technology",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.214378"
+      }
+    ],
+    "overall_sentiment_score": 0.165155,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "GOOG",
+        "relevance_score": "0.398148",
+        "ticker_sentiment_score": "0.306926",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "AAPL",
+        "relevance_score": "0.75957",
+        "ticker_sentiment_score": "0.107809",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "AAPL",
+    "ingestion_timestamp": "2025-08-08T13:18:53.829094"
+  },
+  {
+    "title": "Apple, Palo Alto Networks And An Energy Stock On CNBC's 'Final Trades' - Apple  ( NASDAQ:AAPL ) , Flex LNG  ( NYSE:FLNG ) ",
+    "url": "https://www.benzinga.com/trading-ideas/long-ideas/25/08/46995762/apple-palo-alto-networks-and-an-energy-stock-on-cnbcs-final-trades",
+    "time_published": "20250808T121123",
+    "authors": [
+      "Avi Kapoor"
+    ],
+    "summary": "Joshua Brown names Apple as his final trade. Jenny Van Leeuwen Harrington says FLEX LNG is up 10% on the year. The market's back, and these 3 income stocks are thriving. See them here→",
+    "banner_image": "https://cdn.benzinga.com/files/images/story/2025/08/08/Analyst.jpeg?width=1200&height=800&fit=crop",
+    "source": "Benzinga",
+    "category_within_source": "Trading",
+    "source_domain": "www.benzinga.com",
+    "topics": [
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.413559"
+      },
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.795202"
+      },
+      {
+        "topic": "Energy & Transportation",
+        "relevance_score": "0.5"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.5"
+      }
+    ],
+    "overall_sentiment_score": 0.235257,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "AAPL",
+        "relevance_score": "0.550532",
+        "ticker_sentiment_score": "0.672207",
+        "ticker_sentiment_label": "Bullish"
+      },
+      {
+        "ticker": "FTNT",
+        "relevance_score": "0.199037",
+        "ticker_sentiment_score": "-0.154344",
+        "ticker_sentiment_label": "Somewhat-Bearish"
+      },
+      {
+        "ticker": "FLNG",
+        "relevance_score": "0.47147",
+        "ticker_sentiment_score": "0.198635",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      },
+      {
+        "ticker": "PANW",
+        "relevance_score": "0.199037",
+        "ticker_sentiment_score": "0.115466",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "AAPL",
+    "ingestion_timestamp": "2025-08-08T13:18:53.829118"
+  },
+  {
+    "title": "3 Reasons Why Nasdaq ETFs Hit a Record High",
+    "url": "https://www.zacks.com/stock/news/2683172/3-reasons-why-nasdaq-etfs-hit-a-record-high",
+    "time_published": "20250808T103500",
+    "authors": [
+      "Sanghamitra Saha"
+    ],
+    "summary": "The Nasdaq hit a record high despite tariffs, as Apple's $100B U.S. push, Fed rate cut talks and chip exemptions fuel tech optimism.",
+    "banner_image": "https://staticx-tuner.zacks.com/images/articles/main/1f/1145.jpg",
+    "source": "Zacks Commentary",
+    "category_within_source": "n/a",
+    "source_domain": "www.zacks.com",
+    "topics": [
+      {
+        "topic": "Economy - Monetary",
+        "relevance_score": "0.451494"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.744043"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "0.333333"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "0.333333"
+      },
+      {
+        "topic": "Finance",
+        "relevance_score": "0.333333"
+      }
+    ],
+    "overall_sentiment_score": 0.128491,
+    "overall_sentiment_label": "Neutral",
+    "ticker_sentiment": [
+      {
+        "ticker": "AMD",
+        "relevance_score": "0.143843",
+        "ticker_sentiment_score": "0.12884",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.143843",
+        "ticker_sentiment_score": "0.12884",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "AAPL",
+        "relevance_score": "0.28305",
+        "ticker_sentiment_score": "0.367495",
+        "ticker_sentiment_label": "Bullish"
+      },
+      {
+        "ticker": "IVZ",
+        "relevance_score": "0.143843",
+        "ticker_sentiment_score": "0.096481",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "AAPL",
+    "ingestion_timestamp": "2025-08-08T13:18:53.829126"
+  },
+  {
+    "title": "Palantir Stock Is Booming, but Here's 1 Major Reason I Wouldn't Touch It Right Now",
+    "url": "https://www.fool.com/investing/2025/08/08/palantir-stock-is-booming-but-heres-1-major-reason/",
+    "time_published": "20250808T120800",
+    "authors": [
+      "Stefon Walters"
+    ],
+    "summary": "For a company its size, Palantir stock has reached some of the highest valuation levels in market history.",
+    "banner_image": "https://media.ycharts.com/charts/dc5fa6fc7f527fc975570091c9df37d4.png",
+    "source": "Motley Fool",
+    "category_within_source": "n/a",
+    "source_domain": "www.fool.com",
+    "topics": [
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.986564"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.692272"
+      },
+      {
+        "topic": "Manufacturing",
+        "relevance_score": "1.0"
+      }
+    ],
+    "overall_sentiment_score": 0.181155,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "NVDA",
+        "relevance_score": "0.11894",
+        "ticker_sentiment_score": "0.093769",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "NVDA",
+    "ingestion_timestamp": "2025-08-08T13:19:45.089534"
+  }
+]
