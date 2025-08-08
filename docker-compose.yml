@@ -1,16 +1,10 @@
 version: '3.8'
 
 services:
-  dollarpunk-app:
+  dollarpunk-ingest:
     build: .
-    ports:
-      - "5000:5000"
     volumes:
       - ./output:/app/output
       - ./.env:/app/.env:ro
-      - ./templates:/app/templates
-      - ./app.py:/app/app.py
-      - ./ingest.py:/app/ingest.py
     environment:
-      - PYTHONUNBUFFERED=1
-    command: python app.py 
+      - PYTHONUNBUFFERED=1 

@@ -6,10 +6,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
+# Copy only the ingestion script
 COPY ingest.py .
-COPY app.py .
-COPY templates/ ./templates/
 
 # Create output directory
 RUN mkdir -p /app/output
@@ -17,5 +15,5 @@ RUN mkdir -p /app/output
 # Set volume for output folder
 VOLUME ["/app/output"]
 
-# Run the application
+# Run the ingestion directly
 CMD ["python", "ingest.py"] 
