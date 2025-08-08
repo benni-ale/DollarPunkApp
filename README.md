@@ -58,7 +58,10 @@ docker run --env-file .env -v $(pwd)/output:/app/output dollarpunk-ingest
 
 ## Output
 
-The application will create `output/news_data.json` with the fetched news sentiment data.
+The application will create timestamped files in the `output/` directory with the format:
+- `news_data_YYYYMMDD_HHMMSS.json` (e.g., `news_data_20250115_143022.json`)
+
+Each ingestion run creates a new file, preserving historical data. The dashboard automatically displays the most recent file.
 
 ## Environment Variables
 

@@ -79,6 +79,20 @@
             </div>
         </div>
 
+        <!-- Current File Info -->
+        <div class="card rounded-lg p-4 mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold mb-2">📁 Current Data File</h3>
+                    <div class="text-sm opacity-80" id="currentFile">No data file available</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm opacity-60">Last Updated</div>
+                    <div class="text-sm" id="lastUpdate">-</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Charts Row -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Articles per Ticker -->
@@ -188,6 +202,10 @@
                     document.getElementById('dockerStatus').textContent = data.docker_status ? '✅' : '❌';
                     document.getElementById('progress').textContent = data.ingestion_status.progress + '%';
                     document.getElementById('currentTicker').textContent = data.ingestion_status.current_ticker || '-';
+                    
+                    // Update current file info
+                    document.getElementById('currentFile').textContent = data.news_stats.current_file || 'No data file available';
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
                     
                     // Update status
                     const statusDot = document.getElementById('statusDot');

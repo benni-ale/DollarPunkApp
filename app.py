@@ -21,13 +21,12 @@ ingestion_status = {
 }
 
 def get_news_stats():
-    """Get statistics from the news data file"""
+    """Get statistics from the most recent news data file"""
     try:
-        # The file should be available at /app/output/news_data.json due to volume mounting
-        file_path = "/app/output/news_data.json"
-        
-        if not os.path.exists(file_path):
-            print(f"File not found at: {file_path}")
+        # Find the most recent news data file with timestamp
+        output_dir = "/app/output"
+        if not os.path.exists(output_dir):
+            print(f"Output directory not found at: {output_dir}")
             return {
                 "total_articles": 0,
                 "tickers": {},
@@ -35,15 +34,34 @@ def get_news_stats():
                 "latest_articles": []
             }
         
-        with open(file_path, "r", encoding="utf-8") as f:
+        # Look for files matching the pattern news_data_YYYYMMDD_HHMMSS.json
+        import glob
+        pattern = os.path.join(output_dir, "news_data_*.json")
+        files = glob.glob(pattern)
+        
+        if not files:
+            print(f"No news data files found in: {output_dir}")
+            return {
+                "total_articles": 0,
+                "tickers": {},
+                "sentiment_distribution": {},
+                "latest_articles": []
+            }
+        
+        # Get the most recent file (highest timestamp)
+        latest_file = max(files, key=os.path.getctime)
+        print(f"Using most recent file: {latest_file}")
+        
+        with open(latest_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-            print(f"Successfully loaded {len(data)} articles from: {file_path}")
+            print(f"Successfully loaded {len(data)} articles from: {latest_file}")
         
         stats = {
             "total_articles": len(data),
             "tickers": {},
             "sentiment_distribution": {},
-            "latest_articles": []
+            "latest_articles": [],
+            "current_file": os.path.basename(latest_file)
         }
         
         # Count articles per ticker
@@ -157,11 +175,13 @@ def get_logs():
 def debug_info():
     """Debug endpoint to check file paths and data"""
     import os
+    import glob
     debug_info = {
         "current_working_dir": os.getcwd(),
         "files_in_output": [],
         "file_exists": {},
-        "data_sample": None
+        "data_sample": None,
+        "news_files": []
     }
     
     # Check output directory
@@ -169,21 +189,39 @@ def debug_info():
     for path in output_paths:
         try:
             if os.path.exists(path):
-                debug_info["files_in_output"].extend(os.listdir(path))
+                files = os.listdir(path)
+                debug_info["files_in_output"].extend(files)
                 debug_info["file_exists"][path] = True
+                
+                # Find news data files with timestamps
+                pattern = os.path.join(path, "news_data_*.json")
+                news_files = glob.glob(pattern)
+                debug_info["news_files"].extend([os.path.basename(f) for f in news_files])
             else:
                 debug_info["file_exists"][path] = False
         except Exception as e:
             debug_info["file_exists"][path] = f"Error: {str(e)}"
     
-    # Try to read a sample of the data
+    # Try to read a sample of the most recent data file
     try:
-        with open("output/news_data.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-            debug_info["data_sample"] = {
-                "total_articles": len(data),
-                "first_article": data[0] if data else None
-            }
+        # Find the most recent news data file
+        output_dir = "output"
+        if os.path.exists(output_dir):
+            pattern = os.path.join(output_dir, "news_data_*.json")
+            files = glob.glob(pattern)
+            if files:
+                latest_file = max(files, key=os.path.getctime)
+                with open(latest_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    debug_info["data_sample"] = {
+                        "file": os.path.basename(latest_file),
+                        "total_articles": len(data),
+                        "first_article": data[0] if data else None
+                    }
+            else:
+                debug_info["data_sample"] = "No news data files found"
+        else:
+            debug_info["data_sample"] = "Output directory not found"
     except Exception as e:
         debug_info["data_sample"] = f"Error reading file: {str(e)}"
     
