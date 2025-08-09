@@ -15,5 +15,8 @@ RUN mkdir -p /app/output
 # Set volume for output folder
 VOLUME ["/app/output"]
 
+# Set default mode (can be overridden)
+ENV INGESTION_MODE=2
+
 # Run the ingestion directly
 CMD ["python", "ingest.py"] 

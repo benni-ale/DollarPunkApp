@@ -7,4 +7,5 @@ services:
       - ./output:/app/output
       - ./.env:/app/.env:ro
     environment:
-      - PYTHONUNBUFFERED=1 
+      - PYTHONUNBUFFERED=1
+      - INGESTION_MODE=2  # Default to historical year ingestion 

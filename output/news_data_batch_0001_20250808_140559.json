@@ -1,0 +1,104 @@
+[
+  {
+    "title": "If You Invested $1000 in Arista Networks a Decade Ago, This is How Much It'd Be Worth Now",
+    "url": "https://www.zacks.com/stock/news/2683525/if-you-invested-1000-in-arista-networks-a-decade-ago-this-is-how-much-itd-be-worth-now",
+    "time_published": "20250808T123002",
+    "authors": [
+      "Zacks Equity Research"
+    ],
+    "summary": "Why investing for the long run, especially if you buy certain popular stocks, could reap huge rewards.",
+    "banner_image": "https://staticx-tuner.zacks.com/images/default_article_images/default97.jpg",
+    "source": "Zacks Commentary",
+    "category_within_source": "n/a",
+    "source_domain": "www.zacks.com",
+    "topics": [
+      {
+        "topic": "Earnings",
+        "relevance_score": "0.158519"
+      },
+      {
+        "topic": "Technology",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.929393"
+      }
+    ],
+    "overall_sentiment_score": 0.189515,
+    "overall_sentiment_label": "Somewhat-Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "MSFT",
+        "relevance_score": "0.051663",
+        "ticker_sentiment_score": "0.042001",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "VMW",
+        "relevance_score": "0.051663",
+        "ticker_sentiment_score": "0.042001",
+        "ticker_sentiment_label": "Neutral"
+      },
+      {
+        "ticker": "ANET",
+        "relevance_score": "0.349857",
+        "ticker_sentiment_score": "0.28089",
+        "ticker_sentiment_label": "Somewhat-Bullish"
+      }
+    ],
+    "source_ticker": "MSFT",
+    "ingestion_timestamp": "2025-08-08T14:05:11.404592",
+    "historical_fetch": true,
+    "fetch_date_range": {
+      "start_date": "2024-08-08",
+      "end_date": "2025-08-08",
+      "days_back": 365
+    }
+  },
+  {
+    "title": "The Rise of Digital Transformation Market: A $3,289.4 billion Industry Dominated by Tech Giants - Microsoft  ( US ) , IBM  ( US ) , and AWS  ( US ) | MarketsandMarkets™",
+    "url": "https://www.benzinga.com/pressreleases/25/08/g46999133/the-rise-of-digital-transformation-market-a-3-289-4-billion-industry-dominated-by-tech-giants-micr",
+    "time_published": "20250808T140000",
+    "authors": [
+      "Globe Newswire"
+    ],
+    "summary": "Delray Beach, FL, Aug. 08, 2025 ( GLOBE NEWSWIRE ) -- According to MarketsandMarkets™, the global Digital Transformation Market will increase from USD 911.2 billion in 2024 to USD 3,289.4 billion by 2030, with a compound annual growth rate ( CAGR ) of 23.9% during the forecast period.",
+    "banner_image": "https://www.benzinga.com/next-assets/images/schema-image-default.png",
+    "source": "Benzinga",
+    "category_within_source": "News",
+    "source_domain": "www.benzinga.com",
+    "topics": [
+      {
+        "topic": "Technology",
+        "relevance_score": "1.0"
+      },
+      {
+        "topic": "Blockchain",
+        "relevance_score": "0.310843"
+      },
+      {
+        "topic": "Financial Markets",
+        "relevance_score": "0.360215"
+      }
+    ],
+    "overall_sentiment_score": 0.471586,
+    "overall_sentiment_label": "Bullish",
+    "ticker_sentiment": [
+      {
+        "ticker": "MSFT",
+        "relevance_score": "0.049322",
+        "ticker_sentiment_score": "0.0",
+        "ticker_sentiment_label": "Neutral"
+      }
+    ],
+    "source_ticker": "MSFT",
+    "ingestion_timestamp": "2025-08-08T14:05:11.404624",
+    "historical_fetch": true,
+    "fetch_date_range": {
+      "start_date": "2024-08-08",
+      "end_date": "2025-08-08",
+      "days_back": 365
+    }
+  }
+]

@@ -47,8 +47,9 @@ The application creates timestamped files in the `output/` directory with the fo
 
 Each run creates a new file with the current timestamp.
 
-## Simple Analysis
+## Data Analysis
 
+### Simple Analysis (Terminal)
 To analyze your data, run:
 ```bash
 python simple_analyze.py
@@ -60,6 +61,14 @@ This will show:
 - Distribution by ticker and sentiment
 - Top sources
 - Sample articles
+
+### Interactive Dashboard (Web)
+Open `dashboard.html` in your browser for:
+- 📅 **Calendar view** with news count per day
+- 🔍 **Advanced filters** by ticker, sentiment, source, date
+- 📊 **Interactive charts** showing distributions
+- 📰 **News list** with all articles
+- 📈 **Real-time statistics** and overview
 
 ## Environment Variables
 
