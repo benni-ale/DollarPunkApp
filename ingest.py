@@ -13,6 +13,8 @@ TICKERS = os.getenv("TICKERS", "").split(",")
 BATCH_SIZE = 100  # Articles per file
 MAX_RUNTIME_HOURS = 8  # Run for 8 hours
 SLEEP_BETWEEN_RUNS = 300  # 5 minutes between ingestion cycles
+MAX_TICKERS_PER_RUN = int(os.getenv("MAX_TICKERS_PER_RUN", "3"))  # Process max 3 tickers per run
+MAX_RETRIES = 3  # Maximum retries for failed API calls
 
 def fetch_news(ticker, time_from=None, time_to=None):
     """Fetch news for a specific ticker with optional date filtering"""
@@ -52,10 +54,18 @@ def fetch_news(ticker, time_from=None, time_to=None):
             return []
         else:
             print(f"ℹ️  API Info: {info_msg}")
+            # Try fallback without date filters
+            if time_from or time_to:
+                print("🔄 Trying fallback without date filters...")
+                return fetch_news(ticker)  # Recursive call without date filters
             return []
     
     if "Error Message" in response:
         print(f"❌ API Error: {response['Error Message']}")
+        # Try fallback without date filters
+        if time_from or time_to:
+            print("🔄 Trying fallback without date filters...")
+            return fetch_news(ticker)  # Recursive call without date filters
         return []
     
     if "Note" in response:
@@ -64,6 +74,10 @@ def fetch_news(ticker, time_from=None, time_to=None):
             print("🚫 API limit reached! Waiting 1 minute...")
             time.sleep(60)
             return []
+        # Try fallback without date filters
+        if time_from or time_to:
+            print("🔄 Trying fallback without date filters...")
+            return fetch_news(ticker)  # Recursive call without date filters
         return []
     
     feed = response.get("feed", [])
@@ -232,17 +246,61 @@ def run_continuous_ingestion():
     if total_new_articles == 0:
         print("   ⚠️  No new articles found during the entire run!")
 
+def test_api_connection():
+    """Test API connection with a simple request"""
+    print("🔍 Testing API connection...")
+    
+    # Test with a simple request (no date filters)
+    test_url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT&tickers=AAPL&apikey={API_KEY}"
+    print(f"🔗 Test URL: {test_url}")
+    
+    try:
+        r = requests.get(test_url)
+        if r.status_code != 200:
+            print(f"❌ API test failed: HTTP {r.status_code}")
+            return False
+        
+        response = r.json()
+        print(f"📊 Test response keys: {list(response.keys())}")
+        
+        if "Information" in response:
+            print(f"⚠️  API test returned info: {response['Information']}")
+            return False
+        
+        if "Error Message" in response:
+            print(f"❌ API test error: {response['Error Message']}")
+            return False
+        
+        feed = response.get("feed", [])
+        print(f"✅ API test successful! Feed length: {len(feed)}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ API test exception: {e}")
+        return False
+
 def fetch_historical_news_year():
     """Fetch news from the last year with intelligent batching - starting from oldest"""
     print("🚀 Starting historical news ingestion for the last year...")
     print("📅 Processing from OLDEST to NEWEST articles")
     
-    # Calculate date range (last 365 days)
+    # Test API connection first
+    if not test_api_connection():
+        print("❌ API connection test failed. Please check your API key and plan.")
+        return
+    
+    print("✅ API connection test passed. Proceeding with ingestion...")
+    
+    # Calculate date range (last 365 days) - break into smaller chunks
     end_date = datetime.now()
     start_date = end_date - timedelta(days=365)
     
+    # Break into 30-day chunks to avoid overwhelming the API
+    chunk_days = 30
+    total_chunks = (365 + chunk_days - 1) // chunk_days
+    
     print(f"📅 Fetching news from: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-    print(f"⏰ Total days: 365")
+    print(f"⏰ Total days: 365 (broken into {total_chunks} chunks of {chunk_days} days)")
     print(f"📦 Batch size: {BATCH_SIZE} articles per file")
     
     # Load existing articles
@@ -254,82 +312,106 @@ def fetch_historical_news_year():
     batch_articles = []
     batch_number = 1
     
-    # Process each ticker
-    for ticker_index, ticker in enumerate(TICKERS):
+    # Process each ticker (limited to avoid overwhelming the API)
+    tickers_to_process = TICKERS[:MAX_TICKERS_PER_RUN]
+    print(f"📊 Processing {len(tickers_to_process)} out of {len(TICKERS)} tickers (MAX_TICKERS_PER_RUN={MAX_TICKERS_PER_RUN})")
+    
+    for ticker_index, ticker in enumerate(tickers_to_process):
         print(f"\n{'='*60}")
-        print(f"📈 Processing ticker {ticker_index + 1}/{len(TICKERS)}: {ticker}")
+        print(f"📈 Processing ticker {ticker_index + 1}/{len(tickers_to_process)}: {ticker}")
         print(f"{'='*60}")
         
         ticker_total_new = 0
         ticker_total_duplicates = 0
         
-        # Fetch news for this ticker with date filtering
-        print(f"🔍 Fetching news for {ticker}...")
+        # Process in smaller date chunks
+        current_start = start_date
+        chunk_number = 1
         
-        # Format dates for API (YYYYMMDDTHHMMSS)
-        time_from = start_date.strftime("%Y%m%dT000000")
-        time_to = end_date.strftime("%Y%m%dT235959")
-        
-        print(f"📅 Using date range: {time_from} to {time_to}")
-        news_list = fetch_news(ticker, time_from=time_from, time_to=time_to)
-        
-        # Reverse the list to process from oldest to newest
-        news_list.reverse()
-        print(f"🔄 Reversed order: processing {len(news_list)} articles from oldest to newest")
-        
-        # Show date range of articles
-        if news_list:
-            first_article_date = news_list[0].get("time_published", "N/A")
-            last_article_date = news_list[-1].get("time_published", "N/A")
-            print(f"📅 Date range: {first_article_date} (oldest) → {last_article_date} (newest)")
-        
-        ticker_new = 0
-        ticker_duplicates = 0
-        
-        for item in news_list:
-            # Add metadata
-            item["source_ticker"] = ticker
-            item["ingestion_timestamp"] = datetime.now().isoformat()
-            item["historical_fetch"] = True
-            item["fetch_date_range"] = {
-                "start_date": start_date.strftime("%Y-%m-%d"),
-                "end_date": end_date.strftime("%Y-%m-%d"),
-                "days_back": 365
-            }
+        while current_start < end_date:
+            current_end = min(current_start + timedelta(days=chunk_days), end_date)
             
-            # Check for duplicates
-            if item.get("url", "") in existing_urls:
-                ticker_duplicates += 1
-                ticker_total_duplicates += 1
-                total_duplicates += 1
-                continue
+            print(f"📅 Processing chunk {chunk_number}/{total_chunks}: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
             
-            # New article found
-            ticker_new += 1
-            ticker_total_new += 1
-            total_new_articles += 1
-            existing_urls.add(item.get("url", ""))
-            batch_articles.append(item)
+            # Format dates for API (YYYYMMDDTHHMMSS)
+            time_from = current_start.strftime("%Y%m%dT000000")
+            time_to = current_end.strftime("%Y%m%dT235959")
             
-            # Write batch if full
-            if len(batch_articles) >= BATCH_SIZE:
-                write_batch_file(batch_articles, batch_number)
-                batch_articles = []
-                batch_number += 1
+            print(f"📅 Using date range: {time_from} to {time_to}")
+            
+            # Retry logic for API calls
+            news_list = []
+            for retry in range(MAX_RETRIES):
+                news_list = fetch_news(ticker, time_from=time_from, time_to=time_to)
+                if news_list or retry == MAX_RETRIES - 1:
+                    break
+                print(f"🔄 Retry {retry + 1}/{MAX_RETRIES} for {ticker} chunk {chunk_number}")
+                time.sleep(30)  # Wait before retry
+            
+            # Reverse the list to process from oldest to newest
+            news_list.reverse()
+            print(f"🔄 Reversed order: processing {len(news_list)} articles from oldest to newest")
+            
+            # Show date range of articles
+            if news_list:
+                first_article_date = news_list[0].get("time_published", "N/A")
+                last_article_date = news_list[-1].get("time_published", "N/A")
+                print(f"📅 Date range: {first_article_date} (oldest) → {last_article_date} (newest)")
+            
+            ticker_new = 0
+            ticker_duplicates = 0
+            
+            for item in news_list:
+                # Add metadata
+                item["source_ticker"] = ticker
+                item["ingestion_timestamp"] = datetime.now().isoformat()
+                item["historical_fetch"] = True
+                item["fetch_date_range"] = {
+                    "start_date": current_start.strftime("%Y-%m-%d"),
+                    "end_date": current_end.strftime("%Y-%m-%d"),
+                    "days_back": 365
+                }
+                
+                # Check for duplicates
+                if item.get("url", "") in existing_urls:
+                    ticker_duplicates += 1
+                    ticker_total_duplicates += 1
+                    total_duplicates += 1
+                    continue
+                
+                # New article found
+                ticker_new += 1
+                ticker_total_new += 1
+                total_new_articles += 1
+                existing_urls.add(item.get("url", ""))
+                batch_articles.append(item)
+                
+                # Write batch if full
+                if len(batch_articles) >= BATCH_SIZE:
+                    write_batch_file(batch_articles, batch_number)
+                    batch_articles = []
+                    batch_number += 1
+            
+            print(f"✅ Chunk {chunk_number} results: {ticker_new} new, {ticker_duplicates} duplicates")
+            
+            # Move to next chunk
+            current_start = current_end
+            chunk_number += 1
+            
+            # Wait between chunks to respect API limits
+            if chunk_number <= total_chunks:
+                print(f"⏳ Waiting 45 seconds before next chunk...")
+                time.sleep(45)
         
         print(f"✅ {ticker} results:")
-        print(f"   • New articles: {ticker_new}")
-        print(f"   • Duplicates: {ticker_duplicates}")
+        print(f"   • New articles: {ticker_total_new}")
+        print(f"   • Duplicates: {ticker_total_duplicates}")
         print(f"   • Total for this ticker: {ticker_total_new} new, {ticker_total_duplicates} duplicates")
         
-        # Show sample of processed articles with dates
-        if news_list:
-            print(f"   • Sample dates: {news_list[0].get('time_published', 'N/A')} (first) → {news_list[-1].get('time_published', 'N/A')} (last)")
-        
         # Sleep between tickers to respect API limits
-        if ticker_index < len(TICKERS) - 1:
-            print(f"⏳ Waiting 15 seconds before next ticker...")
-            time.sleep(15)
+        if ticker_index < len(tickers_to_process) - 1:
+            print(f"⏳ Waiting 90 seconds before next ticker...")
+            time.sleep(90)  # Increased from 15 to 90 seconds
     
     # Write remaining articles
     if batch_articles:
@@ -346,12 +428,16 @@ def fetch_historical_news_year():
     print(f"   • Total new articles: {total_new_articles}")
     print(f"   • Total duplicates skipped: {total_duplicates}")
     print(f"   • Total batches written: {batch_number - 1}")
-    print(f"   • Tickers processed: {len(TICKERS)}")
+    print(f"   • Tickers processed: {len(tickers_to_process)} out of {len(TICKERS)}")
+    
+    if len(tickers_to_process) < len(TICKERS):
+        remaining_tickers = TICKERS[len(tickers_to_process):]
+        print(f"   • Remaining tickers for next run: {', '.join(remaining_tickers)}")
     
     if total_new_articles == 0:
         print("   ⚠️  No new articles found in the last year!")
     else:
-        print(f"   📈 Average articles per ticker: {total_new_articles / len(TICKERS):.1f}")
+        print(f"   📈 Average articles per ticker: {total_new_articles / len(tickers_to_process):.1f}")
 
 def run_ingestion():
     """Legacy function for single run - now calls continuous"""
