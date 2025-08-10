@@ -7,6 +7,7 @@ Just run: python simple_analyze.py
 import json
 import glob
 from collections import Counter, defaultdict
+from datetime import datetime
 
 def simple_analyze():
     print("🔍 DollarPunk Simple Analysis")
@@ -26,7 +27,7 @@ def simple_analyze():
     
     for file in files:
         try:
-            with open(file, 'r') as f:
+            with open(file, 'r', encoding='utf-8') as f:
                 articles = json.load(f)
                 all_articles.extend(articles)
                 all_urls.update(article.get('url', '') for article in articles)
@@ -43,15 +44,53 @@ def simple_analyze():
     print(f"   Unique URLs: {unique_urls}")
     print(f"   Duplicate rate: {duplicate_rate:.1f}%")
     
-    # By ticker
-    ticker_counts = Counter(article.get('source_ticker', 'Unknown') for article in all_articles)
-    print(f"\n📈 BY TICKER:")
-    for ticker, count in ticker_counts.most_common():
+    # By source ticker
+    source_ticker_counts = Counter(article.get('source_ticker', 'Unknown') for article in all_articles)
+    print(f"\n📈 BY SOURCE TICKER:")
+    for ticker, count in source_ticker_counts.most_common():
         print(f"   {ticker}: {count}")
     
-    # By sentiment
+    # By mentioned tickers (from ticker_sentiment array)
+    mentioned_ticker_counts = Counter()
+    
+    for article in all_articles:
+        ticker_sentiments = article.get('ticker_sentiment', [])
+        for ticker_data in ticker_sentiments:
+            ticker = ticker_data.get('ticker', 'Unknown')
+            mentioned_ticker_counts[ticker] += 1
+    
+    print(f"\n📈 BY MENTIONED TICKERS (from ticker_sentiment):")
+    for ticker, count in mentioned_ticker_counts.most_common():  # All tickers
+        print(f"   {ticker}: {count}")
+    
+    # Date ranges by source ticker
+    source_ticker_dates = defaultdict(list)
+    for article in all_articles:
+        ticker = article.get('source_ticker', 'Unknown')
+        date_str = article.get('time_published', '')
+        if date_str:
+            try:
+                # Parse the time_published format: YYYYMMDDTHHMMSS
+                date_obj = datetime.strptime(date_str, '%Y%m%dT%H%M%S')
+                source_ticker_dates[ticker].append(date_obj)
+            except Exception:
+                continue
+    
+    print(f"\n📅 DATE RANGES BY SOURCE TICKER:")
+    for ticker in sorted(source_ticker_counts.keys()):
+        dates = source_ticker_dates[ticker]
+        if dates:
+            min_date = min(dates)
+            max_date = max(dates)
+            print(f"   {ticker}: {min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')} ({len(dates)} articles)")
+        else:
+            print(f"   {ticker}: No valid dates found")
+    
+
+    
+    # Overall sentiment
     sentiment_counts = Counter(article.get('overall_sentiment_label', 'Unknown') for article in all_articles)
-    print(f"\n😊 BY SENTIMENT:")
+    print(f"\n😊 OVERALL SENTIMENT (by article):")
     for sentiment, count in sentiment_counts.most_common():
         print(f"   {sentiment}: {count}")
     
@@ -65,7 +104,11 @@ def simple_analyze():
     print(f"\n📰 SAMPLE ARTICLES:")
     for i, article in enumerate(all_articles[:3]):
         print(f"   {i+1}. {article.get('title', 'No title')[:60]}...")
-        print(f"      Ticker: {article.get('source_ticker')} | Sentiment: {article.get('overall_sentiment_label')}")
+        print(f"      Source Ticker: {article.get('source_ticker')} | Sentiment: {article.get('overall_sentiment_label')}")
+        ticker_sentiments = article.get('ticker_sentiment', [])
+        if ticker_sentiments:
+            mentioned_tickers = [ts.get('ticker') for ts in ticker_sentiments]
+            print(f"      Mentioned Tickers: {', '.join(mentioned_tickers)}")
         print()
 
 if __name__ == "__main__":

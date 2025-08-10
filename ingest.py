@@ -16,73 +16,42 @@ SLEEP_BETWEEN_RUNS = 300  # 5 minutes between ingestion cycles
 MAX_TICKERS_PER_RUN = int(os.getenv("MAX_TICKERS_PER_RUN", "3"))  # Process max 3 tickers per run
 MAX_RETRIES = 3  # Maximum retries for failed API calls
 
-def fetch_news(ticker, time_from=None, time_to=None):
-    """Fetch news for a specific ticker with optional date filtering"""
+def fetch_news(ticker, time_from=None, time_to=None, sort=None, limit=None):
+    """Fetch news per ticker con opzione data/sort/limit; NO fallback senza date."""
     url = (
         "https://www.alphavantage.co/query?"
         f"function=NEWS_SENTIMENT&tickers={ticker}&apikey={API_KEY}"
     )
-    
-    # Add date filters if provided
     if time_from:
         url += f"&time_from={time_from}"
     if time_to:
         url += f"&time_to={time_to}"
-    
+    if sort:
+        url += f"&sort={sort}"           # es. EARLIEST
+    if limit:
+        url += f"&limit={limit}"         # es. 1000
+
     print(f"🔗 API URL: {url}")
-    
-    r = requests.get(url)
+    r = requests.get(url, timeout=30)
     if r.status_code != 200:
         print(f"❌ Error for {ticker}: HTTP {r.status_code}")
         return []
-    
+
     response = r.json()
     print(f"📊 Response keys: {list(response.keys())}")
-    
-    # Check for API errors and rate limiting
-    if "Information" in response:
-        info_msg = response["Information"]
-        print(f"⚠️  API Information: {info_msg}")
-        
-        if "API call frequency" in info_msg or "rate" in info_msg.lower():
-            print("🚫 Rate limit exceeded! Waiting 2 minutes...")
-            time.sleep(120)  # Wait 2 minutes
+
+    # Se l’API segnala limiti/errore, NON richiamiamo senza date
+    for k in ("Information", "Error Message", "Note"):
+        if k in response:
+            msg = response[k]
+            print(f"⚠️  API {k}: {msg}")
+            # Attendi un po' se è rate limit, poi restituisci []
+            if "limit" in msg.lower() or "rate" in msg.lower():
+                time.sleep(60)
             return []
-        elif "limit" in info_msg.lower():
-            print("🚫 API limit reached! Waiting 1 minute...")
-            time.sleep(60)  # Wait 1 minute
-            return []
-        else:
-            print(f"ℹ️  API Info: {info_msg}")
-            # Try fallback without date filters
-            if time_from or time_to:
-                print("🔄 Trying fallback without date filters...")
-                return fetch_news(ticker)  # Recursive call without date filters
-            return []
-    
-    if "Error Message" in response:
-        print(f"❌ API Error: {response['Error Message']}")
-        # Try fallback without date filters
-        if time_from or time_to:
-            print("🔄 Trying fallback without date filters...")
-            return fetch_news(ticker)  # Recursive call without date filters
-        return []
-    
-    if "Note" in response:
-        print(f"⚠️  API Note: {response['Note']}")
-        if "limit" in response['Note'].lower():
-            print("🚫 API limit reached! Waiting 1 minute...")
-            time.sleep(60)
-            return []
-        # Try fallback without date filters
-        if time_from or time_to:
-            print("🔄 Trying fallback without date filters...")
-            return fetch_news(ticker)  # Recursive call without date filters
-        return []
-    
+
     feed = response.get("feed", [])
     print(f"📊 Feed length: {len(feed)}")
-    
     return feed
 
 def load_existing_articles():
@@ -334,15 +303,21 @@ def fetch_historical_news_year():
             print(f"📅 Processing chunk {chunk_number}/{total_chunks}: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
             
             # Format dates for API (YYYYMMDDTHHMMSS)
-            time_from = current_start.strftime("%Y%m%dT000000")
-            time_to = current_end.strftime("%Y%m%dT235959")
+            time_from = current_start.strftime("%Y%m%dT0000")
+            time_to = current_end.strftime("%Y%m%dT2359")
             
             print(f"📅 Using date range: {time_from} to {time_to}")
             
             # Retry logic for API calls
             news_list = []
             for retry in range(MAX_RETRIES):
-                news_list = fetch_news(ticker, time_from=time_from, time_to=time_to)
+                news_list = fetch_news(
+                   ticker,
+                   time_from=time_from,
+                   time_to=time_to,
+                   sort="EARLIEST",   # ordina dal più vecchio al più nuovo
+                   limit=1000         # richiedi fino a 1000 articoli nel range
+                    )
                 if news_list or retry == MAX_RETRIES - 1:
                     break
                 print(f"🔄 Retry {retry + 1}/{MAX_RETRIES} for {ticker} chunk {chunk_number}")
