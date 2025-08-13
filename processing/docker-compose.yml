@@ -1,0 +1,12 @@
+services:
+  news-processor:
+    build: .
+    container_name: dollarpunk-news-processor
+    volumes:
+      # Monta la directory output per leggere i file JSON e scrivere i risultati
+      - ../output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: "no"
+    # Comando per eseguire il processing
+    command: python process_news_data.py
