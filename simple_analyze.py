@@ -50,18 +50,7 @@ def simple_analyze():
     for ticker, count in source_ticker_counts.most_common():
         print(f"   {ticker}: {count}")
     
-    # By mentioned tickers (from ticker_sentiment array)
-    mentioned_ticker_counts = Counter()
-    
-    for article in all_articles:
-        ticker_sentiments = article.get('ticker_sentiment', [])
-        for ticker_data in ticker_sentiments:
-            ticker = ticker_data.get('ticker', 'Unknown')
-            mentioned_ticker_counts[ticker] += 1
-    
-    print(f"\n📈 BY MENTIONED TICKERS (from ticker_sentiment):")
-    for ticker, count in mentioned_ticker_counts.most_common():  # All tickers
-        print(f"   {ticker}: {count}")
+
     
     # Date ranges by source ticker
     source_ticker_dates = defaultdict(list)
@@ -105,10 +94,6 @@ def simple_analyze():
     for i, article in enumerate(all_articles[:3]):
         print(f"   {i+1}. {article.get('title', 'No title')[:60]}...")
         print(f"      Source Ticker: {article.get('source_ticker')} | Sentiment: {article.get('overall_sentiment_label')}")
-        ticker_sentiments = article.get('ticker_sentiment', [])
-        if ticker_sentiments:
-            mentioned_tickers = [ts.get('ticker') for ts in ticker_sentiments]
-            print(f"      Mentioned Tickers: {', '.join(mentioned_tickers)}")
         print()
 
 if __name__ == "__main__":
