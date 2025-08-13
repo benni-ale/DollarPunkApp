@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  dollarpunk-ingest:
+    build: .
+    volumes:
+      - ../output:/app/output
+      - ../.env:/app/.env:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - INGESTION_MODE=2  # Default to historical year ingestion

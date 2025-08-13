@@ -14,7 +14,7 @@ def simple_analyze():
     print("=" * 50)
     
     # Find all JSON files
-    files = glob.glob("output/news_data_*.json")
+    files = glob.glob("../output/news_data_*.json")
     if not files:
         print("❌ No data files found in output/")
         return
