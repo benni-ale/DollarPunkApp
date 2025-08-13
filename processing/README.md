@@ -81,8 +81,8 @@ Il sistema di delta logging monitora le modifiche tra le esecuzioni:
   "table_name": "topics",
   "insertions_count": 150,
   "deletions_count": 25,
-  "insertions": [...],  // Record nuovi completi
-  "deletions": [...]    // Hash dei record rimossi
+  "insertions": ["abc123...", "def456..."],  // Hash dei record aggiunti
+  "deletions": ["ghi789...", "jkl012..."]    // Hash dei record rimossi
 }
 ```
 

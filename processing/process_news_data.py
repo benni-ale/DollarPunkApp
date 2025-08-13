@@ -298,31 +298,29 @@ class NewsDataProcessor:
         if current_file.exists():
             current_file.rename(previous_file)
     
-    def calculate_delta(self, df: pd.DataFrame, table_name: str) -> Tuple[List[Dict], List[Dict]]:
+    def calculate_delta(self, df: pd.DataFrame, table_name: str) -> Tuple[List[str], List[str]]:
         """Calcola le inserzioni e cancellazioni rispetto allo stato precedente"""
         current_hashes = set()
-        hash_to_record = {}
         
         # Genera hash per tutti i record correnti
         for _, row in df.iterrows():
             record = row.to_dict()
             hash_value = self.generate_record_hash(record, table_name)
             current_hashes.add(hash_value)
-            hash_to_record[hash_value] = record
         
         # Carica hash precedenti
         previous_hashes = self.load_previous_state(table_name)
         
         # Calcola inserzioni (presenti ora, non prima)
-        insertions = [hash_to_record[hash_value] for hash_value in current_hashes - previous_hashes]
+        insertions = list(current_hashes - previous_hashes)
         
         # Calcola cancellazioni (presenti prima, non ora)
         deletions = list(previous_hashes - current_hashes)
         
         return insertions, deletions
     
-    def save_delta_log(self, table_name: str, insertions: List[Dict], deletions: List[str], timestamp: str):
-        """Salva il log delle modifiche"""
+    def save_delta_log(self, table_name: str, insertions: List[str], deletions: List[str], timestamp: str):
+        """Salva il log delle modifiche (solo hash)"""
         delta_file = self.delta_log_dir / f"{table_name}_delta_{timestamp}.json"
         
         delta_data = {
@@ -330,8 +328,8 @@ class NewsDataProcessor:
             'table_name': table_name,
             'insertions_count': len(insertions),
             'deletions_count': len(deletions),
-            'insertions': insertions,
-            'deletions': deletions
+            'insertions': insertions,  # Lista di hash aggiunti
+            'deletions': deletions     # Lista di hash rimossi
         }
         
         with open(delta_file, 'w', encoding='utf-8') as f:
