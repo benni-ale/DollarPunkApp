@@ -100,15 +100,45 @@ processing/
 ├── Dockerfile              # Configurazione Docker
 ├── docker-compose.yml      # Orchestrazione Docker
 ├── process_news_data.py    # Script principale
+├── reorganize_files.py     # Script per riorganizzare i file
 ├── requirements.txt        # Dipendenze Python
 ├── README.md              # Documentazione
 └── .dockerignore          # File da escludere dal build
 
-../output/                 # Directory con i file JSON (montata come volume)
-../output/processed/       # Directory di output (montata come volume)
+../output/                 # Directory principale
+├── ingested/              # File JSON delle news (input)
+└── processed/             # Tabelle CSV e delta log (output)
 ```
+
+## Workflow Completo
+
+### 1. Ingestion (Genera nuovi file)
+```bash
+cd ingestion
+docker-compose up --build
+```
+- Scrive file JSON in `../output/ingested/` con formato: `news_data_batch_20250808_100548_0001.json`
+
+### 2. Riorganizzazione (Solo per file esistenti)
+Se hai file vecchi da riorganizzare:
+```bash
+cd processing
+python reorganize_files.py
+```
+- Sposta file dalla directory principale a `../output/ingested/`
+- Rinomina: `news_data_batch_0001_20250808_100548.json` → `news_data_batch_20250808_100548_0001.json`
+
+### 3. Processing
+```bash
+cd processing
+docker-compose up --build
+```
+- Legge da `../output/ingested/`
+- Scrive tabelle in `../output/processed/`
 
 ## Volumi Docker
 
 Il container Docker monta il seguente volume:
-- `../output:/app/output` - Directory di input/output (lettura/scrittura)
+- `../output:/app/output` - Directory principale (lettura/scrittura)
+  - `/app/output/ingested/` - File JSON di input (lettura)
+  - `/app/output/processed/` - Tabelle CSV e delta log di output (scrittura)

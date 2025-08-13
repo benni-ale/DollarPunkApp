@@ -22,11 +22,11 @@ class NewsDataProcessor:
         # Gestisce i percorsi sia per esecuzione locale che Docker
         if Path("/app").exists():
             # Siamo in Docker, usa percorsi assoluti
-            self.input_dir = Path("/app/output")
+            self.input_dir = Path("/app/output/ingested")
             self.output_dir = Path("/app/output/processed")
         else:
             # Esecuzione locale
-            self.input_dir = Path(input_dir)
+            self.input_dir = Path(input_dir) / "ingested"
             self.output_dir = Path(output_dir)
         
         # Crea le directory di output

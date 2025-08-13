@@ -4,6 +4,7 @@ import time
 import os
 import glob
 from datetime import datetime, timedelta
+from pathlib import Path
 from tqdm import tqdm
 from dotenv import load_dotenv
 
@@ -73,8 +74,15 @@ def load_existing_articles():
     existing_articles = []
     existing_urls = set()
 
-    pattern = "output/news_data_*.json"
-    files = glob.glob(pattern)
+    # Cerca sia nella directory principale che in ingested
+    patterns = [
+        "output/news_data_*.json",  # Vecchi file nella directory principale
+        "output/ingested/news_data_*.json"  # Nuovi file nella directory ingested
+    ]
+    
+    files = []
+    for pattern in patterns:
+        files.extend(glob.glob(pattern))
 
     if not files:
         print("No existing files found, starting fresh")
@@ -100,7 +108,13 @@ def load_existing_articles():
 def write_batch_file(articles, batch_number):
     """Write a batch of articles to a separate file"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"output/news_data_batch_{batch_number:04d}_{timestamp}.json"
+    
+    # Crea la directory ingested se non esiste
+    ingested_dir = Path("output/ingested")
+    ingested_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Nuovo formato: news_data_batch_20250808_100548_0001.json
+    filename = ingested_dir / f"news_data_batch_{timestamp}_{batch_number:04d}.json"
 
     # Get date range for this batch
     if articles:
