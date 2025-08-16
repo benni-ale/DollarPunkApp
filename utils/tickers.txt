@@ -1,3 +1,4 @@
+'NVDA', 'MSFT', 'AAPL', 'GOOG', 'AMZN', 'META', 'AVGO', 'TSLA', 'BRK-B', 'JPM', 'WMT', 'ORCL', 'V', 'LLY', 'NFLX', 'MA', 'XOM', 'COST', 'JNJ', 'PLTR', 'HD', 'ABBV', 'PG', 'BAC', 'CVX', 'KO', 'AMD', 'TMUS', 'GE', 'UNH', 'CSCO', 'PM', 'WFC', 'CRM', 'MS', 'ABT', 'IBM', 'GS', 'MCD', 'AXP', 'BX', 'MRK', 'DIS', 'T', 'RTX', 'PEP', 'INTU', 'UBER', 'CAT', 'VZ', 'TMO', 'NOW', 'BA', 'TXN', 'BKNG', 'BLK', 'SCHW', 'ANET', 'C', 'ISRG'
 SPY,QQQ,JPM,BAC,XOM,GLD
 AAPL,TSLA,MSFT,GOOG,NVDA,AMZN
 META, AVGO, COST, ADBE, AMD

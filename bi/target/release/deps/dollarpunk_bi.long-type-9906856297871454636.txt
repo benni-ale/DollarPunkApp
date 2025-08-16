@@ -1,1 +1,0 @@
-Cloned<Filter<std::slice::Iter<'_, TickerData>, {closure@src\main.rs:78:29: 78:37}>>

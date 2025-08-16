@@ -36,6 +36,14 @@ services:
     networks:
       - dollarpunk-network
 
+  dollarpunk-utils:
+    build: ./utils
+    container_name: dollarpunk-utils
+    volumes:
+      - ./utils:/app
+    networks:
+      - dollarpunk-network
+
 networks:
   dollarpunk-network:
     driver: bridge 
