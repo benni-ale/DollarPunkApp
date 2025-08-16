@@ -382,6 +382,14 @@ def main():
                     "View Type",
                     ["Daily Count", "Sentiment Heatmap", "Ticker Activity", "Topic Activity"]
                 )
+                
+                # Sentiment calculation method (only for sentiment heatmap)
+                if view_type == "Sentiment Heatmap":
+                    sentiment_method = st.selectbox(
+                        "Sentiment Calculation",
+                        ["Simple Average", "Weighted by Relevance"],
+                        help="Simple Average: mean of sentiment scores. Weighted: relevance-weighted average."
+                    )
             
             # Filter data for selected month
             if selected_month:
@@ -434,6 +442,49 @@ def main():
                         )
                         st.plotly_chart(fig, use_container_width=True)
                         
+                        # Add calendar view with day numbers for daily count
+                        st.subheader("📅 Calendar View with Day Numbers")
+                        
+                        # Define day names in order
+                        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        
+                        # Create calendar grid with day numbers
+                        calendar_grid_count = calendar_df.pivot(index='week', columns='day_name', values='count')
+                        
+                        # Create heatmap with day numbers as annotations
+                        fig_calendar_count = px.imshow(
+                            calendar_grid_count,
+                            title=f"Calendar View - {selected_month.strftime('%B %Y')}",
+                            color_continuous_scale='Blues',
+                            aspect='auto'
+                        )
+                        
+                        # Add day numbers as annotations
+                        annotations_count = []
+                        for week in range(1, 6):
+                            for day_idx, day_name in enumerate(day_names):
+                                if week in calendar_grid_count.index and day_name in calendar_grid_count.columns:
+                                    count_val = calendar_grid_count.loc[week, day_name]
+                                    if not pd.isna(count_val):
+                                        day_number = (week - 1) * 7 + day_idx + 1
+                                        annotations_count.append(
+                                            dict(
+                                                x=day_idx,
+                                                y=week-1,
+                                                text=f"{day_number}<br>{int(count_val)}",
+                                                showarrow=False,
+                                                font=dict(size=10, color="black"),
+                                                bgcolor="rgba(255,255,255,0.7)"
+                                            )
+                                        )
+                        
+                        fig_calendar_count.update_layout(
+                            annotations=annotations_count,
+                            xaxis_title="Day of Week",
+                            yaxis_title="Week of Month"
+                        )
+                        st.plotly_chart(fig_calendar_count, use_container_width=True)
+                        
                         # Summary statistics
                         col1, col2, col3, col4 = st.columns(4)
                         with col1:
@@ -447,8 +498,15 @@ def main():
                             st.metric("Busiest Day", f"{busiest_day['date'].strftime('%b %d')} ({busiest_day['count']})")
                     
                     elif view_type == "Sentiment Heatmap":
-                        # Sentiment heatmap
-                        daily_sentiment = month_data.groupby('date')['overall_sentiment_score'].mean().reset_index()
+                        # Sentiment heatmap with weighted calculation option
+                        if sentiment_method == "Weighted by Relevance" and 'relevance_score' in month_data.columns:
+                            # Weighted average: sentiment * relevance / sum(relevance)
+                            daily_sentiment = month_data.groupby('date').apply(
+                                lambda x: np.average(x['overall_sentiment_score'], weights=x['relevance_score'])
+                            ).reset_index(name='overall_sentiment_score')
+                        else:
+                            # Simple average
+                            daily_sentiment = month_data.groupby('date')['overall_sentiment_score'].mean().reset_index()
                         
                         # Create calendar grid for sentiment
                         all_dates = pd.date_range(start=month_start, end=month_end, freq='D')
@@ -466,9 +524,10 @@ def main():
                         
                         sentiment_df = pd.DataFrame(sentiment_data)
                         
+                        # Create calendar-style heatmap
                         fig = px.imshow(
                             sentiment_df.pivot(index='week', columns='day_name', values='sentiment'),
-                            title=f"Daily Average Sentiment - {selected_month.strftime('%B %Y')}",
+                            title=f"Daily {sentiment_method} Sentiment - {selected_month.strftime('%B %Y')}",
                             color_continuous_scale='RdYlGn',
                             aspect='auto'
                         )
@@ -477,6 +536,88 @@ def main():
                             yaxis_title="Week of Month"
                         )
                         st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Add calendar view with day numbers
+                        st.subheader("📅 Calendar View with Day Numbers")
+                        
+                        # Create a proper calendar grid
+                        calendar_grid = sentiment_df.pivot(index='week', columns='day_name', values='sentiment')
+                        
+                        # Create custom calendar display
+                        fig_calendar = go.Figure()
+                        
+                        # Define day names in order
+                        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        
+                        # Create calendar data with day numbers
+                        calendar_data = []
+                        for week in range(1, 6):  # Assume max 5 weeks
+                            for day_idx, day_name in enumerate(day_names):
+                                if week in calendar_grid.index and day_name in calendar_grid.columns:
+                                    sentiment_val = calendar_grid.loc[week, day_name]
+                                    if not pd.isna(sentiment_val):
+                                        calendar_data.append({
+                                            'week': week,
+                                            'day_name': day_name,
+                                            'sentiment': sentiment_val,
+                                            'day_number': (week - 1) * 7 + day_idx + 1
+                                        })
+                        
+                        if calendar_data:
+                            calendar_df = pd.DataFrame(calendar_data)
+                            
+                            # Create heatmap with day numbers as annotations
+                            fig_calendar = px.imshow(
+                                calendar_grid,
+                                title=f"Calendar View - {selected_month.strftime('%B %Y')}",
+                                color_continuous_scale='RdYlGn',
+                                aspect='auto'
+                            )
+                            
+                            # Add day numbers as annotations
+                            annotations = []
+                            for week in range(1, 6):
+                                for day_idx, day_name in enumerate(day_names):
+                                    if week in calendar_grid.index and day_name in calendar_grid.columns:
+                                        sentiment_val = calendar_grid.loc[week, day_name]
+                                        if not pd.isna(sentiment_val):
+                                            day_number = (week - 1) * 7 + day_idx + 1
+                                            annotations.append(
+                                                dict(
+                                                    x=day_idx,
+                                                    y=week-1,
+                                                    text=f"{day_number}<br>{sentiment_val:.2f}",
+                                                    showarrow=False,
+                                                    font=dict(size=10, color="black"),
+                                                    bgcolor="rgba(255,255,255,0.7)"
+                                                )
+                                            )
+                            
+                            fig_calendar.update_layout(
+                                annotations=annotations,
+                                xaxis_title="Day of Week",
+                                yaxis_title="Week of Month"
+                            )
+                            st.plotly_chart(fig_calendar, use_container_width=True)
+                        
+                        # Formula explanation
+                        with st.expander("📊 Formula Explanation"):
+                            if sentiment_method == "Weighted by Relevance":
+                                st.markdown("""
+                                **Weighted Average Formula:**
+                                ```
+                                Daily Sentiment = Σ(sentiment_score × relevance_score) / Σ(relevance_score)
+                                ```
+                                This gives more weight to articles with higher relevance scores.
+                                """)
+                            else:
+                                st.markdown("""
+                                **Simple Average Formula:**
+                                ```
+                                Daily Sentiment = Σ(sentiment_score) / number_of_articles
+                                ```
+                                This treats all articles equally regardless of relevance.
+                                """)
                         
                         # Sentiment summary
                         col1, col2, col3 = st.columns(3)
