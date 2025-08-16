@@ -126,7 +126,7 @@ def main():
             topics_df = topics_df[topics_df['topic'].isin(selected_topics)]
     
     # Main content
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Tickers Analysis", "🏷️ Topics Analysis", "📰 News Feed"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Overview", "📈 Tickers Analysis", "🏷️ Topics Analysis", "📰 News Feed", "📅 Calendar View"])
     
     with tab1:
         st.header("📊 Dashboard Overview")
@@ -352,6 +352,231 @@ def main():
                     
                     if 'url' in row and pd.notna(row['url']):
                         st.write(f"[Read Full Article]({row['url']})")
+    
+    with tab5:
+        st.header("📅 Calendar View")
+        
+        if 'time_published' in tickers_df.columns:
+            # Calendar view controls
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                # Month/Year selector
+                min_date = tickers_df['time_published'].min()
+                max_date = tickers_df['time_published'].max()
+                
+                # Get unique months
+                tickers_df['year_month'] = tickers_df['time_published'].dt.to_period('M')
+                available_months = sorted(tickers_df['year_month'].unique())
+                
+                selected_month = st.selectbox(
+                    "Select Month",
+                    options=available_months,
+                    index=len(available_months)-1 if len(available_months) > 0 else 0,
+                    format_func=lambda x: x.strftime('%B %Y')
+                )
+            
+            with col2:
+                # View type selector
+                view_type = st.selectbox(
+                    "View Type",
+                    ["Daily Count", "Sentiment Heatmap", "Ticker Activity", "Topic Activity"]
+                )
+            
+            # Filter data for selected month
+            if selected_month:
+                month_start = selected_month.start_time
+                month_end = selected_month.end_time
+                month_data = tickers_df[
+                    (tickers_df['time_published'] >= month_start) &
+                    (tickers_df['time_published'] <= month_end)
+                ]
+                
+                if len(month_data) > 0:
+                    # Create calendar data
+                    month_data['date'] = month_data['time_published'].dt.date
+                    month_data['day_of_week'] = month_data['time_published'].dt.day_name()
+                    month_data['week_of_month'] = ((month_data['time_published'].dt.day - 1) // 7) + 1
+                    
+                    if view_type == "Daily Count":
+                        # Daily article count heatmap
+                        daily_counts = month_data.groupby('date').size().reset_index(name='count')
+                        
+                        # Create calendar grid
+                        fig = go.Figure()
+                        
+                        # Get all dates in the month
+                        all_dates = pd.date_range(start=month_start, end=month_end, freq='D')
+                        calendar_data = []
+                        
+                        for date in all_dates:
+                            count = daily_counts[daily_counts['date'] == date.date()]['count'].iloc[0] if date.date() in daily_counts['date'].values else 0
+                            calendar_data.append({
+                                'date': date,
+                                'day': date.day,
+                                'day_name': date.strftime('%A'),
+                                'week': ((date.day - 1) // 7) + 1,
+                                'count': count
+                            })
+                        
+                        calendar_df = pd.DataFrame(calendar_data)
+                        
+                        # Create heatmap
+                        fig = px.imshow(
+                            calendar_df.pivot(index='week', columns='day_name', values='count'),
+                            title=f"Daily Article Count - {selected_month.strftime('%B %Y')}",
+                            color_continuous_scale='Blues',
+                            aspect='auto'
+                        )
+                        fig.update_layout(
+                            xaxis_title="Day of Week",
+                            yaxis_title="Week of Month"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Summary statistics
+                        col1, col2, col3, col4 = st.columns(4)
+                        with col1:
+                            st.metric("Total Articles", len(month_data))
+                        with col2:
+                            st.metric("Active Days", len(daily_counts))
+                        with col3:
+                            st.metric("Avg Articles/Day", f"{len(month_data)/len(all_dates):.1f}")
+                        with col4:
+                            busiest_day = daily_counts.loc[daily_counts['count'].idxmax()]
+                            st.metric("Busiest Day", f"{busiest_day['date'].strftime('%b %d')} ({busiest_day['count']})")
+                    
+                    elif view_type == "Sentiment Heatmap":
+                        # Sentiment heatmap
+                        daily_sentiment = month_data.groupby('date')['overall_sentiment_score'].mean().reset_index()
+                        
+                        # Create calendar grid for sentiment
+                        all_dates = pd.date_range(start=month_start, end=month_end, freq='D')
+                        sentiment_data = []
+                        
+                        for date in all_dates:
+                            sentiment = daily_sentiment[daily_sentiment['date'] == date.date()]['overall_sentiment_score'].iloc[0] if date.date() in daily_sentiment['date'].values else 0
+                            sentiment_data.append({
+                                'date': date,
+                                'day': date.day,
+                                'day_name': date.strftime('%A'),
+                                'week': ((date.day - 1) // 7) + 1,
+                                'sentiment': sentiment
+                            })
+                        
+                        sentiment_df = pd.DataFrame(sentiment_data)
+                        
+                        fig = px.imshow(
+                            sentiment_df.pivot(index='week', columns='day_name', values='sentiment'),
+                            title=f"Daily Average Sentiment - {selected_month.strftime('%B %Y')}",
+                            color_continuous_scale='RdYlGn',
+                            aspect='auto'
+                        )
+                        fig.update_layout(
+                            xaxis_title="Day of Week",
+                            yaxis_title="Week of Month"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Sentiment summary
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            avg_sentiment = month_data['overall_sentiment_score'].mean()
+                            st.metric("Avg Sentiment", f"{avg_sentiment:.3f}")
+                        with col2:
+                            positive_days = len(daily_sentiment[daily_sentiment['overall_sentiment_score'] > 0])
+                            st.metric("Positive Days", positive_days)
+                        with col3:
+                            negative_days = len(daily_sentiment[daily_sentiment['overall_sentiment_score'] < 0])
+                            st.metric("Negative Days", negative_days)
+                    
+                    elif view_type == "Ticker Activity":
+                        # Ticker activity calendar
+                        if 'ticker' in month_data.columns:
+                            # Get top tickers for the month
+                            top_tickers = month_data['ticker'].dropna().value_counts().head(5).index
+                            
+                            # Create activity data for each ticker
+                            ticker_activity = month_data[month_data['ticker'].isin(top_tickers)]
+                            daily_ticker_counts = ticker_activity.groupby(['date', 'ticker']).size().reset_index(name='count')
+                            
+                            # Pivot for heatmap
+                            ticker_pivot = daily_ticker_counts.pivot(index='date', columns='ticker', values='count').fillna(0)
+                            
+                            fig = px.imshow(
+                                ticker_pivot.T,  # Transpose to show tickers on y-axis
+                                title=f"Daily Ticker Activity - {selected_month.strftime('%B %Y')}",
+                                color_continuous_scale='Viridis',
+                                aspect='auto'
+                            )
+                            fig.update_layout(
+                                xaxis_title="Date",
+                                yaxis_title="Ticker"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Ticker summary
+                            st.subheader("Top Tickers This Month")
+                            ticker_summary = month_data['ticker'].dropna().value_counts().head(10)
+                            for ticker, count in ticker_summary.items():
+                                col1, col2 = st.columns([1, 3])
+                                with col1:
+                                    st.write(f"**{ticker}**")
+                                with col2:
+                                    st.progress(count / ticker_summary.max())
+                                    st.write(f"{count} articles")
+                    
+                    elif view_type == "Topic Activity":
+                        # Topic activity calendar
+                        if 'topic' in topics_df.columns:
+                            # Filter topics data for the same month
+                            month_topics = topics_df[
+                                (topics_df['time_published'] >= month_start) &
+                                (topics_df['time_published'] <= month_end)
+                            ]
+                            
+                            if len(month_topics) > 0:
+                                # Get top topics for the month
+                                top_topics = month_topics['topic'].dropna().value_counts().head(5).index
+                                
+                                # Create activity data for each topic
+                                topic_activity = month_topics[month_topics['topic'].isin(top_topics)]
+                                topic_activity['date'] = topic_activity['time_published'].dt.date
+                                daily_topic_counts = topic_activity.groupby(['date', 'topic']).size().reset_index(name='count')
+                                
+                                # Pivot for heatmap
+                                topic_pivot = daily_topic_counts.pivot(index='date', columns='topic', values='count').fillna(0)
+                                
+                                fig = px.imshow(
+                                    topic_pivot.T,  # Transpose to show topics on y-axis
+                                    title=f"Daily Topic Activity - {selected_month.strftime('%B %Y')}",
+                                    color_continuous_scale='Plasma',
+                                    aspect='auto'
+                                )
+                                fig.update_layout(
+                                    xaxis_title="Date",
+                                    yaxis_title="Topic"
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Topic summary
+                                st.subheader("Top Topics This Month")
+                                topic_summary = month_topics['topic'].dropna().value_counts().head(10)
+                                for topic, count in topic_summary.items():
+                                    col1, col2 = st.columns([1, 3])
+                                    with col1:
+                                        st.write(f"**{topic}**")
+                                    with col2:
+                                        st.progress(count / topic_summary.max())
+                                        st.write(f"{count} articles")
+                            else:
+                                st.info("No topic data available for the selected month.")
+                else:
+                    st.info(f"No data available for {selected_month.strftime('%B %Y')}")
+            else:
+                st.info("Please select a month to view calendar data.")
+        else:
+            st.error("No timestamp data available for calendar view.")
 
 if __name__ == "__main__":
     main()
