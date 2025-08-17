@@ -64,11 +64,11 @@ def build_calendar_matrix(values_by_date, year, month):
         Z.append(zrow); TEXT.append(trow)
     return np.array(Z, dtype=float), TEXT
 
-def render_sentiment_calendar(df, label_col, label_value, sel):
+def render_sentiment_calendar(df, label_col, label_value, date_range, sel):
     """Rende il calendario sentiment."""
     y, m = int(sel.start_time.year), int(sel.start_time.month)
     
-    # subset mese
+    # subset mese per il calendario
     mstart = pd.Timestamp(y, m, 1)
     mend   = pd.Timestamp(y, m, calendar.monthrange(y, m)[1], 23, 59, 59)
     month_df = df[(df['time_published'] >= mstart) & (df['time_published'] <= mend)]
@@ -92,44 +92,76 @@ def render_sentiment_calendar(df, label_col, label_value, sel):
     
     return daily, Z
 
-def render_sentiment_timeline(daily, label_col, label_value, sel):
-    """Rende il grafico timeline sentiment."""
+def render_sentiment_timeline(df, label_col, label_value, date_range):
+    """Rende il grafico timeline sentiment per l'intero intervallo date."""
+    # Applica filtro date range
+    if date_range:
+        start = pd.to_datetime(date_range[0])
+        end = pd.to_datetime(date_range[1]) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        df_filtered = df[(df['time_published'] >= start) & (df['time_published'] <= end)]
+    else:
+        df_filtered = df
+    
+    # sentiment giornaliero (pesato) per tutto l'intervallo
+    daily = daily_weighted_sentiment(df_filtered)
+    
+    if daily.empty:
+        st.info("Nessun dato sentiment nell'intervallo selezionato.")
+        return daily
+    
     line = daily.reset_index()
     line.columns = ['date', 'sentiment_w']
     
+    # Formatta il titolo con l'intervallo date
+    if date_range:
+        start_str = date_range[0].strftime('%d/%m/%Y')
+        end_str = date_range[1].strftime('%d/%m/%Y')
+        title = f"📈 Andamento sentiment giornaliero – {label_col.capitalize()} {label_value} – {start_str} → {end_str}"
+    else:
+        title = f"📈 Andamento sentiment giornaliero – {label_col.capitalize()} {label_value}"
+    
     fig_line = px.line(
         line, x='date', y='sentiment_w', markers=True,
-        title=f"📈 Andamento sentiment giornaliero – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
+        title=title,
         hover_data={'date': '|%Y-%m-%d'}
     )
     fig_line.update_yaxes(title="Sentiment (w)", range=[-1, 1])
     fig_line.update_xaxes(title="Data")
     fig_line.add_hline(y=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig_line, use_container_width=True)
+    
+    return daily
 
-def render_stock_price_chart(stocks_df, label_value, sel):
-    """Rende il grafico prezzi azioni."""
-    y, m = int(sel.start_time.year), int(sel.start_time.month)
-    
-    # subset mese
-    mstart = pd.Timestamp(y, m, 1)
-    mend   = pd.Timestamp(y, m, calendar.monthrange(y, m)[1], 23, 59, 59)
-    
-    # Get stock data for the selected ticker and month
-    stock_subset = stocks_df[
-        (stocks_df['ticker'] == label_value) & 
-        (stocks_df['date'] >= mstart) & 
-        (stocks_df['date'] <= mend)
-    ].copy()
+def render_stock_price_chart(stocks_df, label_value, date_range):
+    """Rende il grafico prezzi azioni per l'intero intervallo date."""
+    # Applica filtro date range
+    if date_range:
+        start = pd.to_datetime(date_range[0])
+        end = pd.to_datetime(date_range[1]) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        stock_subset = stocks_df[
+            (stocks_df['ticker'] == label_value) & 
+            (stocks_df['date'] >= start) & 
+            (stocks_df['date'] <= end)
+        ].copy()
+    else:
+        stock_subset = stocks_df[stocks_df['ticker'] == label_value].copy()
     
     if stock_subset.empty:
-        st.info(f"📊 Nessun dato stock disponibile per {label_value} nel periodo selezionato.")
+        st.info(f"📊 Nessun dato stock disponibile per {label_value} nell'intervallo selezionato.")
         return None
+    
+    # Formatta il titolo con l'intervallo date
+    if date_range:
+        start_str = date_range[0].strftime('%d/%m/%Y')
+        end_str = date_range[1].strftime('%d/%m/%Y')
+        title = f"💰 Prezzi di chiusura – {label_value} – {start_str} → {end_str}"
+    else:
+        title = f"💰 Prezzi di chiusura – {label_value}"
     
     # Grafico prezzi
     fig_stock = px.line(
         stock_subset, x='date', y='close', markers=True,
-        title=f"💰 Prezzi di chiusura – {label_value} – {sel.strftime('%B %Y')}",
+        title=title,
         hover_data={'date': '|%Y-%m-%d', 'close': ':.2f'}
     )
     fig_stock.update_yaxes(title="Prezzo di chiusura ($)")
@@ -152,31 +184,31 @@ def render_stock_price_chart(stocks_df, label_value, sel):
     
     return stock_subset
 
-def render_calendar_for(df, label_col, label_value, stocks_df=None):
+def render_calendar_for(df, label_col, label_value, stocks_df=None, date_range=None):
     sub = df[df[label_col].astype(str) == str(label_value)]
     if sub.empty:
         st.info("Nessun dato per la selezione.")
         return
 
-    # mesi disponibili
+    # mesi disponibili per il calendario
     months = sub['time_published'].dt.to_period('M').dropna().sort_values().unique()
-    sel = st.selectbox("Mese", options=list(months), index=len(months)-1,
+    sel = st.selectbox("Mese per calendario", options=list(months), index=len(months)-1,
                        format_func=lambda p: p.strftime("%B %Y"))
 
-    # 1. CALENDARIO SENTIMENT
+    # 1. CALENDARIO SENTIMENT (usa il mese selezionato)
     st.header("📅 Calendario Sentiment")
-    daily, Z = render_sentiment_calendar(sub, label_col, label_value, sel)
+    daily_cal, Z = render_sentiment_calendar(sub, label_col, label_value, date_range, sel)
     
-    # 2. TIMELINE SENTIMENT
+    # 2. TIMELINE SENTIMENT (usa l'intero intervallo date)
     st.header("📈 Timeline Sentiment")
-    render_sentiment_timeline(daily, label_col, label_value, sel)
+    daily_timeline = render_sentiment_timeline(sub, label_col, label_value, date_range)
     
-    # 3. GRAFICO PREZZI AZIONI (solo per ticker)
+    # 3. GRAFICO PREZZI AZIONI (usa l'intero intervallo date)
     if label_col == "ticker" and not stocks_df.empty:
         st.header("💰 Prezzi Azioni")
-        stock_data = render_stock_price_chart(stocks_df, label_value, sel)
+        stock_data = render_stock_price_chart(stocks_df, label_value, date_range)
     
-    # KPI rapidi sentiment
+    # KPI rapidi sentiment (dal calendario)
     st.header("📊 Metriche Sentiment")
     flat = Z[~np.isnan(Z)]
     c1, c2, c3 = st.columns(3)
@@ -225,7 +257,7 @@ def main():
     st.sidebar.success(f"📊 Analizzando: **{chosen}**")
     
     # Renderizza i grafici
-    render_calendar_for(fdf, label_col, chosen, stocks_df)
+    render_calendar_for(fdf, label_col, chosen, stocks_df, date_range)
 
 if __name__ == "__main__":
     main()
