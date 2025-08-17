@@ -297,7 +297,7 @@ def fetch_historical_news_year():
 
     # Calculate date range (last 365 days) - break into smaller chunks
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)
+    start_date = end_date - timedelta(days=1000)
 
     # Break into 30-day chunks to avoid overwhelming the API
     chunk_days = 30
