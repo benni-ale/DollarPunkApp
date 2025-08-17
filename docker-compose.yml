@@ -44,6 +44,17 @@ services:
     networks:
       - dollarpunk-network
 
+  dollarpunk-stocks:
+    build: ./stocks
+    container_name: dollarpunk-stocks-fetch
+    volumes:
+      - ./output:/app/output
+      - ./.env:/app/.env:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - dollarpunk-network
+
 networks:
   dollarpunk-network:
     driver: bridge 

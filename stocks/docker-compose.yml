@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  stocks-fetch:
+    build: .
+    container_name: dollarpunk-stocks-fetch
+    volumes:
+      # Mount the local output directory to persist CSV files
+      - ../output:/app/output
+      # Mount the .env file from the root directory
+      - ../.env:/app/.env:ro
+    environment:
+      # Environment variables can be overridden here or in .env file
+      - PYTHONUNBUFFERED=1
+    restart: "no"
+    # Optional: run with specific environment variables
+    # environment:
+    #   - TICKERS=AAPL,MSFT,GOOGL
+    #   - MAX_TICKERS_PER_RUN=5
+    #   - DAYS_TO_FETCH=30
