@@ -4,7 +4,8 @@ import numpy as np
 import plotly.graph_objects as go
 import calendar
 from datetime import date as Date
-import plotly.express as px   # <-- aggiungi questo import
+import plotly.express as px
+from plotly.subplots import make_subplots
 
 
 st.set_page_config(page_title="Calendar – Weighted Sentiment", page_icon="📅", layout="wide")
@@ -13,10 +14,17 @@ st.set_page_config(page_title="Calendar – Weighted Sentiment", page_icon="📅
 def load_csvs():
     t = pd.read_csv('/app/data/processed/tickers.csv')
     p = pd.read_csv('/app/data/processed/topics.csv')
+    # Load stock data
+    try:
+        stocks_df = pd.read_csv('/app/data/stocks/stocks_data.csv')
+        stocks_df['date'] = pd.to_datetime(stocks_df['date'])
+    except FileNotFoundError:
+        stocks_df = pd.DataFrame()
+    
     for df in (t, p):
         if 'time_published' in df.columns:
             df['time_published'] = pd.to_datetime(df['time_published'], format='%Y%m%dT%H%M%S', errors='coerce')
-    return t, p
+    return t, p, stocks_df
 
 def apply_filters(df, date_range, label_col, selected_vals):
     df = df[df['time_published'].notna()]
@@ -56,22 +64,14 @@ def build_calendar_matrix(values_by_date, year, month):
         Z.append(zrow); TEXT.append(trow)
     return np.array(Z, dtype=float), TEXT
 
-def render_calendar_for(df, label_col, label_value):
-    sub = df[df[label_col].astype(str) == str(label_value)]
-    if sub.empty:
-        st.info("Nessun dato per la selezione.")
-        return
-
-    # mesi disponibili
-    months = sub['time_published'].dt.to_period('M').dropna().sort_values().unique()
-    sel = st.selectbox("Mese", options=list(months), index=len(months)-1,
-                       format_func=lambda p: p.strftime("%B %Y"))
+def render_sentiment_calendar(df, label_col, label_value, sel):
+    """Rende il calendario sentiment."""
     y, m = int(sel.start_time.year), int(sel.start_time.month)
-
+    
     # subset mese
     mstart = pd.Timestamp(y, m, 1)
     mend   = pd.Timestamp(y, m, calendar.monthrange(y, m)[1], 23, 59, 59)
-    month_df = sub[(sub['time_published'] >= mstart) & (sub['time_published'] <= mend)]
+    month_df = df[(df['time_published'] >= mstart) & (df['time_published'] <= mend)]
 
     # sentiment giornaliero (pesato)
     daily = daily_weighted_sentiment(month_df)  # index=python date
@@ -83,32 +83,101 @@ def render_calendar_for(df, label_col, label_value):
         colorscale='RdYlGn', zmin=-1, zmax=1, hoverinfo="skip", showscale=True
     ))
     fig.update_layout(
-        title=f"Sentiment ponderato giornaliero – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
+        title=f"📅 Sentiment ponderato giornaliero – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
         xaxis=dict(title="Giorno", tickmode='array', ticktext=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], tickvals=list(range(7))),
         yaxis=dict(title="Settimana", tickmode='array', ticktext=[f"W{i+1}" for i in range(len(Z))], tickvals=list(range(len(Z)))),
         margin=dict(t=60, l=10, r=10, b=10), height=420
     )
     st.plotly_chart(fig, use_container_width=True)
-    # --- LINE CHART (mese selezionato) ---
-    # serie giornaliera pesata per il mese corrente
+    
+    return daily, Z
+
+def render_sentiment_timeline(daily, label_col, label_value, sel):
+    """Rende il grafico timeline sentiment."""
     line = daily.reset_index()
     line.columns = ['date', 'sentiment_w']
-
-    # numero articoli per giorno (per hover)
-    counts = month_df.groupby(month_df['time_published'].dt.date).size()
-    line['n_articles'] = line['date'].map(counts).fillna(0).astype(int)
-
+    
     fig_line = px.line(
         line, x='date', y='sentiment_w', markers=True,
-        title=f"Andamento giornaliero (pesato) – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
-        hover_data={'n_articles': True, 'date': '|%Y-%m-%d'}
+        title=f"📈 Andamento sentiment giornaliero – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
+        hover_data={'date': '|%Y-%m-%d'}
     )
     fig_line.update_yaxes(title="Sentiment (w)", range=[-1, 1])
     fig_line.update_xaxes(title="Data")
-    fig_line.add_hline(y=0, line_dash="dash")
+    fig_line.add_hline(y=0, line_dash="dash", line_color="gray")
     st.plotly_chart(fig_line, use_container_width=True)
 
-    # KPI rapidi
+def render_stock_price_chart(stocks_df, label_value, sel):
+    """Rende il grafico prezzi azioni."""
+    y, m = int(sel.start_time.year), int(sel.start_time.month)
+    
+    # subset mese
+    mstart = pd.Timestamp(y, m, 1)
+    mend   = pd.Timestamp(y, m, calendar.monthrange(y, m)[1], 23, 59, 59)
+    
+    # Get stock data for the selected ticker and month
+    stock_subset = stocks_df[
+        (stocks_df['ticker'] == label_value) & 
+        (stocks_df['date'] >= mstart) & 
+        (stocks_df['date'] <= mend)
+    ].copy()
+    
+    if stock_subset.empty:
+        st.info(f"📊 Nessun dato stock disponibile per {label_value} nel periodo selezionato.")
+        return None
+    
+    # Grafico prezzi
+    fig_stock = px.line(
+        stock_subset, x='date', y='close', markers=True,
+        title=f"💰 Prezzi di chiusura – {label_value} – {sel.strftime('%B %Y')}",
+        hover_data={'date': '|%Y-%m-%d', 'close': ':.2f'}
+    )
+    fig_stock.update_yaxes(title="Prezzo di chiusura ($)")
+    fig_stock.update_xaxes(title="Data")
+    st.plotly_chart(fig_stock, use_container_width=True)
+    
+    # Stock price KPI
+    st.subheader("📈 Metriche Stock Price")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Prezzo iniziale", f"${stock_subset['close'].iloc[0]:.2f}")
+    with col2:
+        st.metric("Prezzo finale", f"${stock_subset['close'].iloc[-1]:.2f}")
+    with col3:
+        change = stock_subset['close'].iloc[-1] - stock_subset['close'].iloc[0]
+        change_pct = (change / stock_subset['close'].iloc[0]) * 100
+        st.metric("Variazione", f"${change:.2f}", f"{change_pct:+.2f}%")
+    with col4:
+        st.metric("Prezzo massimo", f"${stock_subset['close'].max():.2f}")
+    
+    return stock_subset
+
+def render_calendar_for(df, label_col, label_value, stocks_df=None):
+    sub = df[df[label_col].astype(str) == str(label_value)]
+    if sub.empty:
+        st.info("Nessun dato per la selezione.")
+        return
+
+    # mesi disponibili
+    months = sub['time_published'].dt.to_period('M').dropna().sort_values().unique()
+    sel = st.selectbox("Mese", options=list(months), index=len(months)-1,
+                       format_func=lambda p: p.strftime("%B %Y"))
+
+    # 1. CALENDARIO SENTIMENT
+    st.header("📅 Calendario Sentiment")
+    daily, Z = render_sentiment_calendar(sub, label_col, label_value, sel)
+    
+    # 2. TIMELINE SENTIMENT
+    st.header("📈 Timeline Sentiment")
+    render_sentiment_timeline(daily, label_col, label_value, sel)
+    
+    # 3. GRAFICO PREZZI AZIONI (solo per ticker)
+    if label_col == "ticker" and not stocks_df.empty:
+        st.header("💰 Prezzi Azioni")
+        stock_data = render_stock_price_chart(stocks_df, label_value, sel)
+    
+    # KPI rapidi sentiment
+    st.header("📊 Metriche Sentiment")
     flat = Z[~np.isnan(Z)]
     c1, c2, c3 = st.columns(3)
     c1.metric("Media mese (pesata)", f"{np.nanmean(flat):.3f}" if flat.size else "NA")
@@ -129,7 +198,7 @@ def render_calendar_for(df, label_col, label_value):
 def main():
     st.title("📅 Calendar – Weighted Sentiment")
 
-    tickers_df, topics_df = load_csvs()
+    tickers_df, topics_df, stocks_df = load_csvs()
     dataset = st.sidebar.radio("Dataset", ["Tickers", "Topics"])
     df = tickers_df.copy() if dataset == "Tickers" else topics_df.copy()
     label_col = "ticker" if dataset == "Tickers" else "topic"
@@ -137,21 +206,26 @@ def main():
     if not need.issubset(df.columns):
         st.error(f"Mancano colonne richieste: {need - set(df.columns)}"); return
 
-    # filtri
+    # filtri nella sidebar
     st.sidebar.header("Filtri")
     min_d, max_d = df['time_published'].min().date(), df['time_published'].max().date()
     date_range = st.sidebar.date_input("Intervallo date", (min_d, max_d), min_value=min_d, max_value=max_d)
+    
+    # Selezione ticker/topic nella sidebar
     opts = sorted(df[label_col].dropna().astype(str).unique())
-    chosen_filter = st.sidebar.multiselect(f"Filtra {label_col}", opts)
-    fdf = apply_filters(df, date_range, label_col, chosen_filter)
+    chosen = st.sidebar.selectbox(f"Seleziona {label_col.capitalize()}", opts)
+    
+    # Applica filtri
+    fdf = apply_filters(df, date_range, label_col, [chosen])
 
     if fdf.empty:
         st.info("Nessun dato dopo i filtri."); return
 
-    # scegli l'elemento da visualizzare
-    values = sorted(fdf[label_col].dropna().astype(str).unique())
-    chosen = st.selectbox(f"Seleziona {label_col.capitalize()} per il calendario", values)
-    render_calendar_for(fdf, label_col, chosen)
+    # Mostra il ticker/topic selezionato
+    st.sidebar.success(f"📊 Analizzando: **{chosen}**")
+    
+    # Renderizza i grafici
+    render_calendar_for(fdf, label_col, chosen, stocks_df)
 
 if __name__ == "__main__":
     main()
