@@ -16,6 +16,7 @@ MAX_RUNTIME_HOURS = 8  # Run for 8 hours
 SLEEP_BETWEEN_RUNS = 300  # 5 minutes between ingestion cycles
 MAX_TICKERS_PER_RUN = int(os.getenv("MAX_TICKERS_PER_RUN", "3"))  # Process max N tickers per run
 MAX_RETRIES = 3  # Maximum retries for failed API calls
+DAYS_TO_FETCH = int(os.getenv("DAYS_TO_FETCH", "1000"))  # Number of days to fetch from the past
 
 def fetch_news(ticker, time_from=None, time_to=None, sort=None, limit=None):
     """Fetch news per ticker con opzione data/sort/limit; ritorna (feed, status).
@@ -295,16 +296,16 @@ def fetch_historical_news_year():
 
     print("✅ API connection test passed. Proceeding with ingestion...")
 
-    # Calculate date range (last 365 days) - break into smaller chunks
+    # Calculate date range using DAYS_TO_FETCH from .env - break into smaller chunks
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=1000)
+    start_date = end_date - timedelta(days=DAYS_TO_FETCH)
 
     # Break into 30-day chunks to avoid overwhelming the API
     chunk_days = 30
-    total_chunks = (365 + chunk_days - 1) // chunk_days
+    total_chunks = (DAYS_TO_FETCH + chunk_days - 1) // chunk_days
 
     print(f"📅 Fetching news from: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-    print(f"⏰ Total days: 365 (broken into {total_chunks} chunks of {chunk_days} days)")
+    print(f"⏰ Total days: {DAYS_TO_FETCH} (broken into {total_chunks} chunks of {chunk_days} days)")
     print(f"📦 Batch size: {BATCH_SIZE} articles per file")
 
     # Load existing articles
