@@ -121,7 +121,7 @@ def render_sentiment_timeline(df, label_col, label_value, date_range):
         title = f"📈 Andamento sentiment giornaliero – {label_col.capitalize()} {label_value}"
     
     fig_line = px.line(
-        line, x='date', y='sentiment_w', markers=True,
+        line, x='date', y='sentiment_w',
         title=title,
         hover_data={'date': '|%Y-%m-%d'}
     )
@@ -160,7 +160,7 @@ def render_stock_price_chart(stocks_df, label_value, date_range):
     
     # Grafico prezzi
     fig_stock = px.line(
-        stock_subset, x='date', y='close', markers=True,
+        stock_subset, x='date', y='close',
         title=title,
         hover_data={'date': '|%Y-%m-%d', 'close': ':.2f'}
     )
@@ -243,9 +243,27 @@ def main():
     min_d, max_d = df['time_published'].min().date(), df['time_published'].max().date()
     date_range = st.sidebar.date_input("Intervallo date", (min_d, max_d), min_value=min_d, max_value=max_d)
     
-    # Selezione ticker/topic nella sidebar
+    # Selezione ticker/topic nella sidebar con barra di ricerca
     opts = sorted(df[label_col].dropna().astype(str).unique())
-    chosen = st.sidebar.selectbox(f"Seleziona {label_col.capitalize()}", opts)
+    
+    # Barra di ricerca per filtrare le opzioni
+    search_term = st.sidebar.text_input(f"🔍 Cerca {label_col.capitalize()}", placeholder=f"Digita per cercare {label_col}...")
+    
+    # Filtra le opzioni basandosi sulla ricerca
+    if search_term:
+        filtered_opts = [opt for opt in opts if search_term.upper() in opt.upper()]
+        if not filtered_opts:
+            st.sidebar.warning(f"Nessun {label_col} trovato per '{search_term}'")
+            filtered_opts = opts
+    else:
+        filtered_opts = opts
+    
+    # Selectbox con le opzioni filtrate
+    chosen = st.sidebar.selectbox(
+        f"Seleziona {label_col.capitalize()}", 
+        filtered_opts,
+        help=f"Usa la barra di ricerca sopra per filtrare i {label_col}"
+    )
     
     # Applica filtri
     fdf = apply_filters(df, date_range, label_col, [chosen])
