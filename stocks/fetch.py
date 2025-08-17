@@ -57,7 +57,9 @@ print(f"   MAX_RETRIES: {MAX_RETRIES}")
 
 # Output: /app/output/stocks (mounted from ../output)
 OUTPUT_DIR = Path("/app/output/stocks")
+OUTPUT_FILE = OUTPUT_DIR / "stocks_data.csv"
 print(f"📁 OUTPUT_DIR: {OUTPUT_DIR}")
+print(f"📄 OUTPUT_FILE: {OUTPUT_FILE}")
 
 try:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -107,9 +109,10 @@ def fetch_prices_for_symbol(symbol: str):
         last_status = status
     return None, last_status or "unknown_error", symbol
 
-def parse_row(date_str, payload):
+def parse_row(date_str, ticker, payload):
     return {
         "date": date_str,
+        "ticker": ticker,
         "open": payload.get("1. open"),
         "high": payload.get("2. high"),
         "low": payload.get("3. low"),
@@ -117,25 +120,53 @@ def parse_row(date_str, payload):
         "volume": payload.get("6. volume") or payload.get("5. volume"),
     }
 
-def load_existing_dates(csv_path: Path):
+def load_existing_data_for_ticker(csv_path: Path, target_ticker: str):
+    """Load existing data for a specific ticker as dict: {date: row_data}"""
     if not csv_path.exists():
-        return set()
-    dates = set()
+        return {}
+    existing_data = {}
     with open(csv_path, "r", newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            d = row.get("date")
-            if d:
-                dates.add(d)
-    return dates
+            date = row.get("date")
+            ticker = row.get("ticker")
+            if date and ticker == target_ticker:
+                existing_data[date] = row
+    return existing_data
 
-def write_rows(csv_path: Path, rows):
-    write_header = not csv_path.exists()
-    with open(csv_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["date", "open", "high", "low", "close", "volume"])
-        if write_header:
-            writer.writeheader()
-        for r in rows:
-            writer.writerow(r)
+def merge_and_write_ticker_data(csv_path: Path, ticker_data: dict, ticker: str):
+    """Merge ticker data with existing CSV and write incrementally"""
+    # Load existing data for this ticker
+    existing_data = load_existing_data_for_ticker(csv_path, ticker)
+    
+    # Merge new data with existing data (new data overwrites existing)
+    merged_data = existing_data.copy()
+    merged_data.update(ticker_data)
+    
+    # Read all existing data from CSV
+    all_rows = []
+    if csv_path.exists():
+        with open(csv_path, "r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # Skip rows for this ticker (we'll replace them)
+                if row.get("ticker") != ticker:
+                    all_rows.append(row)
+    
+    # Add merged ticker data
+    all_rows.extend(merged_data.values())
+    
+    # Write back to CSV
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["date", "ticker", "open", "high", "low", "close", "volume"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        # Sort by date and ticker for consistent output
+        sorted_data = sorted(all_rows, key=lambda x: (x["date"], x["ticker"]))
+        for row in sorted_data:
+            writer.writerow(row)
+    
+    return len(merged_data)
 
 def within_last_days(date_str, days):
     try:
@@ -146,16 +177,16 @@ def within_last_days(date_str, days):
 
 def fetch_historical_prices():
     print("\n" + "="*50)
-    print("🚀 Starting OHLCV ingestion → output/stocks/")
+    print("🚀 Starting OHLCV ingestion → output/stocks/stocks_data.csv")
     print("="*50)
     print(f"📅 Days: {DAYS_TO_FETCH} | Tickers: {len(TICKERS)} (max {MAX_TICKERS_PER_RUN})")
     print(f"🎯 Tickers to process: {TICKERS[:MAX_TICKERS_PER_RUN]}")
+    
     total_new = total_skipped = processed = 0
 
     for idx, raw_symbol in enumerate(tqdm(TICKERS[:MAX_TICKERS_PER_RUN], desc="Tickers")):
         symbol = raw_symbol.strip().upper()
-        csv_path = OUTPUT_DIR / f"{symbol}.csv"
-        existing_dates = load_existing_dates(csv_path)
+        print(f"\n📈 Processing {symbol}...")
 
         retries = 0
         while True:
@@ -186,27 +217,31 @@ def fetch_historical_prices():
                 time.sleep(SLEEP_BETWEEN_CALLS)
             continue
 
-        new_rows = []
+        # Process data for this ticker
+        ticker_data = {}
+        symbol_new = 0
+        symbol_skipped = 0
+        
         for d, payload in ts.items():
             if not within_last_days(d, DAYS_TO_FETCH):
                 continue
-            if d in existing_dates:
-                total_skipped += 1
-                continue
-            row = parse_row(d, payload)
+                
+            row = parse_row(d, symbol, payload)
             if row["open"] and row["close"]:
-                new_rows.append(row)
+                ticker_data[d] = row
+                symbol_new += 1
+                total_new += 1
 
-        new_rows.sort(key=lambda r: r["date"])
-
-        if new_rows:
-            write_rows(csv_path, new_rows)
-            print(f"💾 {symbol}: +{len(new_rows)} (file: {csv_path})")
-            total_new += len(new_rows)
+        # Merge and write this ticker's data immediately
+        if ticker_data:
+            print(f"💾 {symbol}: +{symbol_new} new records")
+            total_records = merge_and_write_ticker_data(OUTPUT_FILE, ticker_data, symbol)
+            print(f"   📊 Total records for {symbol}: {total_records}")
         else:
             print(f"➡️  {symbol}: nessuna nuova riga")
-
+            
         processed += 1
+        
         if idx < min(len(TICKERS), MAX_TICKERS_PER_RUN) - 1:
             time.sleep(SLEEP_BETWEEN_CALLS)
 
