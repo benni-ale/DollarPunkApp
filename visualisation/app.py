@@ -238,10 +238,8 @@ def main():
     if not need.issubset(df.columns):
         st.error(f"Mancano colonne richieste: {need - set(df.columns)}"); return
 
-    # filtri nella sidebar
+    # Filtri nella sidebar
     st.sidebar.header("Filtri")
-    min_d, max_d = df['time_published'].min().date(), df['time_published'].max().date()
-    date_range = st.sidebar.date_input("Intervallo date", (min_d, max_d), min_value=min_d, max_value=max_d)
     
     # Selezione ticker/topic nella sidebar con barra di ricerca
     opts = sorted(df[label_col].dropna().astype(str).unique())
@@ -265,15 +263,33 @@ def main():
         help=f"Usa la barra di ricerca sopra per filtrare i {label_col}"
     )
     
+    # Mostra il ticker/topic selezionato
+    st.sidebar.success(f"📊 Analizzando: **{chosen}**")
+    
+    # Intervallo date nel main content (più visibile)
+    st.header("📅 Selezione Intervallo Date")
+    min_d, max_d = df['time_published'].min().date(), df['time_published'].max().date()
+    
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.info(f"📊 **Range disponibile:** {min_d.strftime('%d/%m/%Y')} → {max_d.strftime('%d/%m/%Y')}")
+    with col2:
+        st.info(f"📈 **Ticker selezionato:** {chosen}")
+    
+    date_range = st.date_input(
+        "Seleziona l'intervallo di date per l'analisi", 
+        (min_d, max_d), 
+        min_value=min_d, 
+        max_value=max_d,
+        help="Seleziona la data di inizio e fine per filtrare i dati"
+    )
+    
     # Applica filtri
     fdf = apply_filters(df, date_range, label_col, [chosen])
 
     if fdf.empty:
         st.info("Nessun dato dopo i filtri."); return
 
-    # Mostra il ticker/topic selezionato
-    st.sidebar.success(f"📊 Analizzando: **{chosen}**")
-    
     # Renderizza i grafici
     render_calendar_for(fdf, label_col, chosen, stocks_df, date_range)
 
