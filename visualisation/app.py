@@ -4,6 +4,8 @@ import numpy as np
 import plotly.graph_objects as go
 import calendar
 from datetime import date as Date
+import plotly.express as px   # <-- aggiungi questo import
+
 
 st.set_page_config(page_title="Calendar – Weighted Sentiment", page_icon="📅", layout="wide")
 
@@ -87,6 +89,24 @@ def render_calendar_for(df, label_col, label_value):
         margin=dict(t=60, l=10, r=10, b=10), height=420
     )
     st.plotly_chart(fig, use_container_width=True)
+    # --- LINE CHART (mese selezionato) ---
+    # serie giornaliera pesata per il mese corrente
+    line = daily.reset_index()
+    line.columns = ['date', 'sentiment_w']
+
+    # numero articoli per giorno (per hover)
+    counts = month_df.groupby(month_df['time_published'].dt.date).size()
+    line['n_articles'] = line['date'].map(counts).fillna(0).astype(int)
+
+    fig_line = px.line(
+        line, x='date', y='sentiment_w', markers=True,
+        title=f"Andamento giornaliero (pesato) – {label_col.capitalize()} {label_value} – {sel.strftime('%B %Y')}",
+        hover_data={'n_articles': True, 'date': '|%Y-%m-%d'}
+    )
+    fig_line.update_yaxes(title="Sentiment (w)", range=[-1, 1])
+    fig_line.update_xaxes(title="Data")
+    fig_line.add_hline(y=0, line_dash="dash")
+    st.plotly_chart(fig_line, use_container_width=True)
 
     # KPI rapidi
     flat = Z[~np.isnan(Z)]
