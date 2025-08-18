@@ -1,0 +1,5 @@
+httpx
+trafilatura
+readability-lxml
+newspaper3k
+lxml

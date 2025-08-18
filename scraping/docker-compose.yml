@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  scraper:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: python scrape.py input/tickers.csv output/scraped_articles.json
+    environment:
+      - PYTHONUNBUFFERED=1
