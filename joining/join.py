@@ -27,6 +27,61 @@ def log_message(message):
     with open(LOG_FILE, 'a', encoding='utf-8') as f:
         f.write(log_entry + "\n")
 
+def process_chunk(chunk_articles, output_file, processed_urls_file, processed_urls, 
+                 overall_map, tickers_map, processed_count, skipped_count, checkpoint_mgr):
+    """Process a chunk of articles"""
+    for article_data in chunk_articles:
+        url = article_data.get("url")
+        article = (article_data.get("article") or "").strip()
+        
+        if not article: 
+            continue
+            
+        # Check if already processed
+        if url in processed_urls:
+            skipped_count += 1
+            if skipped_count % 100 == 0:
+                progress = checkpoint_mgr.get_progress_percentage()
+                log_message(f"Skipped {skipped_count} already processed articles... ({progress:.1f}% complete)")
+            continue
+        
+        # Get data for this URL
+        overall = {k:v for k,v in (overall_map.get(url, {}) or {}).items() if pd.notna(v)}
+        tickers = tickers_map.get(url, [])
+        
+        # Create output (without url_hash - that's for internal tracking only)
+        output = {
+            **overall, 
+            "tickers": tickers
+        }
+        
+        row = {
+            "input": f"<ARTICLE>\n{article}\n</ARTICLE>",
+            "output": output
+        }
+        
+        # Write to file
+        output_file.write(json.dumps(row, ensure_ascii=False) + "\n")
+        output_file.flush()  # Force write to disk immediately
+        
+        # Mark as processed
+        processed_urls.add(url)
+        processed_urls_file.write(url + "\n")
+        processed_urls_file.flush()
+        
+        processed_count += 1
+        
+        # Checkpoint periodically
+        if checkpoint_mgr.should_checkpoint(processed_count):
+            checkpoint_mgr.save_checkpoint(processed_count, processed_count, skipped_count)
+            progress = checkpoint_mgr.get_progress_percentage()
+            elapsed = time.time() - checkpoint_mgr.state['start_time']
+            rate = processed_count / elapsed if elapsed > 0 else 0
+            log_message(f"Checkpoint saved: {processed_count} processed, {skipped_count} skipped "
+                      f"({progress:.1f}% complete, {rate:.1f} articles/sec)")
+    
+    return processed_count, skipped_count
+
 # ---- checkpoint management ----
 class CheckpointManager:
     def __init__(self, checkpoint_file):
@@ -77,19 +132,27 @@ class CheckpointManager:
     
     def get_progress_percentage(self):
         """Get progress percentage"""
-        if self.state['total_articles'] == 0:
+        # Since we're processing in chunks, we can't know total articles
+        # Just return a simple progress based on processed articles
+        if self.state['processed_count'] == 0:
             return 0
-        return (self.state['processed_count'] + self.state['skipped_count']) / self.state['total_articles'] * 100
+        return min(99.9, (self.state['processed_count'] / 1000) * 10)  # Rough estimate
 
 # ---- load ----
 try:
     log_message(f"Loading articles from: {ARTICLES_JSON}")
-    art = pd.read_json(ARTICLES_JSON)              # deve avere almeno: url, article
-    log_message(f"Loaded {len(art)} articles")
     
+    # Check file size first
+    file_size = os.path.getsize(ARTICLES_JSON)
+    log_message(f"File size: {file_size / (1024*1024):.1f} MB")
+    
+    # Load metrics first (we need this for all articles)
     log_message(f"Loading metrics from: {METRICS_CSV}")
     met = pd.read_csv(METRICS_CSV, engine="python")
     log_message(f"Loaded {len(met)} metric records")
+    
+    # Process articles in chunks instead of loading all at once
+    log_message("Processing articles in chunks...")
     
 except FileNotFoundError as e:
     log_message(f"Error: File not found - {e}")
@@ -135,7 +198,6 @@ Path(OUT_JSONL).parent.mkdir(parents=True, exist_ok=True)
 
 # Initialize checkpoint manager
 checkpoint_mgr = CheckpointManager(CHECKPOINT_FILE)
-checkpoint_mgr.state['total_articles'] = len(art)
 checkpoint_mgr.state['start_time'] = time.time()
 
 # Load checkpoint if exists
@@ -155,10 +217,13 @@ if os.path.exists(PROCESSED_URLS_FILE):
 def get_url_hash(url):
     return hashlib.md5(url.encode('utf-8')).hexdigest()
 
-# ---- write JSONL incrementally with checkpointing ----
-log_message(f"Starting incremental write to: {OUT_JSONL}")
+# ---- process JSON in chunks ----
+CHUNK_SIZE = 100  # Process 100 articles at a time
+log_message(f"Starting chunked processing with chunk size: {CHUNK_SIZE}")
+
 processed_count = checkpoint_mgr.state['processed_count']
 skipped_count = checkpoint_mgr.state['skipped_count']
+current_index = resume_from_index
 
 # Open file in append mode if resuming, write mode if new
 mode = 'a' if resume_from_index > 0 and os.path.exists(OUT_JSONL) else 'w'
@@ -166,73 +231,70 @@ processed_urls_file = open(PROCESSED_URLS_FILE, 'a', encoding='utf-8')
 
 try:
     with open(OUT_JSONL, mode, encoding="utf-8") as f:
-        for idx, r in art.iterrows():
-            # Skip if we're resuming and this index was already processed
-            if idx < resume_from_index:
-                continue
-                
-            url = r.get("url")
-            article = (r.get("article") or "").strip()
+        # Process JSON in chunks using ijson
+        import ijson
+        
+        chunk_articles = []
+        chunk_count = 0
+        
+        with open(ARTICLES_JSON, 'rb') as json_file:
+            parser = ijson.parse(json_file)
+            current_article = {}
+            in_article = False
             
-            if not article: 
-                continue
-                
-            # Check if already processed
-            if url in processed_urls:
-                skipped_count += 1
-                if skipped_count % 100 == 0:
-                    progress = checkpoint_mgr.get_progress_percentage()
-                    log_message(f"Skipped {skipped_count} already processed articles... ({progress:.1f}% complete)")
-                continue
+            for prefix, event, value in parser:
+                if prefix == 'item' and event == 'start_map':
+                    current_article = {}
+                    in_article = True
+                elif prefix == 'item' and event == 'end_map':
+                    if current_article.get('url') and current_article.get('article'):
+                        # Skip if we're resuming and this index was already processed
+                        if current_index < resume_from_index:
+                            current_index += 1
+                            continue
+                            
+                        chunk_articles.append(current_article)
+                        chunk_count += 1
+                        
+                        # Process chunk when it reaches the size limit
+                        if chunk_count >= CHUNK_SIZE:
+                            log_message(f"Processing chunk {len(chunk_articles)} articles...")
+                            processed_count, skipped_count = process_chunk(
+                                chunk_articles, f, processed_urls_file, 
+                                processed_urls, overall_map, tickers_map, 
+                                processed_count, skipped_count, checkpoint_mgr
+                            )
+                            chunk_articles = []
+                            chunk_count = 0
+                            
+                    current_index += 1
+                    in_article = False
+                elif in_article and prefix.startswith('item.'):
+                    field = prefix.split('.', 1)[1]
+                    current_article[field] = value
             
-            # Get data for this URL
-            overall = {k:v for k,v in (overall_map.get(url, {}) or {}).items() if pd.notna(v)}
-            tickers = tickers_map.get(url, [])
-            
-            # Create output (without url_hash - that's for internal tracking only)
-            output = {
-                **overall, 
-                "tickers": tickers
-            }
-            
-            row = {
-                "input": f"<ARTICLE>\n{article}\n</ARTICLE>",
-                "output": output
-            }
-            
-            # Write to file
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-            f.flush()  # Force write to disk immediately
-            
-            # Mark as processed
-            processed_urls.add(url)
-            processed_urls_file.write(url + "\n")
-            processed_urls_file.flush()
-            
-            processed_count += 1
-            
-            # Checkpoint periodically
-            if checkpoint_mgr.should_checkpoint(processed_count):
-                checkpoint_mgr.save_checkpoint(idx, processed_count, skipped_count)
-                progress = checkpoint_mgr.get_progress_percentage()
-                elapsed = time.time() - checkpoint_mgr.state['start_time']
-                rate = processed_count / elapsed if elapsed > 0 else 0
-                log_message(f"Checkpoint saved: {processed_count} processed, {skipped_count} skipped "
-                          f"({progress:.1f}% complete, {rate:.1f} articles/sec)")
+            # Process remaining articles in the last chunk
+            if chunk_articles:
+                log_message(f"Processing final chunk with {len(chunk_articles)} articles...")
+                processed_count, skipped_count = process_chunk(
+                    chunk_articles, f, processed_urls_file, 
+                    processed_urls, overall_map, tickers_map, 
+                    processed_count, skipped_count, checkpoint_mgr
+                )
 
 except KeyboardInterrupt:
     log_message("Process interrupted by user. Saving checkpoint...")
-    checkpoint_mgr.save_checkpoint(idx, processed_count, skipped_count)
+    checkpoint_mgr.save_checkpoint(current_index, processed_count, skipped_count)
     raise
 except Exception as e:
     log_message(f"Error during processing: {e}")
-    checkpoint_mgr.save_checkpoint(idx, processed_count, skipped_count)
+    checkpoint_mgr.save_checkpoint(current_index, processed_count, skipped_count)
     raise
 finally:
     processed_urls_file.close()
 
 # Final checkpoint
-checkpoint_mgr.save_checkpoint(len(art), processed_count, skipped_count)
+checkpoint_mgr.save_checkpoint(current_index, processed_count, skipped_count)
 
 # Calculate final statistics
 total_time = time.time() - checkpoint_mgr.state['start_time']

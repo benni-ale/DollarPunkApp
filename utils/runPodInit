@@ -1,0 +1,4 @@
+pip install -U transformers trl peft datasets bitsandbytes accelerate
+pip install -U huggingface_hub
+huggingface-cli login 
+pip install -U sentencepiece protobuf
