@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  join:
+    build: .
+    volumes:
+      - ../output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python join.py
