@@ -285,9 +285,9 @@ def test_api_connection():
         return False
 
 def fetch_historical_news_year():
-    """Fetch news from the last year with intelligent batching - starting from oldest"""
+    """Fetch news from the last year with intelligent batching - starting from latest"""
     print("🚀 Starting historical news ingestion for the last year...")
-    print("📅 Processing from OLDEST to NEWEST articles")
+    print("📅 Processing from LATEST to OLDEST articles")
 
     # Test API connection first
     if not test_api_connection():
@@ -307,6 +307,7 @@ def fetch_historical_news_year():
     print(f"📅 Fetching news from: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
     print(f"⏰ Total days: {DAYS_TO_FETCH} (broken into {total_chunks} chunks of {chunk_days} days)")
     print(f"📦 Batch size: {BATCH_SIZE} articles per file")
+    print(f"🔄 Processing order: LATEST to OLDEST articles")
 
     # Load existing articles
     existing_articles, existing_urls = load_existing_articles()
@@ -329,13 +330,13 @@ def fetch_historical_news_year():
         ticker_total_new = 0
         ticker_total_duplicates = 0
 
-        # Process in smaller date chunks
-        current_start = start_date
+        # Process in smaller date chunks - starting from most recent
+        current_end = end_date
         chunk_number = 1
         invalid_ticker = False
 
-        while current_start < end_date:
-            current_end = min(current_start + timedelta(days=chunk_days), end_date)
+        while current_end > start_date:
+            current_start = max(current_end - timedelta(days=chunk_days), start_date)
 
             print(f"📅 Processing chunk {chunk_number}/{total_chunks}: {current_start.strftime('%Y-%m-%d')} to {current_end.strftime('%Y-%m-%d')}")
 
@@ -352,7 +353,7 @@ def fetch_historical_news_year():
                     ticker,
                     time_from=time_from,
                     time_to=time_to,
-                    sort="EARLIEST",   # ordina dal più vecchio al più nuovo
+                    sort="LATEST",     # ordina dal più recente al più vecchio
                     limit=1000         # richiedi fino a 1000 articoli nel range
                 )
                 # Break immediato su ok (anche se feed 0) o su invalid
@@ -377,16 +378,15 @@ def fetch_historical_news_year():
                     time.sleep(5)
                 continue
 
-            # Reverse the list to process from oldest to newest
+            # Process articles in latest to oldest order (no need to reverse)
             news_list = news_list or []
-            news_list.reverse()
-            print(f"🔄 Reversed order: processing {len(news_list)} articles from oldest to newest")
+            print(f"🔄 Processing {len(news_list)} articles from latest to oldest")
 
             # Show date range of articles
             if news_list:
                 first_article_date = news_list[0].get("time_published", "N/A")
                 last_article_date = news_list[-1].get("time_published", "N/A")
-                print(f"📅 Date range: {first_article_date} (oldest) → {last_article_date} (newest)")
+                print(f"📅 Date range: {first_article_date} (latest) → {last_article_date} (oldest)")
 
             ticker_new = 0
             ticker_duplicates = 0
@@ -424,8 +424,8 @@ def fetch_historical_news_year():
 
             print(f"✅ Chunk {chunk_number} results: {ticker_new} new, {ticker_duplicates} duplicates")
 
-            # Move to next chunk
-            current_start = current_end
+            # Move to next chunk (going backwards in time)
+            current_end = current_start
             chunk_number += 1
 
             # Wait between chunks to respect API limits (ridotto a 5s)
@@ -454,7 +454,7 @@ def fetch_historical_news_year():
     print(f"{'='*60}")
     print(f"📊 Final Summary:")
     print(f"   • Date range: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-    print(f"   • Processing order: OLDEST to NEWEST")
+    print(f"   • Processing order: LATEST to OLDEST")
     print(f"   • Total new articles: {total_new_articles}")
     print(f"   • Total duplicates skipped: {total_duplicates}")
     print(f"   • Total batches written: {batch_number - 1}")
