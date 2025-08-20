@@ -130,19 +130,20 @@ def main_from_config_file(node_id: str):
     start_index = config["start_index"]
     end_index = config["end_index"]
     url_count = config["url_count"]
+    temp_csv = config["temp_csv"]
     output_file = config["output_file"]
     
     print(f"Node {node_id} (Run {run_id}): Processing URLs {start_index}-{end_index} ({url_count} URLs)")
     
-    # Load URLs from CSV for this node's range
-    urls_to_scrape = load_urls_from_csv_range("input/tickers.csv", start_index, end_index)
-    print(f"Loaded {len(urls_to_scrape)} URLs from CSV range")
+    # Load URLs from temporary CSV for this node's range
+    urls_to_scrape = load_urls_from_csv_range(temp_csv, start_index, end_index)
+    print(f"Loaded {len(urls_to_scrape)} URLs from temporary CSV range")
     
     # Load existing results for this specific output file
     existing_results = load_existing_results(output_file)
     print(f"Found {len(existing_results)} existing articles in {os.path.basename(output_file)}")
     
-    # Filter out already processed URLs
+    # Filter out already processed URLs (should be minimal since we're using filtered CSV)
     new_urls = {url: summary for url, summary in urls_to_scrape.items() if url not in existing_results}
     print(f"Need to scrape {len(new_urls)} new URLs")
     

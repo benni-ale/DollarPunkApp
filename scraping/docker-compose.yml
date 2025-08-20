@@ -6,7 +6,7 @@ services:
     volumes:
       - ../output/processed:/app/input:ro
       - ../output/scraped:/app/output
-    command: python scrape_coordinator.py input/tickers.csv output --nodes 5
+    command: python scrape_coordinator.py input/tickers.csv output --nodes 10
     environment:
       - PYTHONUNBUFFERED=1
 
@@ -60,6 +60,61 @@ services:
       - ../output/processed:/app/input:ro
       - ../output/scraped:/app/output
     command: sh -c "sleep 10 && python scrape.py --node-id node5"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node6:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --node-id node6"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node7:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --node-id node7"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node8:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --node-id node8"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node9:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --node-id node9"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node10:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --node-id node10"
     environment:
       - PYTHONUNBUFFERED=1
     depends_on:

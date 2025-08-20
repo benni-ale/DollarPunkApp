@@ -62,12 +62,25 @@ def distribute_workload(urls_to_scrape: Dict[str, str], num_nodes: int) -> List[
     
     return distribution
 
+def create_temp_csv_with_unscraped_urls(urls_to_scrape: Dict[str, str], output_folder: str, run_id: str) -> str:
+    """Create a temporary CSV file with only URLs that need to be scraped"""
+    temp_csv_path = os.path.join(output_folder, f"temp_urls_to_scrape_{run_id}.csv")
+    
+    with open(temp_csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["url", "summary"])
+        for url, summary in urls_to_scrape.items():
+            writer.writerow([url, summary])
+    
+    print(f"📄 Created temporary CSV with {len(urls_to_scrape)} URLs to scrape: {temp_csv_path}")
+    return temp_csv_path
+
 def create_node_configs(distribution: List[Dict[str, str]], output_folder: str, run_id: str) -> List[dict]:
     """Create configuration for each node"""
     configs = []
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Calculate start indices for each node
+    # Calculate start indices for each node based on the filtered URLs
     total_urls = sum(len(urls) for urls in distribution)
     start_idx = 0
     
@@ -84,6 +97,7 @@ def create_node_configs(distribution: List[Dict[str, str]], output_folder: str, 
             "start_index": start_idx,
             "end_index": end_idx,
             "url_count": len(node_urls),
+            "temp_csv": os.path.join(output_folder, f"temp_urls_to_scrape_{run_id}.csv"),
             "output_file": os.path.join(output_folder, f"scraped_articles_{run_id}_node{i}.json")
         }
         configs.append(config)
@@ -100,7 +114,7 @@ def save_summary(configs: List[dict], output_folder: str, run_id: str, all_urls:
         "existing_urls": len(existing_results),
         "urls_to_scrape": len(urls_to_scrape),
         "nodes": len(configs),
-        "configs": [{"node_id": c["node_id"], "urls_count": len(c["urls"]), "output_file": c["output_file"]} for c in configs]
+        "configs": [{"node_id": c["node_id"], "urls_count": c["url_count"], "output_file": c["output_file"]} for c in configs]
     }
     
     # Create metadata directory only for summary
@@ -116,18 +130,27 @@ def save_summary(configs: List[dict], output_folder: str, run_id: str, all_urls:
 def save_node_configs(configs: List[dict], output_folder: str):
     """Save node configurations to a temporary file for nodes to read"""
     config_file = os.path.join(output_folder, "node_configs.json")
+    
+    # Remove existing config file if it exists
+    if os.path.exists(config_file):
+        try:
+            os.remove(config_file)
+            print(f"🗑️  Removed existing config file: {config_file}")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not remove existing config file: {e}")
+    
     with open(config_file, "w", encoding="utf-8") as f:
         json.dump(configs, f, ensure_ascii=False, indent=2)
     
     print(f"📋 Node configurations saved to: {config_file}")
     for config in configs:
-        print(f"  {config['node_id']}: {len(config['urls'])} URLs -> {config['output_file']}")
+        print(f"  {config['node_id']}: {config['url_count']} URLs -> {config['output_file']}")
 
 def main():
     parser = argparse.ArgumentParser(description="Coordinate distributed scraping")
     parser.add_argument("input_csv", help="Input CSV file with URLs")
     parser.add_argument("output_folder", help="Output folder for results")
-    parser.add_argument("--nodes", type=int, default=5, help="Number of nodes")
+    parser.add_argument("--nodes", type=int, default=10, help="Number of nodes")
     parser.add_argument("--run-id", default=None, help="Run ID (auto-generated if not provided)")
     
     args = parser.parse_args()
@@ -155,17 +178,20 @@ def main():
         print("✅ All URLs already processed!")
         return
     
-    # Step 4: Distribute workload
+    # Step 4: Create temporary CSV with only URLs to scrape
+    temp_csv_path = create_temp_csv_with_unscraped_urls(urls_to_scrape, args.output_folder, args.run_id)
+    
+    # Step 5: Distribute URLs to scrape
     print(f"📊 Distributing {len(urls_to_scrape)} URLs across {args.nodes} nodes...")
     distribution = distribute_workload(urls_to_scrape, args.nodes)
     
-    # Step 5: Create node configurations
+    # Step 6: Create node configurations
     configs = create_node_configs(distribution, args.output_folder, args.run_id)
     
-    # Step 6: Save node configurations
+    # Step 7: Save node configurations
     save_node_configs(configs, args.output_folder)
     
-    # Step 7: Save summary
+    # Step 8: Save summary
     save_summary(configs, args.output_folder, args.run_id, all_urls, existing_results, urls_to_scrape)
     
     print(f"\n✅ Coordination complete!")
