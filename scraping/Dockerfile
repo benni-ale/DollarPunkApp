@@ -12,8 +12,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the scraping script
+# Copy the scraping scripts
 COPY scrape.py .
+COPY scrape_coordinator.py .
 
 # Create output directory
 RUN mkdir -p /app/output

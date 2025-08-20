@@ -1,11 +1,66 @@
 version: '3.8'
 
 services:
-  scraper:
+  coordinator:
     build: .
     volumes:
       - ../output/processed:/app/input:ro
       - ../output/scraped:/app/output
-    command: python scrape.py input/tickers.csv output/scraped_articles.json
+    command: python scrape_coordinator.py input/tickers.csv output --nodes 5
     environment:
       - PYTHONUNBUFFERED=1
+
+  scraper-node1:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --wait-for-config node1"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node2:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --wait-for-config node2"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node3:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --wait-for-config node3"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node4:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --wait-for-config node4"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
+
+  scraper-node5:
+    build: .
+    volumes:
+      - ../output/processed:/app/input:ro
+      - ../output/scraped:/app/output
+    command: sh -c "sleep 10 && python scrape.py --wait-for-config node5"
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - coordinator
