@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  reddit-ingestion:
+    build: .
+    container_name: reddit-ingestion
+    volumes:
+      - ../output/reddit:/app/output/reddit
+      - ../.env:/app/.env:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: ["python", "reddit_ingestion.py"]
+    restart: unless-stopped
+
