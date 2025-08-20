@@ -8,6 +8,7 @@ from newspaper import Article, Config
 from datetime import datetime
 import os
 import glob
+from typing import Dict
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; NewsScraper/1.0)"}
 NP_CFG = Config()
@@ -49,39 +50,6 @@ def extract_best(url: str, html: str) -> str:
     best = max(cand, key=len) if cand else ""
     return " ".join(best.split())
 
-def find_config_file(node_id: str, output_folder: str = "output") -> str:
-    """Find the latest config file for a specific node"""
-    metadata_dir = os.path.join(output_folder, "metadata")
-    pattern = os.path.join(metadata_dir, f"config_*_{node_id}.json")
-    config_files = glob.glob(pattern)
-    
-    if not config_files:
-        return None
-    
-    # Return the most recent config file
-    return max(config_files, key=os.path.getctime)
-
-def wait_for_config(node_id: str, output_folder: str = "output", max_wait: int = 300) -> dict:
-    """Wait for coordinator to generate config file"""
-    print(f"Waiting for config file for {node_id}...")
-    
-    start_time = time.time()
-    while time.time() - start_time < max_wait:
-        config_file = find_config_file(node_id, output_folder)
-        if config_file:
-            print(f"Found config file: {config_file}")
-            return load_config(config_file)
-        
-        print(f"Config file not found yet, waiting... ({int(time.time() - start_time)}s)")
-        time.sleep(5)
-    
-    raise TimeoutError(f"Config file for {node_id} not found after {max_wait} seconds")
-
-def load_config(config_file: str) -> dict:
-    """Load node configuration from file"""
-    with open(config_file, "r", encoding="utf-8") as f:
-        return json.load(f)
-
 def load_existing_results(json_path: str):
     """Load existing results and return a dict of URL -> item"""
     try:
@@ -100,106 +68,75 @@ def load_existing_results(json_path: str):
         print(f"Error loading existing results: {e}")
         return {}
 
-def save_results(results: list, json_path: str, metadata: dict):
-    """Save results to JSON file with metadata"""
-    output_data = {
-        "metadata": metadata,
-        "articles": results
-    }
+def save_results(results: list, json_path: str):
+    """Save results to JSON file in original format (just array of articles)"""
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(output_data, f, ensure_ascii=False, indent=2)
+        json.dump(results, f, ensure_ascii=False, indent=2)
 
-def main_from_config(config_file: str):
-    """Main function that works with coordinator config"""
-    print(f"Loading configuration from {config_file}...")
-    config = load_config(config_file)
-    
-    node_id = config["node_id"]
-    run_id = config["run_id"]
-    urls_to_scrape = config["urls"]
-    output_file = config["output_file"]
-    
-    print(f"Node {node_id} (Run {run_id}): Processing {len(urls_to_scrape)} URLs")
-    
-    # Load existing results for this specific output file
-    existing_results = load_existing_results(output_file)
-    print(f"Found {len(existing_results)} existing articles in {os.path.basename(output_file)}")
-    
-    # Filter out already processed URLs
-    new_urls = {url: summary for url, summary in urls_to_scrape.items() if url not in existing_results}
-    print(f"Need to scrape {len(new_urls)} new URLs")
-    
-    if not new_urls:
-        print("All URLs already processed!")
-        return
-    
-    # Start with existing results
-    out = list(existing_results.values())
-    chunk_size = 50
-    
-    # Prepare metadata
-    metadata = {
-        "node_id": node_id,
-        "run_id": run_id,
-        "timestamp": datetime.now().isoformat(),
-        "total_urls_assigned": len(urls_to_scrape),
-        "urls_to_scrape": len(new_urls),
-        "scraped_count": 0,
-        "error_count": 0
-    }
-    
-    for i, (url, summary) in enumerate(new_urls.items(), 1):
-        print(f"[{node_id}] Scraping {i}/{len(new_urls)}: {url[:80]}...")
-        item = {
-            "url": url, 
-            "summary": summary, 
-            "article": "",
-            "node_id": node_id,
-            "run_id": run_id,
-            "scraped_at": datetime.now().isoformat()
-        }
-        
-        try:
-            html = fetch(url)
-            item["article"] = extract_best(url, html)
-            print(f"  ✓ Success - Article length: {len(item['article'])} chars")
-            metadata["scraped_count"] += 1
-        except Exception as e:
-            item["error"] = f"{type(e).__name__}: {e}"
-            print(f"  ✗ Error: {type(e).__name__}: {e}")
-            metadata["error_count"] += 1
-            
-        out.append(item)
-        
-        # Save incrementally every chunk_size items
-        if i % chunk_size == 0:
-            print(f"💾 Saving chunk {i//chunk_size} ({len(out)} total articles)...")
-            save_results(out, output_file, metadata)
-        
-        time.sleep(0.5)
-    
-    # Save final results
-    print(f"💾 Saving final results to {output_file}...")
-    save_results(out, output_file, metadata)
-    print(f"Scraping completed! Total articles: {len(out)}")
-
-def main_wait_for_config(node_id: str):
-    """Main function that waits for coordinator to generate config"""
+def load_node_config(node_id: str, config_file: str = "output/node_configs.json") -> dict:
+    """Load node configuration from the config file"""
     try:
-        config = wait_for_config(node_id)
-        main_from_config_dict(config)
+        with open(config_file, "r", encoding="utf-8") as f:
+            configs = json.load(f)
+            for config in configs:
+                if config["node_id"] == node_id:
+                    return config
+        raise ValueError(f"Node {node_id} not found in configuration")
     except Exception as e:
-        print(f"Error waiting for config: {e}")
-        sys.exit(1)
+        print(f"Error loading config for {node_id}: {e}")
+        raise
 
-def main_from_config_dict(config: dict):
-    """Main function that works with config dictionary"""
+def wait_for_config_file(config_file: str = "output/node_configs.json", max_wait: int = 300) -> bool:
+    """Wait for the coordinator to create the config file"""
+    print(f"Waiting for config file: {config_file}")
+    
+    start_time = time.time()
+    while time.time() - start_time < max_wait:
+        if os.path.exists(config_file):
+            print(f"Found config file: {config_file}")
+            return True
+        
+        print(f"Config file not found yet, waiting... ({int(time.time() - start_time)}s)")
+        time.sleep(5)
+    
+    raise TimeoutError(f"Config file not found after {max_wait} seconds")
+
+def load_urls_from_csv_range(csv_path: str, start_index: int, end_index: int) -> Dict[str, str]:
+    """Load URLs from CSV within the specified range"""
+    urls = {}
+    with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for i, row in enumerate(reader):
+            if i < start_index:
+                continue
+            if i >= end_index:
+                break
+                
+            u = (row.get("url") or "").strip()
+            if u and u not in urls:
+                urls[u] = (row.get("summary") or "").strip()
+    return urls
+
+def main_from_config_file(node_id: str):
+    """Main function that reads configuration from file"""
+    # Wait for coordinator to create config file
+    wait_for_config_file()
+    
+    # Load configuration for this node
+    config = load_node_config(node_id)
+    
     node_id = config["node_id"]
     run_id = config["run_id"]
-    urls_to_scrape = config["urls"]
+    start_index = config["start_index"]
+    end_index = config["end_index"]
+    url_count = config["url_count"]
     output_file = config["output_file"]
     
-    print(f"Node {node_id} (Run {run_id}): Processing {len(urls_to_scrape)} URLs")
+    print(f"Node {node_id} (Run {run_id}): Processing URLs {start_index}-{end_index} ({url_count} URLs)")
+    
+    # Load URLs from CSV for this node's range
+    urls_to_scrape = load_urls_from_csv_range("input/tickers.csv", start_index, end_index)
+    print(f"Loaded {len(urls_to_scrape)} URLs from CSV range")
     
     # Load existing results for this specific output file
     existing_results = load_existing_results(output_file)
@@ -217,50 +154,34 @@ def main_from_config_dict(config: dict):
     out = list(existing_results.values())
     chunk_size = 50
     
-    # Prepare metadata
-    metadata = {
-        "node_id": node_id,
-        "run_id": run_id,
-        "timestamp": datetime.now().isoformat(),
-        "total_urls_assigned": len(urls_to_scrape),
-        "urls_to_scrape": len(new_urls),
-        "scraped_count": 0,
-        "error_count": 0
-    }
-    
     for i, (url, summary) in enumerate(new_urls.items(), 1):
         print(f"[{node_id}] Scraping {i}/{len(new_urls)}: {url[:80]}...")
         item = {
             "url": url, 
             "summary": summary, 
-            "article": "",
-            "node_id": node_id,
-            "run_id": run_id,
-            "scraped_at": datetime.now().isoformat()
+            "article": ""
         }
         
         try:
             html = fetch(url)
             item["article"] = extract_best(url, html)
             print(f"  ✓ Success - Article length: {len(item['article'])} chars")
-            metadata["scraped_count"] += 1
         except Exception as e:
             item["error"] = f"{type(e).__name__}: {e}"
             print(f"  ✗ Error: {type(e).__name__}: {e}")
-            metadata["error_count"] += 1
             
         out.append(item)
         
         # Save incrementally every chunk_size items
         if i % chunk_size == 0:
             print(f"💾 Saving chunk {i//chunk_size} ({len(out)} total articles)...")
-            save_results(out, output_file, metadata)
+            save_results(out, output_file)
         
         time.sleep(0.5)
     
     # Save final results
     print(f"💾 Saving final results to {output_file}...")
-    save_results(out, output_file, metadata)
+    save_results(out, output_file)
     print(f"Scraping completed! Total articles: {len(out)}")
 
 def main_legacy(in_csv: str, out_json: str, start_index: int = 0, end_index: int = None, node_id: str = "node1"):
@@ -300,13 +221,13 @@ def main_legacy(in_csv: str, out_json: str, start_index: int = 0, end_index: int
         # Save incrementally every chunk_size items
         if i % chunk_size == 0:
             print(f"💾 Saving chunk {i//chunk_size} ({len(out)} total articles)...")
-            save_results(out, out_json, {"legacy": True})
+            save_results(out, out_json)
         
         time.sleep(0.5)
     
     # Save final results
     print(f"💾 Saving final results to {out_json}...")
-    save_results(out, out_json, {"legacy": True})
+    save_results(out, out_json)
     print(f"Scraping completed! Total articles: {len(out)}")
 
 def load_url_summary(csv_path: str, start_index: int = 0, end_index: int = None):
@@ -330,22 +251,18 @@ def load_url_summary(csv_path: str, start_index: int = 0, end_index: int = None)
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", help="Configuration file from coordinator")
-    parser.add_argument("--wait-for-config", help="Wait for coordinator to generate config for this node")
+    parser.add_argument("--node-id", required=True, help="Node identifier")
+    parser.add_argument("--config-file", default="output/node_configs.json", help="Configuration file path")
     parser.add_argument("input_csv", default="input.csv", nargs="?", help="Input CSV file (legacy mode)")
     parser.add_argument("output_json", default="scraped_news.json", nargs="?", help="Output JSON file (legacy mode)")
     parser.add_argument("--start", type=int, default=0, help="Starting index for this node (legacy mode)")
     parser.add_argument("--end", type=int, default=None, help="Ending index for this node (legacy mode)")
-    parser.add_argument("--node-id", default="node1", help="Node identifier (legacy mode)")
     
     args = parser.parse_args()
     
-    if args.wait_for_config:
-        # New wait-for-config mode
-        main_wait_for_config(args.wait_for_config)
-    elif args.config:
-        # New coordinator mode
-        main_from_config(args.config)
+    if args.node_id:
+        # New distributed mode
+        main_from_config_file(args.node_id)
     else:
         # Legacy mode
         main_legacy(args.input_csv, args.output_json, args.start, args.end, args.node_id)

@@ -67,37 +67,61 @@ def create_node_configs(distribution: List[Dict[str, str]], output_folder: str, 
     configs = []
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Create metadata directory
-    metadata_dir = os.path.join(output_folder, "metadata")
-    os.makedirs(metadata_dir, exist_ok=True)
+    # Calculate start indices for each node
+    total_urls = sum(len(urls) for urls in distribution)
+    start_idx = 0
     
     for i, node_urls in enumerate(distribution, 1):
         if not node_urls:  # Skip empty nodes
             continue
             
+        end_idx = start_idx + len(node_urls)
+        
         config = {
             "node_id": f"node{i}",
             "run_id": run_id,
             "timestamp": timestamp,
-            "urls": node_urls,
-            "output_file": os.path.join(output_folder, f"scraped_articles_{run_id}_node{i}.json"),
-            "start_index": 0,  # Will be calculated
-            "end_index": len(node_urls)
+            "start_index": start_idx,
+            "end_index": end_idx,
+            "url_count": len(node_urls),
+            "output_file": os.path.join(output_folder, f"scraped_articles_{run_id}_node{i}.json")
         }
         configs.append(config)
+        start_idx = end_idx
     
     return configs
 
-def save_node_configs(configs: List[dict], output_folder: str):
-    """Save node configurations to files"""
+def save_summary(configs: List[dict], output_folder: str, run_id: str, all_urls: Dict[str, str], existing_results: Dict[str, dict], urls_to_scrape: Dict[str, str]):
+    """Save only the summary file"""
+    summary = {
+        "run_id": run_id,
+        "timestamp": datetime.now().isoformat(),
+        "total_urls": len(all_urls),
+        "existing_urls": len(existing_results),
+        "urls_to_scrape": len(urls_to_scrape),
+        "nodes": len(configs),
+        "configs": [{"node_id": c["node_id"], "urls_count": len(c["urls"]), "output_file": c["output_file"]} for c in configs]
+    }
+    
+    # Create metadata directory only for summary
     metadata_dir = os.path.join(output_folder, "metadata")
     os.makedirs(metadata_dir, exist_ok=True)
     
+    summary_file = os.path.join(metadata_dir, f"scraping_summary_{run_id}.json")
+    with open(summary_file, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    
+    print(f"📋 Summary saved to: {summary_file}")
+
+def save_node_configs(configs: List[dict], output_folder: str):
+    """Save node configurations to a temporary file for nodes to read"""
+    config_file = os.path.join(output_folder, "node_configs.json")
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(configs, f, ensure_ascii=False, indent=2)
+    
+    print(f"📋 Node configurations saved to: {config_file}")
     for config in configs:
-        config_file = os.path.join(metadata_dir, f"config_{config['run_id']}_{config['node_id']}.json")
-        with open(config_file, "w", encoding="utf-8") as f:
-            json.dump(config, f, ensure_ascii=False, indent=2)
-        print(f"Saved config for {config['node_id']}: {len(config['urls'])} URLs -> {config['output_file']}")
+        print(f"  {config['node_id']}: {len(config['urls'])} URLs -> {config['output_file']}")
 
 def main():
     parser = argparse.ArgumentParser(description="Coordinate distributed scraping")
@@ -138,32 +162,15 @@ def main():
     # Step 5: Create node configurations
     configs = create_node_configs(distribution, args.output_folder, args.run_id)
     
-    # Step 6: Save configurations
+    # Step 6: Save node configurations
     save_node_configs(configs, args.output_folder)
     
     # Step 7: Save summary
-    summary = {
-        "run_id": args.run_id,
-        "timestamp": datetime.now().isoformat(),
-        "total_urls": len(all_urls),
-        "existing_urls": len(existing_results),
-        "urls_to_scrape": len(urls_to_scrape),
-        "nodes": len(configs),
-        "configs": [{"node_id": c["node_id"], "urls_count": len(c["urls"]), "output_file": c["output_file"]} for c in configs]
-    }
-    
-    summary_file = os.path.join(args.output_folder, "metadata", f"scraping_summary_{args.run_id}.json")
-    with open(summary_file, "w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
+    save_summary(configs, args.output_folder, args.run_id, all_urls, existing_results, urls_to_scrape)
     
     print(f"\n✅ Coordination complete!")
-    print(f"📋 Summary saved to: {summary_file}")
     print(f"🎯 Ready to launch {len(configs)} nodes")
-    
-    # Print launch commands
-    print(f"\n🚀 Launch commands:")
-    for config in configs:
-        print(f"docker-compose up scraper-{config['node_id']}")
+    print(f"📝 Nodes will read configuration from: output/node_configs.json")
 
 if __name__ == "__main__":
     main()
