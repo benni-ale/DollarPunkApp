@@ -85,11 +85,24 @@ def main():
     config = load_config()
     default_subs = config.get('SUBREDDITS', 'investing+stocks+StockMarket+EuropeFIRE+PersonalFinanceEurope')
     default_query = config.get('QUERY', '(ECB OR FED OR inflation OR earnings OR ETF OR recession)')
+    days_to_fetch = int(config.get('DAYS_TO_FETCH', '7'))
+    
+    # Calculate time filter based on days_to_fetch
+    if days_to_fetch <= 1:
+        time_filter = "day"
+    elif days_to_fetch <= 7:
+        time_filter = "week"
+    elif days_to_fetch <= 30:
+        time_filter = "month"
+    elif days_to_fetch <= 365:
+        time_filter = "year"
+    else:
+        time_filter = "all"
     
     ap = argparse.ArgumentParser(description="Reddit finance → JSONL con top commenti")
     ap.add_argument("--subs", default=default_subs)
     ap.add_argument("--q", default=default_query)
-    ap.add_argument("--time", default="week", choices=["hour","day","week","month","year","all"])
+    ap.add_argument("--time", default=time_filter, choices=["hour","day","week","month","year","all"])
     ap.add_argument("--limit", type=int, default=200)
     ap.add_argument("--out", default="output/reddit/fin_reddit.jsonl")
     ap.add_argument("--top_n", type=int, default=4, help="# top commenti top-level per score")
@@ -99,7 +112,7 @@ def main():
     ap.add_argument("--chunk_size", type=int, default=10, help="numero di post per chunk")
     args = ap.parse_args()
 
-    logger.info(f"Configuration: subs={args.subs}, query={args.q}, limit={args.limit}, chunk_size={args.chunk_size}")
+    logger.info(f"Configuration: subs={args.subs}, query={args.q}, limit={args.limit}, chunk_size={args.chunk_size}, days_to_fetch={days_to_fetch}, time_filter={args.time}")
 
     # Carica credenziali da .env (montato dal docker-compose)
     env_path = Path(".env")
