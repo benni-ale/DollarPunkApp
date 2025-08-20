@@ -6,7 +6,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy only the ingestion script
+# Copy configuration files
+COPY .conf .
 COPY ingest.py .
 
 # Create output directory

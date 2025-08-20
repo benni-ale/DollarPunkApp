@@ -11,14 +11,24 @@ Questo modulo si occupa dell'ingestione di dati finanziari tramite l'API Alpha V
 
 ## Configurazione
 
-1. Crea un file `.env` nella root del progetto con:
-   ```
-   ALPHA_VANTAGE_API_KEY=your_api_key_here
-   TICKERS=AAPL,MSFT,GOOGL,AMZN,TSLA
-   MAX_TICKERS_PER_RUN=3
-   ```
+Il sistema utilizza due file di configurazione:
 
-2. Assicurati che esista la cartella `output/` nella root del progetto
+### 1. File `.env` (per le chiavi API)
+Crea un file `.env` nella directory `ingestion/` con:
+```
+ALPHA_VANTAGE_API_KEY=your_api_key_here
+```
+
+### 2. File `.conf` (per i parametri di configurazione)
+Il file `.conf` è già configurato con i parametri necessari:
+- `TICKERS`: Lista dei ticker da monitorare
+- `MAX_TICKERS_PER_RUN`: Numero massimo di ticker per esecuzione
+- `DAYS_TO_FETCH`: Giorni di dati storici da recuperare
+
+Per maggiori dettagli sulla configurazione, consulta [CONFIGURATION.md](CONFIGURATION.md).
+
+### 3. Directory Output
+Assicurati che esista la cartella `output/` nella root del progetto
 
 ## Modalità di Esecuzione
 

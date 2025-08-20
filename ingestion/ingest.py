@@ -10,13 +10,59 @@ from dotenv import load_dotenv
 
 load_dotenv()
 API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
-TICKERS = os.getenv("TICKERS", "").split(",")
+
+def load_config():
+    """Load configuration from .conf file"""
+    config = {
+        "TICKERS": [],
+        "MAX_TICKERS_PER_RUN": 3,
+        "DAYS_TO_FETCH": 1000
+    }
+    
+    conf_file = Path(".conf")
+    if not conf_file.exists():
+        print("⚠️  Warning: .conf file not found. Using default values.")
+        print("   Please create a .conf file with TICKERS, MAX_TICKERS_PER_RUN, and DAYS_TO_FETCH parameters.")
+        return config
+    
+    print(f"📁 Loading configuration from {conf_file}")
+    with open(conf_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    
+                    if key == "TICKERS":
+                        config[key] = [ticker.strip() for ticker in value.split(",") if ticker.strip()]
+                    elif key == "MAX_TICKERS_PER_RUN":
+                        config[key] = int(value)
+                    elif key == "DAYS_TO_FETCH":
+                        config[key] = int(value)
+    
+    return config
+
+# Load configuration
+config = load_config()
+TICKERS = config["TICKERS"]
+MAX_TICKERS_PER_RUN = config["MAX_TICKERS_PER_RUN"]
+DAYS_TO_FETCH = config["DAYS_TO_FETCH"]
+
+print(f"📋 Configuration loaded from .conf file:")
+print(f"   • TICKERS: {len(TICKERS)} tickers configured")
+if TICKERS:
+    print(f"   • First few tickers: {', '.join(TICKERS[:5])}{'...' if len(TICKERS) > 5 else ''}")
+else:
+    print("   ⚠️  No tickers configured!")
+print(f"   • MAX_TICKERS_PER_RUN: {MAX_TICKERS_PER_RUN}")
+print(f"   • DAYS_TO_FETCH: {DAYS_TO_FETCH}")
+
 BATCH_SIZE = 100  # Articles per file
 MAX_RUNTIME_HOURS = 8  # Run for 8 hours
 SLEEP_BETWEEN_RUNS = 300  # 5 minutes between ingestion cycles
-MAX_TICKERS_PER_RUN = int(os.getenv("MAX_TICKERS_PER_RUN", "3"))  # Process max N tickers per run
 MAX_RETRIES = 3  # Maximum retries for failed API calls
-DAYS_TO_FETCH = int(os.getenv("DAYS_TO_FETCH", "1000"))  # Number of days to fetch from the past
 
 def fetch_news(ticker, time_from=None, time_to=None, sort=None, limit=None):
     """Fetch news per ticker con opzione data/sort/limit; ritorna (feed, status).
@@ -133,6 +179,11 @@ def write_batch_file(articles, batch_number):
 
 def run_continuous_ingestion():
     """Run continuous ingestion for real-time data collection"""
+    if not TICKERS:
+        print("❌ Error: No tickers configured in .conf file!")
+        print("   Please add TICKERS parameter to your .conf file.")
+        return
+    
     print("🚀 Starting continuous historical data ingestion...")
     print(f"⏰ Will run for {MAX_RUNTIME_HOURS} hours")
     print(f"📦 Batch size: {BATCH_SIZE} articles per file")
@@ -286,6 +337,11 @@ def test_api_connection():
 
 def fetch_historical_news_year():
     """Fetch news from the last year with intelligent batching - starting from latest"""
+    if not TICKERS:
+        print("❌ Error: No tickers configured in .conf file!")
+        print("   Please add TICKERS parameter to your .conf file.")
+        return
+    
     print("🚀 Starting historical news ingestion for the last year...")
     print("📅 Processing from LATEST to OLDEST articles")
 
@@ -476,6 +532,9 @@ def run_ingestion():
 if __name__ == "__main__":
     print("🚀 DollarPunk News Ingester")
     print("=" * 40)
+    print("📁 Using .conf file for configuration")
+    print("🔑 Using .env file for API key")
+    print()
 
     # Check if running in non-interactive mode (Docker)
     ingestion_mode = os.getenv("INGESTION_MODE")
