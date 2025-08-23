@@ -1,0 +1,8 @@
+Non troviamo Buffett continues to sit on the sidelines in train.jsonl
+    Perchè? 
+    
+Inoltre abbiamo visto che ci sono duplicati negli scraped articles
+    Vedi per esempio scraped_articles.json e scraped_asrticles_node1.json 
+
+Assicurare l'idempotenza in scraping sarebbe top ma forse già ci siamo 
+    Piuttosto assicuriamoci di fare dedup e di leggere tutti gli scraped articles in join.py 
