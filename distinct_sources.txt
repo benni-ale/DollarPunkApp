@@ -1,0 +1,83 @@
+Distinct Data Sources from processed_urls.txt
+==================================================
+
+Total URLs processed: 250729
+Distinct sources found: 75
+
+Sources (sorted by frequency):
+------------------------------
+ 1. benzinga.com                   | Count:  52716 |  21.0%
+ 2. fool.com                       | Count:  46697 |  18.6%
+ 3. zacks.com                      | Count:  46294 |  18.5%
+ 4. prnewswire.com                 | Count:  12573 |   5.0%
+ 5. globenewswire.com              | Count:  11325 |   4.5%
+ 6. forbes.com                     | Count:  10553 |   4.2%
+ 7. cnbc.com                       | Count:   9332 |   3.7%
+ 8. businessinsider.com            | Count:   8223 |   3.3%
+ 9. financialexpress.com           | Count:   4867 |   1.9%
+10. cnn.com                        | Count:   4777 |   1.9%
+11. apnews.com                     | Count:   4099 |   1.6%
+12. markets.businessinsider.com    | Count:   3738 |   1.5%
+13. cointelegraph.com              | Count:   3337 |   1.3%
+14. foxbusiness.com                | Count:   3259 |   1.3%
+15. newswire.ca                    | Count:   2941 |   1.2%
+16. scmp.com                       | Count:   2844 |   1.1%
+17. investors.com                  | Count:   2487 |   1.0%
+18. nytimes.com                    | Count:   2418 |   1.0%
+19. decrypt.co                     | Count:   2135 |   0.9%
+20. barrons.com                    | Count:   2020 |   0.8%
+21. investingnews.com              | Count:   1584 |   0.6%
+22. africa.businessinsider.com     | Count:   1543 |   0.6%
+23. stocknews.com                  | Count:   1448 |   0.6%
+24. ft.com                         | Count:   1437 |   0.6%
+25. theweek.com                    | Count:   1051 |   0.4%
+26. kiplinger.com                  | Count:   1017 |   0.4%
+27. economist.com                  | Count:    938 |   0.4%
+28. aljazeera.com                  | Count:    851 |   0.3%
+29. edition.cnn.com                | Count:    789 |   0.3%
+30. investorideas.com              | Count:    749 |   0.3%
+31. theatlantic.com                | Count:    662 |   0.3%
+32. beststocks.com                 | Count:    379 |   0.2%
+33. moneymorning.com               | Count:    377 |   0.2%
+34. upi.com                        | Count:    327 |   0.1%
+35. cfo.economictimes.indiatimes.com | Count:    236 |   0.1%
+36. pennystocks.com                | Count:    230 |   0.1%
+37. thedailyupside.com             | Count:    143 |   0.1%
+38. epaper.financialexpress.com    | Count:     67 |   0.0%
+39. us.cnn.com                     | Count:     66 |   0.0%
+40. amp.cnn.com                    | Count:     62 |   0.0%
+41. financialbuzz.com              | Count:     27 |   0.0%
+42. jobs.economist.com             | Count:     17 |   0.0%
+43. fnlondon.com                   | Count:     15 |   0.0%
+44. investors.com:443              | Count:      8 |   0.0%
+45. councils.forbes.com            | Count:      7 |   0.0%
+46. fagenwasanni.com               | Count:      7 |   0.0%
+47. marketwatch.com                | Count:      5 |   0.0%
+48. coupons.businessinsider.com    | Count:      5 |   0.0%
+49. expresshealthcaremgmt.com      | Count:      5 |   0.0%
+50. americanbankingnews.com        | Count:      5 |   0.0%
+51. insiderintelligence.com        | Count:      4 |   0.0%
+52. mediablog.prnewswire.com       | Count:      3 |   0.0%
+53. forums.ft.com                  | Count:      3 |   0.0%
+54. ts2.space                      | Count:      2 |   0.0%
+55. advisor.kiplinger.com          | Count:      2 |   0.0%
+56. propertylistings.ft.com        | Count:      2 |   0.0%
+57. ig.ft.com                      | Count:      2 |   0.0%
+58. professional.ft.com            | Count:      2 |   0.0%
+59. theblock.co                    | Count:      1 |   0.0%
+60. enterprise.ft.com              | Count:      1 |   0.0%
+61. cnnpressroom.blogs.cnn.com     | Count:      1 |   0.0%
+62. newsletters.theatlantic.com    | Count:      1 |   0.0%
+63. execed.economist.com           | Count:      1 |   0.0%
+64. longitude.ft.com               | Count:      1 |   0.0%
+65. get.stage.investors.com        | Count:      1 |   0.0%
+66. fncs.fnlondon.com              | Count:      1 |   0.0%
+67. investingnews.com.au           | Count:      1 |   0.0%
+68. moomoo.com                     | Count:      1 |   0.0%
+69. events.economist.com           | Count:      1 |   0.0%
+70. mr-mag.com                     | Count:      1 |   0.0%
+71. markets.ft.com                 | Count:      1 |   0.0%
+72. projects.apnews.com            | Count:      1 |   0.0%
+73. aboutus.ft.com                 | Count:      1 |   0.0%
+74. reuters.com                    | Count:      1 |   0.0%
+75. theblockcrypto.com             | Count:      1 |   0.0%

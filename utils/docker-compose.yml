@@ -1,11 +1,10 @@
 version: '3.8'
 
 services:
-  utils:
+  dollarpunk-tickers:
     build: .
-    container_name: dollarpunk-utils
     volumes:
-      # Mount the current directory to allow access to all utils files
-      - .:/app
-    # Run the extract_tickers_cmp.py script
-    command: python extract_tickers_cmp.py
+      - ../output:/app/output
+      - ../.env:/app/.env:ro
+    environment:
+      - PYTHONUNBUFFERED=1

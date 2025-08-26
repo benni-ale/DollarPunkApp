@@ -6,8 +6,17 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all utils files
-COPY . .
+# Copy the script
+COPY tickers.py .
 
-# Set the default command to run the extract_tickers_cmp.py script
-CMD ["python", "extract_tickers_cmp.py"]
+# Create output directory
+RUN mkdir -p /app/output
+
+# Set volume for output folder
+VOLUME ["/app/output"]
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Run the script
+CMD ["python", "tickers.py"]
