@@ -1,0 +1,119 @@
+a2a
+A2A.MI
+
+amplifon
+AMP.MI
+
+azimut holding
+AZM.MI
+	
+banca mediolanum
+BMED.MI
+
+banca mps
+BMPS.MI
+
+banco bpm
+BAMI.MI
+
+bp sondrio
+BPSO.MI
+
+bper banca
+BPE.MI
+
+brunello cucinelli
+BC.MI
+
+buzzi
+BZU.MI
+
+campari
+CPR.MI
+
+diasorin
+DIA.MI
+
+enel
+ENEL.MI
+
+eni
+ENI.MI
+
+ferrari
+RACE.MI
+
+finecobank
+FBK.MI
+
+generali
+G.MI
+
+hera
+HER.MI
+
+interpump group
+IP.MI
+
+intesa sanpaolo
+ISP.MI
+
+inwit
+INW.MI
+
+italgas
+IG.MI
+
+iveco grp
+IVG.MI
+
+leonardo
+LDO.MI
+
+mediobanca
+MB.MI
+
+moncler
+MONC.MI
+
+nexi
+NEXI.MI
+
+pirelli & c.
+PIRC.MI
+
+poste italiane
+PST.MI
+
+prysmian
+PRY.MI
+
+recordati
+REC.MI
+
+saipem
+SPM.MI
+
+snam
+SRG.MI
+
+stellantis nv
+STLAM.MI
+
+stmicroelectronics
+STMMI.MI
+
+telecom italia
+TIT.MI
+
+tenaris
+TEN.MI
+
+terna
+TRN.MI
+
+unicredit
+UCG.MI
+
+unipol
+UNI.MI
