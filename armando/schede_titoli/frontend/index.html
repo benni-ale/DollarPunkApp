@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schede Titoli - DollarPunk</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .search-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .search-box {
+            position: relative;
+            display: inline-block;
+            width: 400px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .autocomplete-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        .autocomplete-item.selected {
+            background-color: #e3f2fd;
+        }
+        .search-button {
+            margin-left: 10px;
+            padding: 15px 25px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .search-button:hover {
+            background-color: #0056b3;
+        }
+        .search-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+        }
+        .stock-card {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stock-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+        }
+        .stock-header h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        .stock-price {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .stock-change {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .stock-change.positive {
+            color: #28a745;
+        }
+        .stock-change.negative {
+            color: #dc3545;
+        }
+        .stock-details {
+            display: grid;
+            grid-template-columns: auto auto;
+            gap: 8px 20px;
+            margin: 20px 0;
+        }
+        .stock-details span {
+            color: #666;
+            font-size: 14px;
+        }
+        .stock-details strong {
+            color: #333;
+            font-size: 14px;
+        }
+        .chart-container {
+            height: 280px;
+            margin-top: 25px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            font-size: 18px;
+        }
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 30px;
+            background: #f8d7da;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .remove-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+        .remove-btn:hover {
+            color: #dc3545;
+        }
+        .no-stocks {
+            text-align: center;
+            padding: 60px;
+            color: #666;
+            font-size: 18px;
+        }
+        .no-stocks h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 30px; color: #333;">📈 Schede Titoli - DollarPunk</h1>
+        
+        <div id="app"></div>
+    </div>
+
+    <script type="text/babel">
+        function SearchBox({ onAddStock }) {
+            const [query, setQuery] = React.useState('');
+            const [suggestions, setSuggestions] = React.useState([]);
+            const [selectedIndex, setSelectedIndex] = React.useState(-1);
+            const [isLoading, setIsLoading] = React.useState(false);
+            const [showDropdown, setShowDropdown] = React.useState(false);
+
+            const searchTickers = async (searchQuery) => {
+                if (searchQuery.length < 2) {
+                    setSuggestions([]);
+                    setShowDropdown(false);
+                    return;
+                }
+
+                setIsLoading(true);
+                try {
+                    const response = await fetch(`http://localhost:8000/api/search/${searchQuery}`);
+                    const data = await response.json();
+                    setSuggestions(data.results || []);
+                    setShowDropdown(true);
+                    setSelectedIndex(-1);
+                } catch (error) {
+                    console.error('Error searching tickers:', error);
+                    setSuggestions([]);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleInputChange = (e) => {
+                const value = e.target.value;
+                setQuery(value);
+                searchTickers(value);
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => 
+                        prev < suggestions.length - 1 ? prev + 1 : prev
+                    );
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                        handleSelect(suggestions[selectedIndex]);
+                    } else if (query.trim()) {
+                        handleAddStock();
+                    }
+                } else if (e.key === 'Escape') {
+                    setShowDropdown(false);
+                    setSelectedIndex(-1);
+                }
+            };
+
+            const handleSelect = (ticker) => {
+                onAddStock(ticker);
+                setQuery('');
+                setSuggestions([]);
+                setShowDropdown(false);
+                setSelectedIndex(-1);
+            };
+
+            const handleAddStock = () => {
+                if (query.trim()) {
+                    onAddStock(query.trim().toUpperCase());
+                    setQuery('');
+                    setSuggestions([]);
+                    setShowDropdown(false);
+                }
+            };
+
+            const handleClickOutside = (e) => {
+                if (!e.target.closest('.search-box')) {
+                    setShowDropdown(false);
+                }
+            };
+
+            React.useEffect(() => {
+                document.addEventListener('click', handleClickOutside);
+                return () => document.removeEventListener('click', handleClickOutside);
+            }, []);
+
+            return (
+                <div className="search-container">
+                    <div className="search-box">
+                        <input
+                            type="text"
+                            className="search-input"
+                            placeholder="🔍 Cerca ticker (es. AAPL, MSFT, TSLA...)"
+                            value={query}
+                            onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
+                            autoComplete="off"
+                        />
+                        {showDropdown && suggestions.length > 0 && (
+                            <div className="autocomplete-dropdown">
+                                {suggestions.map((ticker, index) => (
+                                    <div
+                                        key={ticker}
+                                        className={`autocomplete-item ${index === selectedIndex ? 'selected' : ''}`}
+                                        onClick={() => handleSelect(ticker)}
+                                    >
+                                        {ticker}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {isLoading && (
+                            <div className="autocomplete-dropdown">
+                                <div className="autocomplete-item">Caricamento...</div>
+                            </div>
+                        )}
+                    </div>
+                    <button 
+                        className="search-button" 
+                        onClick={handleAddStock}
+                        disabled={!query.trim()}
+                    >
+                        Aggiungi
+                    </button>
+                </div>
+            );
+        }
+
+        function StockCard({ symbol, onRemove }) {
+            const [data, setData] = React.useState(null);
+            const [error, setError] = React.useState(null);
+
+            React.useEffect(() => {
+                console.log(`Fetching data for ${symbol}...`);
+                fetch(`http://localhost:8000/api/stock/${symbol}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        console.log(`Data received for ${symbol}:`, data);
+                        setData(data);
+                    })
+                    .catch(err => {
+                        console.error(`Error fetching ${symbol}:`, err);
+                        setError(err.message);
+                    });
+            }, [symbol]);
+
+            if (error) return (
+                <div className="stock-card">
+                    <div className="error">
+                        <strong>Errore per {symbol}:</strong> {error}
+                        <button className="remove-btn" onClick={onRemove} style={{marginLeft: 10}}>❌</button>
+                    </div>
+                </div>
+            );
+
+            if (!data) return (
+                <div className="stock-card">
+                    <div className="loading">
+                        <div>📊 Caricamento {symbol}...</div>
+                        <div style={{fontSize: '14px', marginTop: '10px'}}>Recupero dati da Alpha Vantage</div>
+                    </div>
+                </div>
+            );
+
+            const chgSign = data.changePct > 0 ? "+" : "";
+            const isPositive = data.changePct > 0;
+            const isNegative = data.changePct < 0;
+
+            try {
+                return (
+                    <div className="stock-card">
+                        <div className="stock-header">
+                            <h2>{data.name || data.symbol} ({data.symbol})</h2>
+                            <div>
+                                <small>{data.currency || ""}</small>
+                                <button className="remove-btn" onClick={onRemove}>❌</button>
+                            </div>
+                        </div>
+
+                        <div className="stock-price">
+                            {data.price?.toFixed(2)}
+                        </div>
+                        <div className={`stock-change ${isPositive ? 'positive' : isNegative ? 'negative' : ''}`}>
+                            {chgSign}{data.change?.toFixed(2)} ({chgSign}{data.changePct?.toFixed(2)}%) · {data.asOf}
+                        </div>
+
+                        <div className="stats">
+                            <div className="stat-item">
+                                <div className="stat-value">{data.sector || "-"}</div>
+                                <div className="stat-label">Settore</div>
+                            </div>
+                            <div className="stat-item">
+                                <div className="stat-value">{Number(data.marketCap||0).toLocaleString()}</div>
+                                <div className="stat-label">Cap. Mercato</div>
+                            </div>
+                            <div className="stat-item">
+                                <div className="stat-value">{data.pe || "-"}</div>
+                                <div className="stat-label">P/E</div>
+                            </div>
+                            <div className="stat-item">
+                                <div className="stat-value">{data.beta || "-"}</div>
+                                <div className="stat-label">Beta</div>
+                            </div>
+                        </div>
+
+                        <div className="chart-container">
+                            <div style={{textAlign: 'center', padding: '20px', color: '#666'}}>
+                                📊 Grafico temporaneamente disabilitato
+                                <br />
+                                <small>Dati disponibili: {data.timeseries ? data.timeseries.length : 0} punti</small>
+                            </div>
+                        </div>
+                    </div>
+                );
+            } catch (error) {
+                console.error(`Error rendering stock card for ${symbol}:`, error);
+                return (
+                    <div className="stock-card">
+                        <div className="error">
+                            <strong>Errore di rendering per {symbol}:</strong> {error.message}
+                            <button className="remove-btn" onClick={onRemove} style={{marginLeft: 10}}>❌</button>
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        function App() {
+            const [stocks, setStocks] = React.useState(['AAPL', 'MSFT', 'GOOGL']);
+
+            console.log('App rendering with stocks:', stocks);
+
+            const addStock = (symbol) => {
+                const upperSymbol = symbol.toUpperCase();
+                if (upperSymbol && !stocks.includes(upperSymbol)) {
+                    setStocks([...stocks, upperSymbol]);
+                }
+            };
+
+            const removeStock = (symbol) => {
+                setStocks(stocks.filter(s => s !== symbol));
+            };
+
+            return (
+                <div>
+                    <SearchBox onAddStock={addStock} />
+                    
+                    {stocks.length === 0 ? (
+                        <div className="no-stocks">
+                            <h3>Nessun titolo selezionato</h3>
+                            <p>Usa la barra di ricerca sopra per aggiungere i tuoi titoli preferiti</p>
+                        </div>
+                    ) : (
+                        <div className="stock-grid">
+                            {stocks.map(symbol => (
+                                <StockCard 
+                                    key={symbol} 
+                                    symbol={symbol} 
+                                    onRemove={() => removeStock(symbol)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
