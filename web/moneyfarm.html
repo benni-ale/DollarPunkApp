@@ -234,7 +234,7 @@
               <label>Cerca titolo</label>
               <input type="text" placeholder="Es: Apple, Tesla, Enel..." id="searchStock">
             </div>
-            <button class="btn" onclick="searchStock()">Cerca Analisi</button>
+                         <button class="btn" onclick="searchStock()">Cerca Ricerche</button>
           </div>
           <div class="card">
             <h3>Ultime Ricerche Pubblicate</h3>
@@ -504,12 +504,12 @@
       alert(`${p.name}\nAzioni: ${p.eq}%\nObbligazioni: ${p.bd}%\nCash: ${p.cs}%\nRendimento atteso: ${p.return}\nRischio: ${p.risk}`);
     }
 
-    function searchStock(){
-      const query = document.getElementById('searchStock').value;
-      if (query) {
-        alert(`Ricerca per: ${query}\n\nAnalisi fondamentale, tecnica e raccomandazioni disponibili nel software completo.`);
-      }
-    }
+         function searchStock(){
+       const query = document.getElementById('searchStock').value;
+       if (query) {
+         alert(`Ricerca per: ${query}\n\nAnalisi fondamentale e raccomandazioni disponibili nel software completo.`);
+       }
+     }
 
     // Event listeners
     amount.addEventListener('input', updateHero);
