@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InvestiPro – Consulenza e ricerca investimenti</title>
+  <meta name="description" content="Piattaforma di consulenza finanziaria: software portafoglio, portafogli modello e ricerche su titoli." />
+  <style>
+    :root{
+      --bg:#0b0f14;          /* page background (very dark) */
+      --card:#111827;        /* card background */
+      --muted:#94a3b8;       /* muted text */
+      --text:#e5e7eb;        /* primary text */
+      --primary:#06b6d4;     /* cyan */
+      --primary-2:#0ea5a0;   /* teal */
+      --accent:#38bdf8;      /* light blue */
+      --ok:#22c55e;          /* green */
+      --warn:#f59e0b;        /* amber */
+      --danger:#ef4444;      /* red */
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --shadow-soft:0 6px 18px rgba(0,0,0,.25);
+      --max:1100px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:linear-gradient(180deg,#0b0f14 0%,#0b1220 60%,#0a1426 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+    a{color:var(--accent);text-decoration:none}
+    .container{max-width:var(--max);margin:0 auto;padding:0 20px}
+    header{position:sticky;top:0;backdrop-filter:saturate(160%) blur(10px);background:rgba(11,15,20,.6);border-bottom:1px solid rgba(148,163,184,.12);z-index:50}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
+    .logo{width:34px;height:34px;background:conic-gradient(from 0deg, var(--primary), var(--accent));border-radius:10px;box-shadow:var(--shadow-soft)}
+    .menu{display:flex;gap:18px;align-items:center}
+    .menu a{color:var(--text);opacity:.9}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:none;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#001014;font-weight:700;padding:12px 16px;border-radius:12px;box-shadow:var(--shadow);cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(148,163,184,.25);color:var(--text)}
+    .btn:active{transform:translateY(1px)}
+
+    /* Hero */
+    .hero{padding:64px 0 36px}
+    .hero-inner{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center}
+    .kicker{display:inline-block;padding:6px 10px;border-radius:999px;border:1px solid rgba(148,163,184,.25);color:var(--muted);font-size:12px;margin-bottom:12px}
+    h1{font-size:44px;line-height:1.1;margin:0 0 10px}
+    .lead{color:#cbd5e1;font-size:18px;margin:0 0 18px}
+    .hero-card{background:linear-gradient(180deg,#0f172a, #0b1220);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-soft)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+    .stat{background:#0b1424;border:1px solid rgba(148,163,184,.14);border-radius:12px;padding:12px}
+    .stat .v{font-weight:800;font-size:20px}
+    .badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .badge{font-size:12px;border:1px dashed rgba(148,163,184,.35);padding:6px 8px;border-radius:999px;color:#cbd5e1}
+
+    /* Sections */
+    section{padding:38px 0}
+    .section-title{font-size:26px;margin:0 0 16px}
+
+    /* Grids */
+    .grid{display:grid;gap:16px}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .grid.cols-5{grid-template-columns:repeat(5,1fr)}
+    @media (max-width:980px){
+      .hero-inner{grid-template-columns:1fr}
+      .grid.cols-3{grid-template-columns:1fr}
+      .grid.cols-2{grid-template-columns:1fr}
+      .grid.cols-5{grid-template-columns:1fr}
+    }
+
+    /* Cards */
+    .card{background:var(--card);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-soft)}
+    .card h3{margin:0 0 8px}
+    .muted{color:var(--muted)}
+
+    /* Allocation bars */
+    .alloc{display:flex;height:12px;border-radius:999px;overflow:hidden;border:1px solid rgba(148,163,184,.2);background:#0b1424}
+    .alloc > span{display:block;height:100%}
+
+    /* Inputs */
+    .field{display:grid;gap:6px;margin-bottom:12px}
+    .field label{font-size:14px;color:#cbd5e1}
+    input[type=range]{width:100%}
+    .inline{display:flex;gap:10px;align-items:center}
+
+    /* FAQ */
+    details{background:#0b1424;border:1px solid rgba(148,163,184,.18);border-radius:12px;padding:12px}
+    details+details{margin-top:10px}
+    summary{cursor:pointer;font-weight:600}
+
+    /* Footer */
+    footer{padding:34px 0;border-top:1px solid rgba(148,163,184,.12);color:#94a3b8}
+    .legal{font-size:12px}
+
+    /* Stock research table */
+    .stock-table{width:100%;border-collapse:collapse;margin-top:12px}
+    .stock-table th,.stock-table td{padding:8px 12px;text-align:left;border-bottom:1px solid rgba(148,163,184,.18)}
+    .stock-table th{background:#0b1424;font-weight:600;color:#cbd5e1}
+    .stock-table tr:hover{background:rgba(148,163,184,.05)}
+    .positive{color:var(--ok)}
+    .negative{color:var(--danger)}
+    .neutral{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand"><div class="logo" aria-hidden></div> InvestiPro</div>
+      <nav class="menu">
+        <a href="#software">Software Portafoglio</a>
+        <a href="#portafogli">Portafogli Modello</a>
+        <a href="#ricerche">Ricerche</a>
+        <a href="#costi">Costi</a>
+        <a href="#faq">FAQ</a>
+        <a class="btn secondary" href="#login">Accedi</a>
+        <a class="btn" href="#demo">Prova Demo</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero container">
+      <div class="hero-inner">
+        <div>
+          <span class="kicker">Demo • Consulenza finanziaria</span>
+          <h1>Software portafoglio + consulenza + ricerche investimenti</h1>
+          <p class="lead">Gestisci i tuoi investimenti con il nostro software, ricevi suggerimenti da portafogli modello e accedi a ricerche approfondite su centinaia di titoli.</p>
+          <div class="inline">
+            <a class="btn" href="#demo">Prova il software</a>
+            <a class="btn secondary" href="#ricerche">Vedi le ricerche</a>
+          </div>
+          <div class="badges">
+            <span class="badge">Software portafoglio completo</span>
+            <span class="badge">Portafogli modello suggeriti</span>
+            <span class="badge">Ricerche su 500+ titoli</span>
+          </div>
+        </div>
+        <div class="hero-card">
+          <strong>Anteprima software portafoglio</strong>
+          <div class="field">
+            <label>Valore totale portafoglio</label>
+            <div class="inline"><input id="amount" type="range" min="1000" max="100000" step="1000" value="25000"><span id="amountOut">€ 25.000</span></div>
+          </div>
+          <div class="field">
+            <label>Numero titoli</label>
+            <div class="inline"><input id="stocks" type="range" min="1" max="20" step="1" value="8"><span id="stocksOut">8 titoli</span></div>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="v" id="performanceOut">+12,4%</div><div class="muted">Performance YTD</div></div>
+            <div class="stat"><div class="v" id="dividendOut">€ 890</div><div class="muted">Dividendi</div></div>
+            <div class="stat"><div class="v" id="riskOut">Bassa</div><div class="muted">Volatilità</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOFTWARE PORTAFOGLIO -->
+    <section id="software">
+      <div class="container">
+        <h2 class="section-title">Software Portafoglio</h2>
+        <div class="grid cols-3">
+          <div class="card">
+            <h3>📊 Dashboard Completa</h3>
+            <p class="muted">Visualizza performance, allocazione, dividendi e metriche di rischio in tempo reale.</p>
+          </div>
+          <div class="card">
+            <h3>📋 Gestione Ordini</h3>
+            <p class="muted">Pianifica ordini, stop loss e take profit direttamente dalla piattaforma.</p>
+          </div>
+          <div class="card">
+            <h3>📊 Reportistica Avanzata</h3>
+            <p class="muted">Report dettagliati su performance, correlazioni e analisi di rischio del portafoglio.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PORTAFOGLI MODELLO -->
+    <section id="portafogli">
+      <div class="container">
+        <h2 class="section-title">Portafogli Modello per Livello di Rischio</h2>
+        <div class="grid cols-5">
+          <div class="card">
+            <h3>Rischio 1</h3>
+            <p class="muted">Molto Conservativo</p>
+            <div class="alloc"><span style="width:0%;background:var(--accent)"></span><span style="width:85%;background:var(--primary-2)"></span><span style="width:15%;background:#64748b"></span></div>
+            <p class="muted">Azioni 0% • Obbligazioni 85% • Cash 15%</p>
+            <p class="muted">Rendimento: 2-4% • Volatilità: Molto bassa</p>
+            <button class="btn secondary" onclick="showPortfolio(1)">Vedi dettagli</button>
+          </div>
+          <div class="card">
+            <h3>Rischio 2</h3>
+            <p class="muted">Conservativo</p>
+            <div class="alloc"><span style="width:25%;background:var(--accent)"></span><span style="width:65%;background:var(--primary-2)"></span><span style="width:10%;background:#64748b"></span></div>
+            <p class="muted">Azioni 25% • Obbligazioni 65% • Cash 10%</p>
+            <p class="muted">Rendimento: 3-6% • Volatilità: Bassa</p>
+            <button class="btn secondary" onclick="showPortfolio(2)">Vedi dettagli</button>
+          </div>
+          <div class="card">
+            <h3>Rischio 3</h3>
+            <p class="muted">Moderato</p>
+            <div class="alloc"><span style="width:50%;background:var(--accent)"></span><span style="width:45%;background:var(--primary-2)"></span><span style="width:5%;background:#64748b"></span></div>
+            <p class="muted">Azioni 50% • Obbligazioni 45% • Cash 5%</p>
+            <p class="muted">Rendimento: 5-8% • Volatilità: Media</p>
+            <button class="btn secondary" onclick="showPortfolio(3)">Vedi dettagli</button>
+          </div>
+          <div class="card">
+            <h3>Rischio 4</h3>
+            <p class="muted">Dinamico</p>
+            <div class="alloc"><span style="width:75%;background:var(--accent)"></span><span style="width:20%;background:var(--primary-2)"></span><span style="width:5%;background:#64748b"></span></div>
+            <p class="muted">Azioni 75% • Obbligazioni 20% • Cash 5%</p>
+            <p class="muted">Rendimento: 7-12% • Volatilità: Alta</p>
+            <button class="btn secondary" onclick="showPortfolio(4)">Vedi dettagli</button>
+          </div>
+          <div class="card">
+            <h3>Rischio 5</h3>
+            <p class="muted">Aggressivo</p>
+            <div class="alloc"><span style="width:100%;background:var(--accent)"></span><span style="width:0%;background:var(--primary-2)"></span><span style="width:0%;background:#64748b"></span></div>
+            <p class="muted">Azioni 100% • Obbligazioni 0% • Cash 0%</p>
+            <p class="muted">Rendimento: 10-18% • Volatilità: Molto alta</p>
+            <button class="btn secondary" onclick="showPortfolio(5)">Vedi dettagli</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RICERCHE -->
+    <section id="ricerche">
+      <div class="container">
+        <h2 class="section-title">Ricerche di Investimento</h2>
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>Analisi Fondamentale</h3>
+            <p class="muted">Report dettagliati su oltre 500 titoli con valutazioni e raccomandazioni.</p>
+            <div class="field">
+              <label>Cerca titolo</label>
+              <input type="text" placeholder="Es: Apple, Tesla, Enel..." id="searchStock">
+            </div>
+            <button class="btn" onclick="searchStock()">Cerca Analisi</button>
+          </div>
+          <div class="card">
+            <h3>Ultime Ricerche Pubblicate</h3>
+            <table class="stock-table">
+              <thead>
+                <tr>
+                  <th>Titolo</th>
+                  <th>Rating</th>
+                  <th>Target</th>
+                  <th>Variaz.</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>AAPL</td>
+                  <td class="positive">Acquista</td>
+                  <td>€ 185</td>
+                  <td class="positive">+2.3%</td>
+                </tr>
+                <tr>
+                  <td>TSLA</td>
+                  <td class="neutral">Neutrale</td>
+                  <td>€ 240</td>
+                  <td class="negative">-1.8%</td>
+                </tr>
+                <tr>
+                  <td>ENEL</td>
+                  <td class="positive">Acquista</td>
+                  <td>€ 6.80</td>
+                  <td class="positive">+0.9%</td>
+                </tr>
+                <tr>
+                  <td>NVDA</td>
+                  <td class="positive">Acquista</td>
+                  <td>€ 520</td>
+                  <td class="positive">+4.2%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COSTI -->
+    <section id="costi">
+      <div class="container">
+        <h2 class="section-title">Piani e Costi</h2>
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>Software + Consulenza</h3>
+            <p class="muted">Accesso completo al software portafoglio e consulenza personalizzata.</p>
+            <div class="field">
+              <label>Piano mensile</label>
+              <div class="inline"><input id="planRate" type="range" min="29" max="99" step="5" value="49"><span id="planRateOut">€ 49/mese</span></div>
+            </div>
+            <div class="grid cols-3">
+              <div class="stat"><div class="v" id="planYear">€ 588</div><div class="muted">Costo annuo</div></div>
+              <div class="stat"><div class="v" id="planDay">€ 1,61</div><div class="muted">/giorno</div></div>
+              <div class="stat"><div class="v" id="planPercent">0,24%</div><div class="muted">su €25k</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Cosa include</h3>
+            <ul class="muted">
+              <li>✔️ Software portafoglio completo</li>
+              <li>✔️ Accesso a portafogli modello</li>
+              <li>✔️ Ricerche su 500+ titoli</li>
+              <li>✔️ Consulenza mensile (1h)</li>
+              <li>✔️ Report settimanali</li>
+              <li>✔️ Supporto prioritario</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO -->
+    <section id="demo">
+      <div class="container">
+        <h2 class="section-title">Prova il Software</h2>
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>Configura il tuo profilo</h3>
+            <div class="field">
+              <label>Obiettivo di investimento</label>
+              <select id="objective">
+                <option value="income">Reddito da dividendi</option>
+                <option value="growth" selected>Crescita del capitale</option>
+                <option value="balanced">Bilanciato</option>
+                <option value="conservative">Conservativo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Orizzonte temporale</label>
+              <select id="horizon">
+                <option value="short">1-3 anni</option>
+                <option value="medium" selected>3-7 anni</option>
+                <option value="long">7+ anni</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tolleranza al rischio</label>
+              <input id="tolerance" type="range" min="1" max="5" step="1" value="3"/>
+            </div>
+            <button class="btn" onclick="generateRecommendation()">Genera raccomandazione</button>
+          </div>
+          <div class="card">
+            <h3 id="recTitle">Raccomandazione: Portfolio Growth</h3>
+            <p class="muted" id="recDescription">Portafoglio ottimizzato per la crescita del capitale con esposizione globale.</p>
+            <div class="alloc" style="margin:10px 0 6px">
+              <span id="recEq" style="background:var(--accent);width:70%"></span>
+              <span id="recBd" style="background:var(--primary-2);width:25%"></span>
+              <span id="recCs" style="background:#64748b;width:5%"></span>
+            </div>
+            <p class="muted" id="recText">Azioni 70% • Obbligazioni 25% • Cash 5%</p>
+            <div class="stats">
+              <div class="stat"><div class="v" id="recReturn">8-12%</div><div class="muted">Rendimento atteso</div></div>
+              <div class="stat"><div class="v" id="recRisk">Media</div><div class="muted">Volatilità</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="container">
+        <h2 class="section-title">FAQ</h2>
+        <details>
+          <summary>Il software si connette al mio broker?</summary>
+          <p class="muted">Sì, supportiamo i principali broker italiani e internazionali per l'importazione automatica dei dati.</p>
+        </details>
+        <details>
+          <summary>Quanto spesso vengono aggiornate le ricerche?</summary>
+          <p class="muted">Le analisi vengono aggiornate settimanalmente, con report trimestrali dettagliati.</p>
+        </details>
+        <details>
+          <summary>Posso personalizzare i portafogli modello?</summary>
+          <p class="muted">Assolutamente! I portafogli modello sono solo suggerimenti che puoi modificare secondo le tue preferenze.</p>
+        </details>
+        <details>
+          <summary>La consulenza è inclusa nel prezzo?</summary>
+          <p class="muted">Sì, ogni piano include 1 ora di consulenza mensile con un analista certificato.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="inline" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>© <span id="year"></span> InvestiPro (demo)</div>
+        <div class="legal">Questa pagina è solo un abbozzo UI per scopi didattici.
+        Non rappresenta un servizio reale né fornisce consulenza finanziaria.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const fmt = new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR', maximumFractionDigits: 0 });
+    const fmtDec = new Intl.NumberFormat('it-IT', { style:'currency', currency:'EUR', minimumFractionDigits:2, maximumFractionDigits:2 });
+
+    // Hero elements
+    const amount = document.getElementById('amount');
+    const amountOut = document.getElementById('amountOut');
+    const stocks = document.getElementById('stocks');
+    const stocksOut = document.getElementById('stocksOut');
+    const performanceOut = document.getElementById('performanceOut');
+    const dividendOut = document.getElementById('dividendOut');
+    const riskOut = document.getElementById('riskOut');
+
+    // Plan elements
+    const planRate = document.getElementById('planRate');
+    const planRateOut = document.getElementById('planRateOut');
+    const planYear = document.getElementById('planYear');
+    const planDay = document.getElementById('planDay');
+    const planPercent = document.getElementById('planPercent');
+
+    // Recommendation elements
+    const objective = document.getElementById('objective');
+    const horizon = document.getElementById('horizon');
+    const tolerance = document.getElementById('tolerance');
+    const recTitle = document.getElementById('recTitle');
+    const recDescription = document.getElementById('recDescription');
+    const recText = document.getElementById('recText');
+    const recEq = document.getElementById('recEq');
+    const recBd = document.getElementById('recBd');
+    const recCs = document.getElementById('recCs');
+    const recReturn = document.getElementById('recReturn');
+    const recRisk = document.getElementById('recRisk');
+
+    const yearSpan = document.getElementById('year');
+    yearSpan.textContent = new Date().getFullYear();
+
+    // Portfolio configurations by risk level
+    const PORTFOLIOS = {
+      1: {name:'Rischio 1 - Molto Conservativo', eq:0, bd:85, cs:15, return:'2-4%', risk:'Molto bassa'},
+      2: {name:'Rischio 2 - Conservativo', eq:25, bd:65, cs:10, return:'3-6%', risk:'Bassa'},
+      3: {name:'Rischio 3 - Moderato', eq:50, bd:45, cs:5, return:'5-8%', risk:'Media'},
+      4: {name:'Rischio 4 - Dinamico', eq:75, bd:20, cs:5, return:'7-12%', risk:'Alta'},
+      5: {name:'Rischio 5 - Aggressivo', eq:100, bd:0, cs:0, return:'10-18%', risk:'Molto alta'}
+    };
+
+    function updateHero(){
+      amountOut.textContent = fmt.format(+amount.value);
+      stocksOut.textContent = stocks.value + ' titoli';
+      
+      // Simulate performance based on amount and stocks
+      const basePerf = 8 + (Math.random() * 8);
+      performanceOut.textContent = '+' + basePerf.toFixed(1) + '%';
+      
+      // Simulate dividends
+      const dividendYield = 0.035 + (Math.random() * 0.02);
+      const dividends = +amount.value * dividendYield;
+      dividendOut.textContent = fmt.format(dividends);
+      
+      // Risk based on number of stocks
+      const risk = +stocks.value < 5 ? 'Alta' : +stocks.value < 10 ? 'Media' : 'Bassa';
+      riskOut.textContent = risk;
+    }
+
+    function updatePlan(){
+      const rate = +planRate.value;
+      planRateOut.textContent = fmt.format(rate) + '/mese';
+      planYear.textContent = fmt.format(rate * 12);
+      planDay.textContent = fmtDec.format(rate / 30);
+      const percent = ((rate * 12) / 25000 * 100).toFixed(2);
+      planPercent.textContent = percent + '%';
+    }
+
+    function generateRecommendation(){
+      const obj = objective.value;
+      const h = horizon.value;
+      const tol = +tolerance.value;
+      
+      // Determine risk level based on inputs
+      let riskLevel = 3; // Default moderate
+      
+      if (obj === 'income') riskLevel = 2;
+      else if (obj === 'growth') riskLevel = 4;
+      else if (obj === 'balanced') riskLevel = 3;
+      else if (obj === 'conservative') riskLevel = 1;
+      
+      // Adjust based on tolerance
+      if (tol <= 2) riskLevel = Math.max(1, riskLevel - 1);
+      if (tol >= 4) riskLevel = Math.min(5, riskLevel + 1);
+      
+      // Adjust based on horizon
+      if (h === 'short') riskLevel = Math.max(1, riskLevel - 1);
+      if (h === 'long') riskLevel = Math.min(5, riskLevel + 1);
+      
+      const portfolio = PORTFOLIOS[riskLevel];
+      
+      recTitle.textContent = `Raccomandazione: ${portfolio.name}`;
+      recDescription.textContent = `Portafoglio ottimizzato per ${objective.options[objective.selectedIndex].text.toLowerCase()} con orizzonte ${horizon.options[horizon.selectedIndex].text.toLowerCase()}.`;
+      recEq.style.width = portfolio.eq + '%';
+      recBd.style.width = portfolio.bd + '%';
+      recCs.style.width = portfolio.cs + '%';
+      recText.textContent = `Azioni ${portfolio.eq}% • Obbligazioni ${portfolio.bd}% • Cash ${portfolio.cs}%`;
+      recReturn.textContent = portfolio.return;
+      recRisk.textContent = portfolio.risk;
+    }
+
+    function showPortfolio(type){
+      const p = PORTFOLIOS[type];
+      alert(`${p.name}\nAzioni: ${p.eq}%\nObbligazioni: ${p.bd}%\nCash: ${p.cs}%\nRendimento atteso: ${p.return}\nRischio: ${p.risk}`);
+    }
+
+    function searchStock(){
+      const query = document.getElementById('searchStock').value;
+      if (query) {
+        alert(`Ricerca per: ${query}\n\nAnalisi fondamentale, tecnica e raccomandazioni disponibili nel software completo.`);
+      }
+    }
+
+    // Event listeners
+    amount.addEventListener('input', updateHero);
+    stocks.addEventListener('input', updateHero);
+    planRate.addEventListener('input', updatePlan);
+
+    // Initialize
+    updateHero();
+    updatePlan();
+    generateRecommendation();
+    
+    // Expose functions for buttons
+    window.showPortfolio = showPortfolio;
+    window.searchStock = searchStock;
+    window.generateRecommendation = generateRecommendation;
+  </script>
+</body>
+</html>
