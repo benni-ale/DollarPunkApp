@@ -155,7 +155,12 @@
       <main class="main-content">
         <!-- Dashboard Section -->
         <section id="dashboard" class="section active">
-          <h2>Dashboard</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h2>Dashboard</h2>
+            <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
+              🔄 Aggiorna
+            </button>
+          </div>
           
           <!-- Stats -->
           <div class="stats">
@@ -243,7 +248,12 @@
 
         <!-- Portfolio Section -->
         <section id="portfolio" class="section" style="display:none">
-          <h2>Portafoglio</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h2>Portafoglio</h2>
+            <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
+              🔄 Aggiorna
+            </button>
+          </div>
           
           <div class="grid cols-4">
             <div class="card">
@@ -590,6 +600,10 @@
   </div>
 
   <script>
+    // Global variables
+    let portfolioData = null;
+    let isLoading = false;
+
     // Navigation
     function showSection(sectionId) {
       // Hide all sections
@@ -605,6 +619,189 @@
         link.classList.remove('active');
       });
       event.target.classList.add('active');
+
+      // Load data for specific sections
+      if (sectionId === 'portfolio') {
+        loadPortfolioData();
+      }
+    }
+
+    // Load portfolio data from API
+    async function loadPortfolioData() {
+      if (isLoading) return;
+      
+      isLoading = true;
+      showLoading('Caricamento dati portafoglio...');
+      
+      try {
+        const response = await fetch('/api/portfolio');
+        if (!response.ok) {
+          throw new Error('Errore nel caricamento dati');
+        }
+        
+        portfolioData = await response.json();
+        updatePortfolioUI();
+        updateSidebar();
+        
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore nel caricamento dei dati del portafoglio');
+      } finally {
+        isLoading = false;
+        hideLoading();
+      }
+    }
+
+    // Update portfolio UI with real data
+    function updatePortfolioUI() {
+      if (!portfolioData) return;
+
+      const summary = portfolioData.summary;
+      const positions = portfolioData.positions;
+
+      // Update summary cards
+      document.querySelector('.stat .v[style*="color:var(--ok)"]').textContent = 
+        formatCurrency(summary.total_gain);
+      document.querySelector('.stat .v[style*="color:var(--accent)"]').textContent = 
+        formatCurrency(summary.total_value * 0.026); // Simulated dividends
+      document.querySelector('.stat .v[style*="color:var(--warn)"]').textContent = 
+        summary.total_gain_percent.toFixed(1) + '%';
+
+      // Update allocation cards
+      updateAllocationCards(positions, summary.total_value);
+
+      // Update portfolio positions table
+      const tbody = document.querySelector('#portfolio .table tbody');
+      tbody.innerHTML = '';
+
+      positions.forEach(position => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+          <td>${position.quantity}</td>
+          <td>${formatCurrency(position.current_price)}</td>
+          <td>${formatCurrency(position.current_value)}</td>
+          <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+          <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+          <td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showPositionDetails('${position.symbol}')">Gestisci</button></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Update allocation cards with real data
+    function updateAllocationCards(positions, totalValue) {
+      // Calculate allocation by asset class (simplified - all stocks for now)
+      const stocksValue = positions.reduce((sum, pos) => sum + pos.current_value, 0);
+      const cashValue = totalValue * 0.05; // 5% cash
+      const bondsValue = totalValue * 0.30; // 30% bonds (simulated)
+      
+      // Update allocation cards
+      const allocationCards = document.querySelectorAll('#portfolio .grid.cols-4 .card');
+      if (allocationCards.length >= 4) {
+        allocationCards[0].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(stocksValue);
+        allocationCards[0].querySelector('div[style*="color:var(--muted)"]').textContent = 
+          ((stocksValue / totalValue) * 100).toFixed(0) + '%';
+        
+        allocationCards[1].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(bondsValue);
+        allocationCards[1].querySelector('div[style*="color:var(--muted)"]').textContent = 
+          ((bondsValue / totalValue) * 100).toFixed(0) + '%';
+        
+        allocationCards[2].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(cashValue);
+        allocationCards[2].querySelector('div[style*="color:var(--muted)"]').textContent = 
+          ((cashValue / totalValue) * 100).toFixed(0) + '%';
+        
+        allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(totalValue);
+        allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '100%';
+      }
+    }
+
+    // Update sidebar with real data
+    function updateSidebar() {
+      if (!portfolioData) return;
+
+      const summary = portfolioData.summary;
+      
+      // Update portfolio value
+      document.querySelector('.sidebar .field div[style*="color:var(--ok)"]').textContent = 
+        formatCurrency(summary.total_value);
+      
+      // Update YTD performance
+      document.querySelector('.sidebar .field div[style*="color:var(--ok)"][style*="font-size:18px"]').textContent = 
+        (summary.total_gain_percent >= 0 ? '+' : '') + summary.total_gain_percent.toFixed(1) + '%';
+      
+      // Update dividends (simulated)
+      document.querySelector('.sidebar .field div[style*="color:var(--muted)"][style*="font-size:16px"]').textContent = 
+        formatCurrency(summary.total_value * 0.026);
+    }
+
+    // Utility functions
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('it-IT', { 
+        style: 'currency', 
+        currency: 'EUR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+
+    function getStockName(symbol) {
+      const names = {
+        'AAPL': 'Apple Inc.',
+        'MSFT': 'Microsoft Corp.',
+        'NVDA': 'NVIDIA Corp.',
+        'TSLA': 'Tesla Inc.',
+        'ENEL.MI': 'Enel S.p.A.',
+        'GOOGL': 'Alphabet Inc.',
+        'AMZN': 'Amazon.com Inc.',
+        'META': 'Meta Platforms Inc.'
+      };
+      return names[symbol] || symbol;
+    }
+
+    function showPositionDetails(symbol) {
+      const position = portfolioData.positions.find(p => p.symbol === symbol);
+      if (position) {
+        alert(`${symbol} - ${getStockName(symbol)}\n\nPrezzo corrente: ${formatCurrency(position.current_price)}\nQuantità: ${position.quantity}\nValore: ${formatCurrency(position.current_value)}\nGuadagno/Perdita: ${formatCurrency(position.gain_loss)} (${position.gain_loss_percent.toFixed(1)}%)`);
+      }
+    }
+
+    function showLoading(message) {
+      // Create loading overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'loading-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        color: white;
+        font-size: 18px;
+      `;
+      overlay.innerHTML = `
+        <div style="text-align: center;">
+          <div style="margin-bottom: 10px;">⏳</div>
+          <div>${message}</div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function hideLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+    }
+
+    function showError(message) {
+      alert('Errore: ' + message);
     }
 
     // Order placement
@@ -635,6 +832,9 @@
       const today = new Date();
       const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
       document.getElementById('orderValidUntil').value = nextWeek.toISOString().split('T')[0];
+      
+      // Load initial portfolio data
+      loadPortfolioData();
     });
   </script>
 </body>
