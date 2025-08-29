@@ -63,6 +63,9 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_email' not in session:
+            # Per le API, restituisci un errore JSON invece di un redirect
+            if request.path.startswith('/api/'):
+                return jsonify({"error": "Non autenticato"}), 401
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -460,6 +463,43 @@ def api_tickers():
     except Exception as e:
         print(f"Error loading tickers: {e}")
         return jsonify([])
+
+@app.route('/api/test')
+def api_test():
+    """Test endpoint to verify routing is working"""
+    return jsonify({"message": "API is working", "endpoints": ["/api/portfolio/add", "/api/portfolio/remove", "/api/portfolio/update"]})
+
+@app.route('/api/test-post', methods=['POST'])
+def api_test_post():
+    """Test POST endpoint to verify POST requests work"""
+    data = request.get_json() or {}
+    return jsonify({
+        "message": "POST request received",
+        "data": data,
+        "method": request.method
+    })
+
+@app.route('/api/debug/routes')
+def api_debug_routes():
+    """Debug endpoint to see all registered routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'rule': str(rule)
+        })
+    return jsonify(routes)
+
+@app.route('/api/debug/session')
+def api_debug_session():
+    """Debug endpoint to check session status"""
+    return jsonify({
+        'authenticated': 'user_email' in session,
+        'user_email': session.get('user_email'),
+        'user_name': session.get('user_name'),
+        'session_data': dict(session)
+    })
 
 if __name__ == '__main__':
     if not ALPHA_VANTAGE_API_KEY:
