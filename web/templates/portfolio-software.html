@@ -86,6 +86,13 @@
     .alloc{display:flex;height:8px;border-radius:999px;overflow:hidden;border:1px solid rgba(148,163,184,.2);background:#0b1424;margin:8px 0}
     .alloc > span{display:block;height:100%}
 
+    /* Modal */
+    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000}
+    .modal-content{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--card);border-radius:var(--radius);padding:24px;min-width:400px;border:1px solid rgba(148,163,184,.18)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer}
+    .modal-close:hover{color:var(--text)}
+
     /* Responsive */
     @media (max-width:1200px){
       .app-layout{grid-template-columns:1fr}
@@ -97,6 +104,7 @@
       .stats{grid-template-columns:1fr}
       .grid.cols-4,.grid.cols-3{grid-template-columns:1fr}
       .grid.cols-2{grid-template-columns:1fr}
+      .modal-content{min-width:90%;margin:20px}
     }
   </style>
 </head>
@@ -104,26 +112,26 @@
   <header>
     <div class="container nav">
       <div class="brand"><div class="logo" aria-hidden></div> DollarPunk</div>
-             <nav class="menu">
-         <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
-         <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
-         <a href="#orders" onclick="showSection('orders')">Ordini</a>
-         <a href="#reports" onclick="showSection('reports')">Report</a>
-         <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
-         <a class="btn secondary" href="{{ url_for('logout') }}">Logout</a>
-       </nav>
+      <nav class="menu">
+        <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
+        <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
+        <a href="#orders" onclick="showSection('orders')">Ordini</a>
+        <a href="#reports" onclick="showSection('reports')">Report</a>
+        <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
+        <a class="btn secondary" href="/logout">Logout</a>
+      </nav>
     </div>
   </header>
 
   <div class="container">
     <div class="app-layout">
-             <!-- Sidebar -->
-       <aside class="sidebar">
-         <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(148,163,184,.18)">
-           <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Benvenuto</div>
-           <div style="font-size:18px;font-weight:600;color:var(--text)">{{ session.user_name }}</div>
-         </div>
-         <h3>Portafoglio</h3>
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(148,163,184,.18)">
+          <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Benvenuto</div>
+          <div style="font-size:18px;font-weight:600;color:var(--text)">{{ session.user_name }}</div>
+        </div>
+        <h3>Portafoglio</h3>
         <div class="field">
           <label>Valore</label>
           <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892</div>
@@ -134,31 +142,14 @@
         </div>
         <div class="field">
           <label>Dividendi</label>
-          <div style="font-size:16px;color:var(--muted)">€ 1.248</div>
-        </div>
-        
-        <h3 style="margin-top:24px">Allocazione</h3>
-        <div class="alloc">
-          <span style="background:var(--accent);width:65%"></span>
-          <span style="background:var(--primary-2);width:30%"></span>
-          <span style="background:#64748b;width:5%"></span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:8px">
-          Azioni 65% • Obbligazioni 30% • Cash 5%
-        </div>
-
-        <h3 style="margin-top:24px">Posizioni</h3>
-        <div style="font-size:14px;color:var(--muted)">
-          <div>8 titoli azionari</div>
-          <div>3 obbligazioni</div>
-          <div>1 ETF</div>
+          <div style="font-size:16px;color:var(--muted)">€ 1.245</div>
         </div>
       </aside>
 
       <!-- Main Content -->
       <main class="main-content">
         <!-- Dashboard Section -->
-        <section id="dashboard" class="section active">
+        <section id="dashboard" class="section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
             <h2>Dashboard</h2>
             <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
@@ -166,87 +157,38 @@
             </button>
           </div>
           
-          <!-- Stats -->
           <div class="stats">
             <div class="stat">
-              <div class="v" style="color:var(--ok)">+€ 5.247</div>
-              <div class="label">Guadagno</div>
+              <div class="v" style="color:var(--ok)">€ 5.892</div>
+              <div class="label">Guadagno Totale</div>
             </div>
             <div class="stat">
-              <div class="v" style="color:var(--accent)">€ 1.248</div>
+              <div class="v" style="color:var(--accent)">€ 1.245</div>
               <div class="label">Dividendi</div>
             </div>
             <div class="stat">
-              <div class="v" style="color:var(--warn)">12,4%</div>
-              <div class="label">Performance</div>
+              <div class="v" style="color:var(--warn)">+12,4%</div>
+              <div class="label">Performance YTD</div>
             </div>
             <div class="stat">
-              <div class="v" style="color:var(--muted)">0,85</div>
-              <div class="label">Beta</div>
+              <div class="v" style="color:var(--primary)">8</div>
+              <div class="label">Posizioni</div>
             </div>
           </div>
 
-          <!-- Charts -->
           <div class="grid cols-2">
             <div class="card">
               <h3>Performance</h3>
               <div class="chart-container">
-                <div class="chart-placeholder">
-                  📈 Performance 12 mesi
-                </div>
+                <div class="chart-placeholder">📈 Grafico performance</div>
               </div>
             </div>
             <div class="card">
               <h3>Allocazione</h3>
               <div class="chart-container">
-                <div class="chart-placeholder">
-                  🥧 Allocazione settoriale
-                </div>
+                <div class="chart-placeholder">🥧 Grafico allocazione</div>
               </div>
             </div>
-          </div>
-
-          <!-- Recent Activity -->
-          <div class="card" style="margin-top:24px">
-            <h3>Attività</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Tipo</th>
-                  <th>Titolo</th>
-                  <th>Quantità</th>
-                  <th>Prezzo</th>
-                  <th>Valore</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>15/01/2024</td>
-                  <td class="positive">Acquisto</td>
-                  <td>AAPL</td>
-                  <td>10</td>
-                  <td>€ 185,20</td>
-                  <td>€ 1.852,00</td>
-                </tr>
-                <tr>
-                  <td>12/01/2024</td>
-                  <td class="positive">Dividendo</td>
-                  <td>ENEL</td>
-                  <td>-</td>
-                  <td>-</td>
-                  <td class="positive">€ 89,50</td>
-                </tr>
-                <tr>
-                  <td>10/01/2024</td>
-                  <td class="negative">Vendita</td>
-                  <td>TSLA</td>
-                  <td>5</td>
-                  <td>€ 240,80</td>
-                  <td>€ 1.204,00</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </section>
 
@@ -254,9 +196,14 @@
         <section id="portfolio" class="section" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
             <h2>Portafoglio</h2>
-            <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
-              🔄 Aggiorna
-            </button>
+            <div style="display:flex;gap:10px">
+              <button class="btn" onclick="showAddPositionModal()" style="padding:8px 16px;font-size:14px">
+                ➕ Aggiungi Posizione
+              </button>
+              <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
+                🔄 Aggiorna
+              </button>
+            </div>
           </div>
           
           <div class="grid cols-4">
@@ -304,7 +251,10 @@
                   <td>€ 4.630,00</td>
                   <td>9,7%</td>
                   <td class="positive">+8,2%</td>
-                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                  <td>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('AAPL')">Modifica</button>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('AAPL')">Rimuovi</button>
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
@@ -313,7 +263,10 @@
                   <td>€ 5.677,50</td>
                   <td>11,9%</td>
                   <td class="positive">+15,4%</td>
-                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                  <td>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('MSFT')">Modifica</button>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('MSFT')">Rimuovi</button>
+                  </td>
                 </tr>
                 <tr>
                   <td><strong>ENEL</strong><br><span style="color:var(--muted);font-size:12px">Enel S.p.A.</span></td>
@@ -322,16 +275,10 @@
                   <td>€ 3.400,00</td>
                   <td>7,1%</td>
                   <td class="negative">-2,1%</td>
-                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
-                </tr>
-                <tr>
-                  <td><strong>NVDA</strong><br><span style="color:var(--muted);font-size:12px">NVIDIA Corp.</span></td>
-                  <td>8</td>
-                  <td>€ 520,00</td>
-                  <td>€ 4.160,00</td>
-                  <td>8,7%</td>
-                  <td class="positive">+45,2%</td>
-                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                  <td>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('ENEL.MI')">Modifica</button>
+                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('ENEL.MI')">Rimuovi</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -340,31 +287,28 @@
 
         <!-- Orders Section -->
         <section id="orders" class="section" style="display:none">
-          <h2>Ordini</h2>
-          
+          <h2>Gestione Ordini</h2>
           <div class="grid cols-2">
             <div class="card">
-              <h3>Nuovo</h3>
+              <h3>Nuovo Ordine</h3>
               <div class="field">
-                <label>Tipo ordine</label>
+                <label>Tipo</label>
                 <select id="orderType">
-                  <option value="market">Mercato</option>
-                  <option value="limit">Limite</option>
-                  <option value="stop">Stop Loss</option>
-                  <option value="take">Take Profit</option>
+                  <option value="buy">Acquisto</option>
+                  <option value="sell">Vendita</option>
                 </select>
               </div>
               <div class="field">
                 <label>Titolo</label>
-                <input type="text" placeholder="Es: AAPL, MSFT..." id="orderSymbol">
+                <input type="text" id="orderSymbol" placeholder="Es: AAPL">
               </div>
               <div class="field">
                 <label>Quantità</label>
-                <input type="number" placeholder="Numero di azioni" id="orderQuantity">
+                <input type="number" id="orderQuantity" placeholder="100">
               </div>
               <div class="field">
-                <label>Prezzo (per ordini limite)</label>
-                <input type="number" placeholder="€ 0,00" id="orderPrice" step="0.01">
+                <label>Prezzo (opzionale)</label>
+                <input type="number" id="orderPrice" placeholder="Prezzo limite">
               </div>
               <div class="field">
                 <label>Valido fino</label>
@@ -372,13 +316,11 @@
               </div>
               <button class="btn" onclick="placeOrder()">Piazza Ordine</button>
             </div>
-            
             <div class="card">
-              <h3>Aperti</h3>
+              <h3>Ordini Aperti</h3>
               <table class="table">
                 <thead>
                   <tr>
-                    <th>Data</th>
                     <th>Tipo</th>
                     <th>Titolo</th>
                     <th>Quantità</th>
@@ -388,218 +330,130 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td>15/01/2024</td>
-                    <td>Limite</td>
-                    <td>TSLA</td>
+                    <td>Acquisto</td>
+                    <td>AAPL</td>
                     <td>10</td>
-                    <td>€ 250,00</td>
-                    <td style="color:var(--warn)">In attesa</td>
-                  </tr>
-                  <tr>
-                    <td>14/01/2024</td>
-                    <td>Stop Loss</td>
-                    <td>NVDA</td>
-                    <td>5</td>
-                    <td>€ 480,00</td>
-                    <td style="color:var(--warn)">Attivo</td>
+                    <td>€ 180,00</td>
+                    <td>In attesa</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-
-          <div class="card" style="margin-top:24px">
-            <h3>Cronologia</h3>
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Tipo</th>
-                  <th>Titolo</th>
-                  <th>Quantità</th>
-                  <th>Prezzo Eseguito</th>
-                  <th>Stato</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>15/01/2024</td>
-                  <td class="positive">Acquisto</td>
-                  <td>AAPL</td>
-                  <td>10</td>
-                  <td>€ 185,20</td>
-                  <td class="positive">Eseguito</td>
-                </tr>
-                <tr>
-                  <td>10/01/2024</td>
-                  <td class="negative">Vendita</td>
-                  <td>TSLA</td>
-                  <td>5</td>
-                  <td>€ 240,80</td>
-                  <td class="positive">Eseguito</td>
-                </tr>
-                <tr>
-                  <td>08/01/2024</td>
-                  <td class="positive">Acquisto</td>
-                  <td>MSFT</td>
-                  <td>8</td>
-                  <td>€ 378,50</td>
-                  <td class="positive">Eseguito</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </section>
 
         <!-- Reports Section -->
         <section id="reports" class="section" style="display:none">
-          <h2>Report</h2>
-          
-          <div class="grid cols-3">
+          <h2>Report e Analisi</h2>
+          <div class="grid cols-2">
             <div class="card">
-              <h3>Performance</h3>
-              <div style="margin-bottom:16px">
-                <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin-right:8px">1M</button>
-                <button class="btn" style="padding:6px 12px;font-size:12px;margin-right:8px">3M</button>
-                <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin-right:8px">6M</button>
-                <button class="btn secondary" style="padding:6px 12px;font-size:12px">1Y</button>
-              </div>
-              <div class="chart-container" style="height:200px">
-                <div class="chart-placeholder">
-                  📊 Grafico performance 3 mesi
-                </div>
+              <h3>Performance per Settore</h3>
+              <div class="chart-container">
+                <div class="chart-placeholder">📊 Grafico settori</div>
               </div>
             </div>
-            
-            <div class="card">
-              <h3>Rischio</h3>
-              <div style="margin-bottom:16px">
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                  <span>Volatilità</span>
-                  <span style="color:var(--warn)">15,2%</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                  <span>Beta</span>
-                  <span style="color:var(--muted)">0,85</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                  <span>Sharpe Ratio</span>
-                  <span style="color:var(--ok)">1,24</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-                  <span>Max Drawdown</span>
-                  <span style="color:var(--danger)">-8,5%</span>
-                </div>
-              </div>
-            </div>
-            
             <div class="card">
               <h3>Correlazioni</h3>
-              <div class="chart-container" style="height:200px">
-                <div class="chart-placeholder">
-                  🔗 Correlazioni
-                </div>
+              <div class="chart-container">
+                <div class="chart-placeholder">🔗 Matrice correlazioni</div>
               </div>
             </div>
-          </div>
-
-          <div class="card" style="margin-top:24px">
-            <h3>Report Mensile</h3>
-            <div class="grid cols-2">
-              <div>
-                <h4>Performance</h4>
-                <ul style="color:var(--muted);line-height:1.8">
-                  <li>Performance: +2,4%</li>
-                  <li>YTD: +12,4%</li>
-                  <li>Dividendi: € 89</li>
-                  <li>Operazioni: 3</li>
-                </ul>
-              </div>
-              <div>
-                <h4>Allocazione</h4>
-                <ul style="color:var(--muted);line-height:1.8">
-                  <li>Azioni: 65%</li>
-                  <li>Obbligazioni: 30%</li>
-                  <li>Cash: 5%</li>
-                  <li>Titoli: 12</li>
-                </ul>
-              </div>
-            </div>
-            <button class="btn" style="margin-top:16px">Scarica PDF</button>
           </div>
         </section>
 
         <!-- Settings Section -->
         <section id="settings" class="section" style="display:none">
           <h2>Impostazioni</h2>
-          
           <div class="grid cols-2">
             <div class="card">
               <h3>Profilo</h3>
               <div class="field">
                 <label>Nome</label>
-                <input type="text" value="Mario Rossi" id="profileName">
+                <input type="text" value="{{ session.user_name }}" readonly>
               </div>
               <div class="field">
                 <label>Email</label>
-                <input type="email" value="mario.rossi@email.com" id="profileEmail">
+                <input type="email" value="{{ session.user_email }}" readonly>
               </div>
+            </div>
+
+            <div class="card">
+              <h3>Broker</h3>
               <div class="field">
-                <label>Valuta preferita</label>
-                <select id="profileCurrency">
-                  <option value="EUR" selected>Euro (EUR)</option>
-                  <option value="USD">Dollaro (USD)</option>
-                  <option value="GBP">Sterlina (GBP)</option>
+                <label>Broker</label>
+                <select id="brokerSelect">
+                  <option value="">Seleziona broker...</option>
+                  <option value="degiro">DEGIRO</option>
+                  <option value="fineco">Fineco Bank</option>
+                  <option value="directa">Directa</option>
+                  <option value="interactive">Interactive Brokers</option>
                 </select>
               </div>
-              <button class="btn">Salva Profilo</button>
-            </div>
-            
-            <div class="card">
-              <h3>Notifiche</h3>
               <div class="field">
-                <label><input type="checkbox" checked> Ordini eseguiti</label>
+                <label>API Key</label>
+                <input type="password" placeholder="Inserisci API key" id="brokerApiKey">
               </div>
               <div class="field">
-                <label><input type="checkbox" checked> Dividendi ricevuti</label>
+                <label>API Secret</label>
+                <input type="password" placeholder="Inserisci API secret" id="brokerApiSecret">
               </div>
-              <div class="field">
-                <label><input type="checkbox"> Stop loss attivati</label>
-              </div>
-              <div class="field">
-                <label><input type="checkbox" checked> Report settimanali</label>
-              </div>
-              <div class="field">
-                <label><input type="checkbox"> Alert prezzi</label>
-              </div>
-              <button class="btn">Salva Preferenze</button>
+              <button class="btn">Connetti Broker</button>
             </div>
-          </div>
-
-          <div class="card" style="margin-top:24px">
-            <h3>Broker</h3>
-            <div class="field">
-              <label>Broker</label>
-              <select id="brokerSelect">
-                <option value="">Seleziona broker...</option>
-                <option value="degiro">DEGIRO</option>
-                <option value="fineco">Fineco Bank</option>
-                <option value="directa">Directa</option>
-                <option value="interactive">Interactive Brokers</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>API Key</label>
-              <input type="password" placeholder="Inserisci API key" id="brokerApiKey">
-            </div>
-            <div class="field">
-              <label>API Secret</label>
-              <input type="password" placeholder="Inserisci API secret" id="brokerApiSecret">
-            </div>
-            <button class="btn">Connetti Broker</button>
           </div>
         </section>
       </main>
+    </div>
+  </div>
+
+  <!-- Add Position Modal -->
+  <div id="addPositionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Aggiungi Posizione</h3>
+        <button class="modal-close" onclick="hideModal('addPositionModal')">&times;</button>
+      </div>
+      <div class="field">
+        <label>Simbolo Titolo</label>
+        <input type="text" id="addSymbol" placeholder="Es: AAPL, MSFT, ENEL.MI" style="text-transform:uppercase">
+      </div>
+      <div class="field">
+        <label>Quantità</label>
+        <input type="number" id="addQuantity" placeholder="100" min="1" step="1">
+      </div>
+      <div class="field">
+        <label>Prezzo Medio di Acquisto</label>
+        <input type="number" id="addAvgPrice" placeholder="180.50" min="0.01" step="0.01">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" onclick="addPosition()">Aggiungi</button>
+        <button class="btn secondary" onclick="hideModal('addPositionModal')">Annulla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Position Modal -->
+  <div id="editPositionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Modifica Posizione</h3>
+        <button class="modal-close" onclick="hideModal('editPositionModal')">&times;</button>
+      </div>
+      <div class="field">
+        <label>Simbolo Titolo</label>
+        <input type="text" id="editSymbol" readonly>
+      </div>
+      <div class="field">
+        <label>Quantità</label>
+        <input type="number" id="editQuantity" placeholder="100" min="1" step="1">
+      </div>
+      <div class="field">
+        <label>Prezzo Medio di Acquisto</label>
+        <input type="number" id="editAvgPrice" placeholder="180.50" min="0.01" step="0.01">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" onclick="updatePosition()">Aggiorna</button>
+        <button class="btn secondary" onclick="hideModal('editPositionModal')">Annulla</button>
+      </div>
     </div>
   </div>
 
@@ -687,7 +541,10 @@
           <td>${formatCurrency(position.current_value)}</td>
           <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
           <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-          <td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showPositionDetails('${position.symbol}')">Gestisci</button></td>
+          <td>
+            <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('${position.symbol}')">Modifica</button>
+            <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('${position.symbol}')">Rimuovi</button>
+          </td>
         `;
         tbody.appendChild(row);
       });
@@ -739,6 +596,147 @@
         formatCurrency(summary.total_value * 0.026);
     }
 
+    // Portfolio Management Functions
+    function showAddPositionModal() {
+      document.getElementById('addPositionModal').style.display = 'block';
+      // Clear form
+      document.getElementById('addSymbol').value = '';
+      document.getElementById('addQuantity').value = '';
+      document.getElementById('addAvgPrice').value = '';
+    }
+
+    function showEditPositionModal(symbol) {
+      const position = portfolioData.positions.find(p => p.symbol === symbol);
+      if (position) {
+        document.getElementById('editSymbol').value = symbol;
+        document.getElementById('editQuantity').value = position.quantity;
+        document.getElementById('editAvgPrice').value = position.avg_price;
+        document.getElementById('editPositionModal').style.display = 'block';
+      }
+    }
+
+    function hideModal(modalId) {
+      document.getElementById(modalId).style.display = 'none';
+    }
+
+    async function addPosition() {
+      const symbol = document.getElementById('addSymbol').value.toUpperCase().trim();
+      const quantity = parseFloat(document.getElementById('addQuantity').value);
+      const avgPrice = parseFloat(document.getElementById('addAvgPrice').value);
+
+      if (!symbol || !quantity || !avgPrice || quantity <= 0 || avgPrice <= 0) {
+        showError('Inserisci tutti i campi con valori validi');
+        return;
+      }
+
+      showLoading('Aggiunta posizione...');
+
+      try {
+        const response = await fetch('/api/portfolio/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: symbol,
+            quantity: quantity,
+            avg_price: avgPrice
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          hideModal('addPositionModal');
+          showSuccess(result.message);
+          loadPortfolioData(); // Reload portfolio data
+        } else {
+          showError(result.error || 'Errore nell\'aggiunta della posizione');
+        }
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore di rete');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function updatePosition() {
+      const symbol = document.getElementById('editSymbol').value;
+      const quantity = parseFloat(document.getElementById('editQuantity').value);
+      const avgPrice = parseFloat(document.getElementById('editAvgPrice').value);
+
+      if (!symbol || !quantity || !avgPrice || quantity <= 0 || avgPrice <= 0) {
+        showError('Inserisci tutti i campi con valori validi');
+        return;
+      }
+
+      showLoading('Aggiornamento posizione...');
+
+      try {
+        const response = await fetch('/api/portfolio/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: symbol,
+            quantity: quantity,
+            avg_price: avgPrice
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          hideModal('editPositionModal');
+          showSuccess(result.message);
+          loadPortfolioData(); // Reload portfolio data
+        } else {
+          showError(result.error || 'Errore nell\'aggiornamento della posizione');
+        }
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore di rete');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function removePosition(symbol) {
+      if (!confirm(`Sei sicuro di voler rimuovere la posizione ${symbol}?`)) {
+        return;
+      }
+
+      showLoading('Rimozione posizione...');
+
+      try {
+        const response = await fetch('/api/portfolio/remove', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: symbol
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showSuccess(result.message);
+          loadPortfolioData(); // Reload portfolio data
+        } else {
+          showError(result.error || 'Errore nella rimozione della posizione');
+        }
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore di rete');
+      } finally {
+        hideLoading();
+      }
+    }
+
     // Utility functions
     function formatCurrency(amount) {
       return new Intl.NumberFormat('it-IT', { 
@@ -761,13 +759,6 @@
         'META': 'Meta Platforms Inc.'
       };
       return names[symbol] || symbol;
-    }
-
-    function showPositionDetails(symbol) {
-      const position = portfolioData.positions.find(p => p.symbol === symbol);
-      if (position) {
-        alert(`${symbol} - ${getStockName(symbol)}\n\nPrezzo corrente: ${formatCurrency(position.current_price)}\nQuantità: ${position.quantity}\nValore: ${formatCurrency(position.current_value)}\nGuadagno/Perdita: ${formatCurrency(position.gain_loss)} (${position.gain_loss_percent.toFixed(1)}%)`);
-      }
     }
 
     function showLoading(message) {
@@ -805,7 +796,11 @@
     }
 
     function showError(message) {
-      alert('Errore: ' + message);
+      alert('❌ Errore: ' + message);
+    }
+
+    function showSuccess(message) {
+      alert('✅ ' + message);
     }
 
     // Order placement
@@ -832,10 +827,15 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-      // Set default date for orders
-      const today = new Date();
-      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      document.getElementById('orderValidUntil').value = nextWeek.toISOString().split('T')[0];
+      // Set current date
+      const now = new Date();
+      document.querySelector('.sidebar .field:last-child div').textContent = 
+        now.toLocaleDateString('it-IT', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
       
       // Load initial portfolio data
       loadPortfolioData();
