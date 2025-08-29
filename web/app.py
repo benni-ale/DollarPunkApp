@@ -67,6 +67,32 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def get_stock_name(symbol):
+    """Restituisce il nome del titolo dato il simbolo"""
+    names = {
+        'AAPL': 'Apple Inc.',
+        'MSFT': 'Microsoft Corp.',
+        'NVDA': 'NVIDIA Corp.',
+        'TSLA': 'Tesla Inc.',
+        'ENEL.MI': 'Enel S.p.A.',
+        'GOOGL': 'Alphabet Inc.',
+        'AMZN': 'Amazon.com Inc.',
+        'META': 'Meta Platforms Inc.',
+        'ENI.MI': 'Eni S.p.A.',
+        'ISP.MI': 'Intesa Sanpaolo S.p.A.',
+        'UCG.MI': 'UniCredit S.p.A.',
+        'TIT.MI': 'Telecom Italia S.p.A.',
+        'STM.MI': 'STMicroelectronics N.V.',
+        'PRY.MI': 'Prysmian S.p.A.',
+        'DIA.MI': 'DiaSorin S.p.A.',
+        'SPM.MI': 'Saipem S.p.A.',
+        'TEN.MI': 'Tenaris S.A.',
+        'RACE.MI': 'Ferrari N.V.',
+        'CNHI.MI': 'CNH Industrial N.V.',
+        'EXO.MI': 'Exor N.V.'
+    }
+    return names.get(symbol, f"{symbol} Stock")
+
 def get_stock_quote(symbol):
     """Ottiene il prezzo corrente di un titolo"""
     try:
@@ -330,27 +356,54 @@ def api_stock(symbol):
 def api_search():
     """API endpoint per cercare titoli"""
     query = request.args.get('q', '').upper()
-    if not query:
+    if len(query) < 2:
         return jsonify([])
     
-    user_email = session['user_email']
-    
-    # Carica il portafoglio dell'utente
+    # Search in user's portfolio first
     user_portfolios = load_user_portfolios()
-    if user_email in user_portfolios:
-        portfolio = user_portfolios[user_email]
-    elif user_email in USERS:
-        portfolio = USERS[user_email]["portfolio"]
-    else:
-        portfolio = {}
+    user_email = session.get('user_email')
+    user_portfolio = user_portfolios.get(user_email, {})
     
-    # Restituisce titoli dal portafoglio dell'utente che corrispondono alla query
     results = []
-    for symbol in portfolio.keys():
+    for symbol in user_portfolio.keys():
         if query in symbol:
-            results.append({"symbol": symbol, "name": f"{symbol} Stock"})
+            results.append({
+                'symbol': symbol,
+                'name': get_stock_name(symbol),
+                'in_portfolio': True
+            })
     
-    return jsonify(results)
+    # Also search in common stocks
+    common_stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'ENEL.MI', 'ENI.MI', 'ISP.MI']
+    for symbol in common_stocks:
+        if query in symbol and symbol not in [r['symbol'] for r in results]:
+            results.append({
+                'symbol': symbol,
+                'name': get_stock_name(symbol),
+                'in_portfolio': False
+            })
+    
+    return jsonify(results[:10])  # Limit to 10 results
+
+@app.route('/api/tickers')
+@login_required
+def api_tickers():
+    """Return all available tickers for autocomplete"""
+    try:
+        # Read tickers from symbols.csv
+        tickers = []
+        symbols_file = os.path.join(os.path.dirname(__file__), 'symbols.csv')
+        if os.path.exists(symbols_file):
+            with open(symbols_file, 'r', encoding='utf-8') as f:
+                next(f)  # Skip header
+                for line in f:
+                    ticker = line.strip()
+                    if ticker:
+                        tickers.append(ticker)
+        return jsonify(tickers)
+    except Exception as e:
+        print(f"Error loading tickers: {e}")
+        return jsonify([])
 
 if __name__ == '__main__':
     if not ALPHA_VANTAGE_API_KEY:

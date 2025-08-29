@@ -93,6 +93,15 @@
     .modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer}
     .modal-close:hover{color:var(--text)}
 
+    /* Autocomplete */
+    .autocomplete-container{position:relative}
+    .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--card);border:1px solid rgba(148,163,184,.25);border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;box-shadow:var(--shadow-soft);display:none}
+    .autocomplete-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(148,163,184,.1);font-size:14px}
+    .autocomplete-item:hover{background:rgba(148,163,184,.1)}
+    .autocomplete-item:last-child{border-bottom:none}
+    .autocomplete-item.selected{background:var(--primary);color:#001014}
+    .autocomplete-highlight{font-weight:bold;color:var(--accent)}
+
     /* Responsive */
     @media (max-width:1200px){
       .app-layout{grid-template-columns:1fr}
@@ -412,10 +421,13 @@
         <h3>Aggiungi Posizione</h3>
         <button class="modal-close" onclick="hideModal('addPositionModal')">&times;</button>
       </div>
-      <div class="field">
-        <label>Simbolo Titolo</label>
-        <input type="text" id="addSymbol" placeholder="Es: AAPL, MSFT, ENEL.MI" style="text-transform:uppercase">
-      </div>
+                              <div class="field">
+                          <label>Simbolo Titolo</label>
+                          <div class="autocomplete-container">
+                            <input type="text" id="addSymbol" placeholder="Es: AAPL, MSFT, ENEL.MI" style="text-transform:uppercase">
+                            <div class="autocomplete-dropdown" id="addSymbolDropdown"></div>
+                          </div>
+                        </div>
       <div class="field">
         <label>Quantità</label>
         <input type="number" id="addQuantity" placeholder="100" min="1" step="1">
@@ -825,6 +837,106 @@
       document.getElementById('orderValidUntil').value = '';
     }
 
+    // Autocomplete functionality
+    let allTickers = [];
+    let currentAutocompleteIndex = -1;
+
+    async function loadTickers() {
+      try {
+        const response = await fetch('/api/tickers');
+        allTickers = await response.json();
+      } catch (error) {
+        console.error('Error loading tickers:', error);
+      }
+    }
+
+    function setupAutocomplete(inputId, dropdownId) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+      
+      if (!input || !dropdown) return;
+
+      input.addEventListener('input', function() {
+        const query = this.value.toUpperCase();
+        
+        if (query.length < 2) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        // Filter tickers
+        const filtered = allTickers.filter(ticker => 
+          ticker.includes(query)
+        ).slice(0, 10);
+
+        if (filtered.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        // Create dropdown items
+        dropdown.innerHTML = filtered.map(ticker => {
+          const highlighted = ticker.replace(
+            new RegExp(query, 'gi'), 
+            `<span class="autocomplete-highlight">${query}</span>`
+          );
+          return `<div class="autocomplete-item" data-value="${ticker}">${highlighted}</div>`;
+        }).join('');
+
+        dropdown.style.display = 'block';
+        currentAutocompleteIndex = -1;
+      });
+
+      input.addEventListener('keydown', function(e) {
+        const items = dropdown.querySelectorAll('.autocomplete-item');
+        
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          currentAutocompleteIndex = Math.min(currentAutocompleteIndex + 1, items.length - 1);
+          updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          currentAutocompleteIndex = Math.max(currentAutocompleteIndex - 1, -1);
+          updateSelection(items);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (currentAutocompleteIndex >= 0 && items[currentAutocompleteIndex]) {
+            this.value = items[currentAutocompleteIndex].dataset.value;
+            dropdown.style.display = 'none';
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+          currentAutocompleteIndex = -1;
+        }
+      });
+
+      // Click on dropdown items
+      dropdown.addEventListener('click', function(e) {
+        if (e.target.classList.contains('autocomplete-item')) {
+          input.value = e.target.dataset.value;
+          dropdown.style.display = 'none';
+        }
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+          currentAutocompleteIndex = -1;
+        }
+      });
+    }
+
+    function updateSelection(items) {
+      items.forEach((item, index) => {
+        if (index === currentAutocompleteIndex) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       // Set current date
@@ -839,6 +951,11 @@
       
       // Load initial portfolio data
       loadPortfolioData();
+      
+      // Load tickers and setup autocomplete
+      loadTickers().then(() => {
+        setupAutocomplete('addSymbol', 'addSymbolDropdown');
+      });
     });
   </script>
 </body>
