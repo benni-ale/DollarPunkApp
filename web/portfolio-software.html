@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>InvestiPro – Software Portafoglio</title>
-  <meta name="description" content="Software completo per la gestione del portafoglio investimenti." />
+  <title>DollarPunk – Software Portafoglio</title>
+  <meta name="description" content="Software portafoglio." />
   <style>
     :root{
       --bg:#0b0f14;          /* page background (very dark) */
@@ -103,14 +103,14 @@
 <body>
   <header>
     <div class="container nav">
-      <div class="brand"><div class="logo" aria-hidden></div> InvestiPro</div>
+      <div class="brand"><div class="logo" aria-hidden></div> DollarPunk</div>
       <nav class="menu">
         <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
         <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
         <a href="#orders" onclick="showSection('orders')">Ordini</a>
         <a href="#reports" onclick="showSection('reports')">Report</a>
         <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
-        <a class="btn secondary" href="moneyfarm.html">← Torna al sito</a>
+        <a class="btn secondary" href="moneyfarm.html">← Home</a>
       </nav>
     </div>
   </header>
@@ -121,16 +121,16 @@
       <aside class="sidebar">
         <h3>Portafoglio</h3>
         <div class="field">
-          <label>Valore totale</label>
-          <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892,45</div>
+          <label>Valore</label>
+          <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892</div>
         </div>
         <div class="field">
-          <label>Performance YTD</label>
+          <label>YTD</label>
           <div style="font-size:18px;font-weight:600;color:var(--ok)">+12,4%</div>
         </div>
         <div class="field">
-          <label>Dividendi YTD</label>
-          <div style="font-size:16px;color:var(--muted)">€ 1.247,80</div>
+          <label>Dividendi</label>
+          <div style="font-size:16px;color:var(--muted)">€ 1.248</div>
         </div>
         
         <h3 style="margin-top:24px">Allocazione</h3>
@@ -161,15 +161,15 @@
           <div class="stats">
             <div class="stat">
               <div class="v" style="color:var(--ok)">+€ 5.247</div>
-              <div class="label">Guadagno YTD</div>
+              <div class="label">Guadagno</div>
             </div>
             <div class="stat">
               <div class="v" style="color:var(--accent)">€ 1.248</div>
-              <div class="label">Dividendi YTD</div>
+              <div class="label">Dividendi</div>
             </div>
             <div class="stat">
               <div class="v" style="color:var(--warn)">12,4%</div>
-              <div class="label">Performance YTD</div>
+              <div class="label">Performance</div>
             </div>
             <div class="stat">
               <div class="v" style="color:var(--muted)">0,85</div>
@@ -180,18 +180,18 @@
           <!-- Charts -->
           <div class="grid cols-2">
             <div class="card">
-              <h3>Performance Portfolio</h3>
+              <h3>Performance</h3>
               <div class="chart-container">
                 <div class="chart-placeholder">
-                  📈 Grafico performance ultimi 12 mesi
+                  📈 Performance 12 mesi
                 </div>
               </div>
             </div>
             <div class="card">
-              <h3>Allocazione per Settore</h3>
+              <h3>Allocazione</h3>
               <div class="chart-container">
                 <div class="chart-placeholder">
-                  🥧 Grafico allocazione settoriale
+                  🥧 Allocazione settoriale
                 </div>
               </div>
             </div>
@@ -199,7 +199,7 @@
 
           <!-- Recent Activity -->
           <div class="card" style="margin-top:24px">
-            <h3>Attività Recenti</h3>
+            <h3>Attività</h3>
             <table class="table">
               <thead>
                 <tr>
@@ -249,22 +249,22 @@
             <div class="card">
               <h3>Azioni</h3>
               <div style="font-size:24px;font-weight:700;color:var(--accent)">€ 31.130</div>
-              <div style="color:var(--muted);font-size:14px">65% del portafoglio</div>
+              <div style="color:var(--muted);font-size:14px">65%</div>
             </div>
             <div class="card">
               <h3>Obbligazioni</h3>
               <div style="font-size:24px;font-weight:700;color:var(--primary-2)">€ 14.368</div>
-              <div style="color:var(--muted);font-size:14px">30% del portafoglio</div>
+              <div style="color:var(--muted);font-size:14px">30%</div>
             </div>
             <div class="card">
               <h3>Cash</h3>
               <div style="font-size:24px;font-weight:700;color:#64748b">€ 2.394</div>
-              <div style="color:var(--muted);font-size:14px">5% del portafoglio</div>
+              <div style="color:var(--muted);font-size:14px">5%</div>
             </div>
             <div class="card">
               <h3>Totale</h3>
               <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892</div>
-              <div style="color:var(--muted);font-size:14px">100% del portafoglio</div>
+              <div style="color:var(--muted);font-size:14px">100%</div>
             </div>
           </div>
 
@@ -326,11 +326,11 @@
 
         <!-- Orders Section -->
         <section id="orders" class="section" style="display:none">
-          <h2>Gestione Ordini</h2>
+          <h2>Ordini</h2>
           
           <div class="grid cols-2">
             <div class="card">
-              <h3>Nuovo Ordine</h3>
+              <h3>Nuovo</h3>
               <div class="field">
                 <label>Tipo ordine</label>
                 <select id="orderType">
@@ -360,7 +360,7 @@
             </div>
             
             <div class="card">
-              <h3>Ordini Aperti</h3>
+              <h3>Aperti</h3>
               <table class="table">
                 <thead>
                   <tr>
@@ -395,7 +395,7 @@
           </div>
 
           <div class="card" style="margin-top:24px">
-            <h3>Cronologia Ordini</h3>
+            <h3>Cronologia</h3>
             <table class="table">
               <thead>
                 <tr>
@@ -439,11 +439,11 @@
 
         <!-- Reports Section -->
         <section id="reports" class="section" style="display:none">
-          <h2>Report e Analisi</h2>
+          <h2>Report</h2>
           
           <div class="grid cols-3">
             <div class="card">
-              <h3>Performance per Periodo</h3>
+              <h3>Performance</h3>
               <div style="margin-bottom:16px">
                 <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin-right:8px">1M</button>
                 <button class="btn" style="padding:6px 12px;font-size:12px;margin-right:8px">3M</button>
@@ -458,7 +458,7 @@
             </div>
             
             <div class="card">
-              <h3>Analisi di Rischio</h3>
+              <h3>Rischio</h3>
               <div style="margin-bottom:16px">
                 <div style="display:flex;justify-content:space-between;margin-bottom:8px">
                   <span>Volatilità</span>
@@ -483,31 +483,31 @@
               <h3>Correlazioni</h3>
               <div class="chart-container" style="height:200px">
                 <div class="chart-placeholder">
-                  🔗 Matrice correlazioni
+                  🔗 Correlazioni
                 </div>
               </div>
             </div>
           </div>
 
           <div class="card" style="margin-top:24px">
-            <h3>Report Mensile - Gennaio 2024</h3>
+            <h3>Report Mensile</h3>
             <div class="grid cols-2">
               <div>
                 <h4>Performance</h4>
                 <ul style="color:var(--muted);line-height:1.8">
-                  <li>Performance mensile: +2,4%</li>
-                  <li>Performance YTD: +12,4%</li>
-                  <li>Dividendi ricevuti: € 89,50</li>
-                  <li>Operazioni eseguite: 3</li>
+                  <li>Performance: +2,4%</li>
+                  <li>YTD: +12,4%</li>
+                  <li>Dividendi: € 89</li>
+                  <li>Operazioni: 3</li>
                 </ul>
               </div>
               <div>
                 <h4>Allocazione</h4>
                 <ul style="color:var(--muted);line-height:1.8">
-                  <li>Azioni: 65% (€ 31.130)</li>
-                  <li>Obbligazioni: 30% (€ 14.368)</li>
-                  <li>Cash: 5% (€ 2.394)</li>
-                  <li>Numero titoli: 12</li>
+                  <li>Azioni: 65%</li>
+                  <li>Obbligazioni: 30%</li>
+                  <li>Cash: 5%</li>
+                  <li>Titoli: 12</li>
                 </ul>
               </div>
             </div>
@@ -563,7 +563,7 @@
           </div>
 
           <div class="card" style="margin-top:24px">
-            <h3>Integrazione Broker</h3>
+            <h3>Broker</h3>
             <div class="field">
               <label>Broker</label>
               <select id="brokerSelect">

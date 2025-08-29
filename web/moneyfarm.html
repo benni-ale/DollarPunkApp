@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DollarPunk</title>
-  <meta name="description" content="Piattaforma di consulenza finanziaria: software portafoglio, portafogli modello e ricerche su titoli." />
+  <meta name="description" content="Software portafoglio e analisi investimenti." />
   <style>
     :root{
       --bg:#012709;          /* page background (very dark) */
@@ -121,16 +121,16 @@
       <div class="hero-inner">
         <div>
           <span class="kicker">Demo • Consulenza finanziaria</span>
-          <h1>Software portafoglio + consulenza + ricerche investimenti</h1>
-          <p class="lead">Gestisci i tuoi investimenti con il nostro software, ricevi suggerimenti da portafogli modello e accedi a ricerche approfondite su centinaia di titoli.</p>
+          <h1>Software portafoglio e analisi investimenti</h1>
+          <p class="lead">Gestisci il tuo portafoglio e analizza titoli.</p>
           <div class="inline">
             <a class="btn" href="portfolio-software.html">Prova il software</a>
             <a class="btn secondary" href="#ricerche">Vedi le ricerche</a>
           </div>
           <div class="badges">
-            <span class="badge">Software portafoglio completo</span>
-            <span class="badge">Portafogli modello suggeriti</span>
-            <span class="badge">Ricerche su 500+ titoli</span>
+            <span class="badge">Portafoglio</span>
+            <span class="badge">Analisi</span>
+            <span class="badge">Report</span>
           </div>
         </div>
         <div class="hero-card">
@@ -158,16 +158,16 @@
         <h2 class="section-title">Software Portafoglio</h2>
         <div class="grid cols-3">
           <div class="card">
-            <h3>📊 Dashboard Completa</h3>
-            <p class="muted">Visualizza performance, allocazione, dividendi e metriche di rischio in tempo reale.</p>
+            <h3>Dashboard</h3>
+            <p class="muted">Performance e allocazione.</p>
           </div>
           <div class="card">
-            <h3>📋 Gestione Ordini</h3>
-            <p class="muted">Pianifica ordini, stop loss e take profit direttamente dalla piattaforma.</p>
+            <h3>Storico Ordini</h3>
+            <p class="muted">Gestione ordini e stop loss.</p>
           </div>
           <div class="card">
-            <h3>📊 Reportistica Avanzata</h3>
-            <p class="muted">Report dettagliati su performance, correlazioni e analisi di rischio del portafoglio.</p>
+            <h3>Report</h3>
+            <p class="muted">Analisi e correlazioni.</p>
           </div>
         </div>
       </div>
@@ -176,7 +176,7 @@
     <!-- PORTAFOGLI MODELLO -->
     <section id="portafogli">
       <div class="container">
-        <h2 class="section-title">Portafogli Modello per Livello di Rischio</h2>
+        <h2 class="section-title">Portafogli Modello</h2>
         <div class="grid cols-5">
           <div class="card">
             <h3>Rischio 1</h3>
@@ -225,11 +225,11 @@
     <!-- RICERCHE -->
     <section id="ricerche">
       <div class="container">
-        <h2 class="section-title">Ricerche di Investimento</h2>
+        <h2 class="section-title">Analisi Titoli</h2>
         <div class="grid cols-2">
           <div class="card">
             <h3>Analisi Fondamentale</h3>
-            <p class="muted">Report dettagliati su oltre 500 titoli con valutazioni e raccomandazioni.</p>
+            <p class="muted">Report su 500+ titoli.</p>
             <div class="field">
               <label>Cerca titolo</label>
               <input type="text" placeholder="Es: Apple, Tesla, Enel..." id="searchStock">
@@ -237,7 +237,7 @@
                          <button class="btn" onclick="searchStock()">Cerca Ricerche</button>
           </div>
           <div class="card">
-            <h3>Ultime Ricerche Pubblicate</h3>
+            <h3>Ultime Analisi</h3>
             <table class="stock-table">
               <thead>
                 <tr>
@@ -282,11 +282,11 @@
     <!-- COSTI -->
     <section id="costi">
       <div class="container">
-        <h2 class="section-title">Piani e Costi</h2>
+        <h2 class="section-title">Costi</h2>
         <div class="grid cols-2">
           <div class="card">
             <h3>Software + Consulenza</h3>
-            <p class="muted">Accesso completo al software portafoglio e consulenza personalizzata.</p>
+            <p class="muted">Accesso completo al software.</p>
             <div class="field">
               <label>Piano mensile</label>
               <div class="inline"><input id="planRate" type="range" min="29" max="99" step="5" value="49"><span id="planRateOut">€ 49/mese</span></div>
@@ -300,12 +300,10 @@
           <div class="card">
             <h3>Cosa include</h3>
             <ul class="muted">
-              <li>✔️ Software portafoglio completo</li>
-              <li>✔️ Accesso a portafogli modello</li>
-              <li>✔️ Ricerche su 500+ titoli</li>
-              <li>✔️ Consulenza mensile (1h)</li>
-              <li>✔️ Report settimanali</li>
-              <li>✔️ Supporto prioritario</li>
+              <li>✔️ Software portafoglio</li>
+              <li>✔️ Portafogli modello</li>
+              <li>✔️ Analisi titoli</li>
+              <li>✔️ Report</li>
             </ul>
           </div>
         </div>
@@ -315,10 +313,10 @@
     <!-- DEMO -->
     <section id="demo">
       <div class="container">
-        <h2 class="section-title">Prova il Software</h2>
+        <h2 class="section-title">Demo</h2>
         <div class="grid cols-2">
           <div class="card">
-            <h3>Configura il tuo profilo</h3>
+            <h3>Profilo</h3>
             <div class="field">
               <label>Obiettivo di investimento</label>
               <select id="objective">
@@ -365,20 +363,20 @@
       <div class="container">
         <h2 class="section-title">FAQ</h2>
         <details>
-          <summary>Il software si connette al mio broker?</summary>
-          <p class="muted">Sì, supportiamo i principali broker italiani e internazionali per l'importazione automatica dei dati.</p>
+          <summary>Il software si connette al broker?</summary>
+          <p class="muted">Sì, supporta i principali broker.</p>
         </details>
         <details>
-          <summary>Quanto spesso vengono aggiornate le ricerche?</summary>
-          <p class="muted">Le analisi vengono aggiornate settimanalmente, con report trimestrali dettagliati.</p>
+          <summary>Frequenza aggiornamenti?</summary>
+          <p class="muted">Settimanale.</p>
         </details>
         <details>
-          <summary>Posso personalizzare i portafogli modello?</summary>
-          <p class="muted">Assolutamente! I portafogli modello sono solo suggerimenti che puoi modificare secondo le tue preferenze.</p>
+          <summary>Personalizzazione portafogli?</summary>
+          <p class="muted">Sì, completamente personalizzabili.</p>
         </details>
         <details>
-          <summary>La consulenza è inclusa nel prezzo?</summary>
-          <p class="muted">Sì, ogni piano include 1 ora di consulenza mensile con un analista certificato.</p>
+          <summary>Consulenza inclusa?</summary>
+          <p class="muted">Sì, 1 ora mensile.</p>
         </details>
       </div>
     </section>
@@ -387,9 +385,8 @@
   <footer>
     <div class="container">
       <div class="inline" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div>© <span id="year"></span> InvestiPro (demo)</div>
-        <div class="legal">Questa pagina è solo un abbozzo UI per scopi didattici.
-        Non rappresenta un servizio reale né fornisce consulenza finanziaria.</div>
+        <div>© <span id="year"></span> DollarPunk (demo)</div>
+        <div class="legal">Demo UI - non rappresenta un servizio reale.</div>
       </div>
     </div>
   </footer>
