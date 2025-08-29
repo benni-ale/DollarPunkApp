@@ -1,15 +1,15 @@
 /* DollarPunk - Common Styles */
 :root {
-  --bg: #012709;          /* page background (very dark green) */
-  --card: #1b2711;        /* card background */
+  --bg: #0a0a0a;          /* page background (very dark gray) */
+  --card: #1a1a1a;        /* card background */
   --muted: #94a3b8;       /* muted text */
   --text: #e5e7eb;        /* primary text */
-  --primary: #aed406;     /* lime green */
-  --primary-2: #84a50e;   /* darker green */
-  --accent: #cbf838;      /* bright lime */
-  --ok: #22c55e;          /* green */
-  --warn: #f59e0b;        /* amber */
-  --danger: #ef4444;      /* red */
+  --primary: #4a4a4a;     /* dark gray */
+  --primary-2: #2a2a2a;   /* darker gray */
+  --accent: #6a6a6a;      /* medium gray */
+  --ok: #22c55e;          /* green (keep for positive values) */
+  --warn: #f59e0b;        /* amber (keep for warnings) */
+  --danger: #ef4444;      /* red (keep for errors) */
   --radius: 16px;
   --shadow: 0 10px 30px rgba(0,0,0,.35);
   --shadow-soft: 0 6px 18px rgba(0,0,0,.25);
@@ -22,7 +22,7 @@
 
 html, body {
   margin: 0;
-  background: linear-gradient(180deg, #11140b 0%, #0b1220 60%, #0a1426 100%);
+  background: linear-gradient(180deg, #0a0a0a 0%, #0f0f0f 60%, #1a1a1a 100%);
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
@@ -44,7 +44,7 @@ header {
   position: sticky;
   top: 0;
   backdrop-filter: saturate(160%) blur(10px);
-  background: rgba(11,15,20,.6);
+  background: rgba(10,10,10,.6);
   border-bottom: 1px solid rgba(148,163,184,.12);
   z-index: 50;
 }
@@ -91,7 +91,7 @@ header {
 
 .menu a.active {
   background: var(--primary);
-  color: #001014;
+  color: #ffffff;
   opacity: 1;
 }
 
@@ -102,7 +102,7 @@ header {
   gap: 8px;
   border: none;
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
-  color: #001014;
+  color: #ffffff;
   font-weight: 700;
   padding: 12px 16px;
   border-radius: 12px;
@@ -194,7 +194,7 @@ header {
 }
 
 .stat {
-  background: linear-gradient(180deg, #0f172a, #0b1220);
+  background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
   border: 1px solid rgba(148,163,184,.18);
   border-radius: var(--radius);
   padding: 16px;
@@ -225,7 +225,7 @@ header {
 }
 
 .table th {
-  background: #0b1424;
+  background: #1a1a1a;
   font-weight: 600;
   color: #cbd5e1;
   font-size: 14px;
@@ -261,7 +261,7 @@ header {
 }
 
 input, select, textarea {
-  background: #0b1424;
+  background: #1a1a1a;
   border: 1px solid rgba(148,163,184,.25);
   border-radius: 8px;
   padding: 10px 12px;
@@ -297,7 +297,7 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
 /* Charts */
 .chart-container {
   height: 300px;
-  background: #0b1424;
+  background: #1a1a1a;
   border-radius: 12px;
   padding: 16px;
   border: 1px solid rgba(148,163,184,.18);
@@ -319,7 +319,7 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid rgba(148,163,184,.2);
-  background: #0b1424;
+  background: #1a1a1a;
   margin: 8px 0;
 }
 
@@ -408,7 +408,7 @@ input[type="date"]::-webkit-datetime-edit-fields-wrapper {
 
 .autocomplete-item.selected {
   background: var(--primary);
-  color: #001014;
+  color: #ffffff;
 }
 
 .autocomplete-highlight {
@@ -451,7 +451,7 @@ h1 {
 }
 
 .hero-card {
-  background: linear-gradient(180deg, #0f172a, #0b1220);
+  background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
   border: 1px solid rgba(148,163,184,.18);
   border-radius: var(--radius);
   padding: 18px;
@@ -485,7 +485,7 @@ section {
 
 /* FAQ */
 details {
-  background: #0b1424;
+  background: #1a1a1a;
   border: 1px solid rgba(148,163,184,.18);
   border-radius: 12px;
   padding: 12px;
@@ -525,7 +525,7 @@ footer {
 }
 
 .stock-table th {
-  background: #0b1424;
+  background: #1a1a1a;
   font-weight: 600;
   color: #cbd5e1;
 }
