@@ -122,23 +122,39 @@ def get_historical_price(symbol, date):
         if "Time Series (Daily)" in data:
             time_series = data["Time Series (Daily)"]
             
-            # Cerca la data esatta o la data più vicina precedente
+            # Cerca la data esatta
             if date in time_series:
                 close_price = float(time_series[date]["4. close"])
+                print(f"Prezzo trovato per {symbol} alla data {date}: €{close_price}")
                 return close_price
             else:
                 # Se la data non esiste (weekend/holiday), cerca la data più vicina precedente
                 available_dates = sorted(time_series.keys(), reverse=True)
+                
+                # Prima cerca una data precedente
                 for available_date in available_dates:
                     if available_date <= date:
                         close_price = float(time_series[available_date]["4. close"])
-                        print(f"Usando prezzo del {available_date} per {symbol} (data richiesta: {date})")
+                        print(f"Usando prezzo del {available_date} per {symbol} (data richiesta: {date}): €{close_price}")
+                        return close_price
+                
+                # Se non trova date precedenti, cerca la data più vicina successiva
+                for available_date in available_dates:
+                    if available_date >= date:
+                        close_price = float(time_series[available_date]["4. close"])
+                        print(f"Usando prezzo del {available_date} per {symbol} (data richiesta: {date}): €{close_price}")
                         return close_price
                 
                 print(f"Nessun dato storico trovato per {symbol} alla data {date}")
                 return None
         else:
-            print(f"Errore per {symbol}: {data}")
+            # Controlla se c'è un errore di API
+            if "Error Message" in data:
+                print(f"Errore API Alpha Vantage per {symbol}: {data['Error Message']}")
+            elif "Note" in data:
+                print(f"Nota API Alpha Vantage per {symbol}: {data['Note']}")
+            else:
+                print(f"Errore sconosciuto per {symbol}: {data}")
             return None
             
     except Exception as e:
@@ -503,6 +519,34 @@ def api_debug_session():
         'user_name': session.get('user_name'),
         'session_data': dict(session)
     })
+
+@app.route('/api/debug/historical/<symbol>/<date>')
+def api_debug_historical(symbol, date):
+    """Debug endpoint to test historical price function"""
+    try:
+        price = get_historical_price(symbol, date)
+        if price:
+            return jsonify({
+                'symbol': symbol,
+                'date': date,
+                'price': price,
+                'success': True
+            })
+        else:
+            return jsonify({
+                'symbol': symbol,
+                'date': date,
+                'price': None,
+                'success': False,
+                'error': 'Prezzo non trovato'
+            }), 404
+    except Exception as e:
+        return jsonify({
+            'symbol': symbol,
+            'date': date,
+            'error': str(e),
+            'success': False
+        }), 500
 
 if __name__ == '__main__':
     if not ALPHA_VANTAGE_API_KEY:

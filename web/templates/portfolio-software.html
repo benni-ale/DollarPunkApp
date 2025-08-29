@@ -532,9 +532,18 @@
       // Clear form
       document.getElementById('addSymbol').value = '';
       document.getElementById('addQuantity').value = '';
-      // Set default date to today
+      // Set default date to today and max date to today
       const today = new Date().toISOString().split('T')[0];
-      document.getElementById('addPurchaseDate').value = today;
+      const dateInput = document.getElementById('addPurchaseDate');
+      dateInput.value = today;
+      dateInput.max = today; // Prevent future dates
+      
+      // Add a note about date selection
+      const dateField = document.getElementById('addPurchaseDate');
+      const note = document.createElement('div');
+      note.style.cssText = 'font-size:12px;color:var(--muted);margin-top:4px;';
+      note.textContent = '💡 Suggerimento: Usa date recenti (ultimi 2 anni) per migliori risultati';
+      dateField.parentNode.appendChild(note);
     }
 
     function showEditPositionModal(symbol) {
@@ -731,7 +740,37 @@
     }
 
     function showError(message) {
-      alert('❌ Errore: ' + message);
+      // Create a more user-friendly error dialog
+      const errorDialog = document.createElement('div');
+      errorDialog.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-secondary);
+        border: 1px solid var(--danger);
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 1001;
+        max-width: 400px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      `;
+      
+      errorDialog.innerHTML = `
+        <div style="display:flex;align-items:center;margin-bottom:16px;">
+          <div style="color:var(--danger);font-size:24px;margin-right:12px;">❌</div>
+          <h3 style="margin:0;color:var(--text);">Errore</h3>
+        </div>
+        <div style="color:var(--text);margin-bottom:20px;line-height:1.5;">${message}</div>
+        <div style="text-align:right;">
+          <button onclick="this.parentElement.parentElement.remove()" 
+                  style="background:var(--danger);color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">
+            OK
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(errorDialog);
     }
 
     function showSuccess(message) {
