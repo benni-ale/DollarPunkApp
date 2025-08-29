@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InvestiPro – Software Portafoglio</title>
+  <meta name="description" content="Software completo per la gestione del portafoglio investimenti." />
+  <style>
+    :root{
+      --bg:#0b0f14;          /* page background (very dark) */
+      --card:#111827;        /* card background */
+      --muted:#94a3b8;       /* muted text */
+      --text:#e5e7eb;        /* primary text */
+      --primary:#06b6d4;     /* cyan */
+      --primary-2:#0ea5a0;   /* teal */
+      --accent:#38bdf8;      /* light blue */
+      --ok:#22c55e;          /* green */
+      --warn:#f59e0b;        /* amber */
+      --danger:#ef4444;      /* red */
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --shadow-soft:0 6px 18px rgba(0,0,0,.25);
+      --max:1400px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;background:linear-gradient(180deg,#0b0f14 0%,#0b1220 60%,#0a1426 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+    a{color:var(--accent);text-decoration:none}
+    .container{max-width:var(--max);margin:0 auto;padding:0 20px}
+    
+    /* Header */
+    header{position:sticky;top:0;backdrop-filter:saturate(160%) blur(10px);background:rgba(11,15,20,.6);border-bottom:1px solid rgba(148,163,184,.12);z-index:50}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
+    .logo{width:34px;height:34px;background:conic-gradient(from 0deg, var(--primary), var(--accent));border-radius:10px;box-shadow:var(--shadow-soft)}
+    .menu{display:flex;gap:18px;align-items:center}
+    .menu a{color:var(--text);opacity:.9;padding:8px 12px;border-radius:8px;transition:all 0.2s}
+    .menu a:hover{background:rgba(148,163,184,.1)}
+    .menu a.active{background:var(--primary);color:#001014;opacity:1}
+    .btn{display:inline-flex;align-items:center;gap:8px;border:none;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#001014;font-weight:700;padding:12px 16px;border-radius:12px;box-shadow:var(--shadow);cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(148,163,184,.25);color:var(--text)}
+    .btn:active{transform:translateY(1px)}
+
+    /* Layout */
+    .app-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;padding:24px 0;min-height:calc(100vh - 80px)}
+    .sidebar{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid rgba(148,163,184,.18);height:fit-content}
+    .main-content{background:var(--card);border-radius:var(--radius);padding:24px;border:1px solid rgba(148,163,184,.18)}
+
+    /* Cards */
+    .card{background:var(--card);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-soft)}
+    .card h3{margin:0 0 12px;font-size:18px}
+    .muted{color:var(--muted)}
+
+    /* Grids */
+    .grid{display:grid;gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+
+    /* Stats */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .stat{background:linear-gradient(180deg,#0f172a, #0b1220);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius);padding:16px}
+    .stat .v{font-weight:800;font-size:24px;margin-bottom:4px}
+    .stat .label{color:var(--muted);font-size:14px}
+
+    /* Tables */
+    .table{width:100%;border-collapse:collapse;margin-top:12px}
+    .table th,.table td{padding:12px;text-align:left;border-bottom:1px solid rgba(148,163,184,.18)}
+    .table th{background:#0b1424;font-weight:600;color:#cbd5e1;font-size:14px}
+    .table tr:hover{background:rgba(148,163,184,.05)}
+    .positive{color:var(--ok)}
+    .negative{color:var(--danger)}
+    .neutral{color:var(--muted)}
+
+    /* Forms */
+    .field{display:grid;gap:6px;margin-bottom:16px}
+    .field label{font-size:14px;color:#cbd5e1;font-weight:500}
+    input,select,textarea{background:#0b1424;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+    .inline{display:flex;gap:10px;align-items:center}
+
+    /* Charts */
+    .chart-container{height:300px;background:#0b1424;border-radius:12px;padding:16px;border:1px solid rgba(148,163,184,.18)}
+    .chart-placeholder{height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:16px}
+
+    /* Allocation bars */
+    .alloc{display:flex;height:8px;border-radius:999px;overflow:hidden;border:1px solid rgba(148,163,184,.2);background:#0b1424;margin:8px 0}
+    .alloc > span{display:block;height:100%}
+
+    /* Responsive */
+    @media (max-width:1200px){
+      .app-layout{grid-template-columns:1fr}
+      .sidebar{order:2}
+      .main-content{order:1}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:768px){
+      .stats{grid-template-columns:1fr}
+      .grid.cols-4,.grid.cols-3{grid-template-columns:1fr}
+      .grid.cols-2{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand"><div class="logo" aria-hidden></div> InvestiPro</div>
+      <nav class="menu">
+        <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
+        <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
+        <a href="#orders" onclick="showSection('orders')">Ordini</a>
+        <a href="#reports" onclick="showSection('reports')">Report</a>
+        <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
+        <a class="btn secondary" href="moneyfarm.html">← Torna al sito</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="app-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <h3>Portafoglio</h3>
+        <div class="field">
+          <label>Valore totale</label>
+          <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892,45</div>
+        </div>
+        <div class="field">
+          <label>Performance YTD</label>
+          <div style="font-size:18px;font-weight:600;color:var(--ok)">+12,4%</div>
+        </div>
+        <div class="field">
+          <label>Dividendi YTD</label>
+          <div style="font-size:16px;color:var(--muted)">€ 1.247,80</div>
+        </div>
+        
+        <h3 style="margin-top:24px">Allocazione</h3>
+        <div class="alloc">
+          <span style="background:var(--accent);width:65%"></span>
+          <span style="background:var(--primary-2);width:30%"></span>
+          <span style="background:#64748b;width:5%"></span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px">
+          Azioni 65% • Obbligazioni 30% • Cash 5%
+        </div>
+
+        <h3 style="margin-top:24px">Posizioni</h3>
+        <div style="font-size:14px;color:var(--muted)">
+          <div>8 titoli azionari</div>
+          <div>3 obbligazioni</div>
+          <div>1 ETF</div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+          <h2>Dashboard</h2>
+          
+          <!-- Stats -->
+          <div class="stats">
+            <div class="stat">
+              <div class="v" style="color:var(--ok)">+€ 5.247</div>
+              <div class="label">Guadagno YTD</div>
+            </div>
+            <div class="stat">
+              <div class="v" style="color:var(--accent)">€ 1.248</div>
+              <div class="label">Dividendi YTD</div>
+            </div>
+            <div class="stat">
+              <div class="v" style="color:var(--warn)">12,4%</div>
+              <div class="label">Performance YTD</div>
+            </div>
+            <div class="stat">
+              <div class="v" style="color:var(--muted)">0,85</div>
+              <div class="label">Beta</div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="grid cols-2">
+            <div class="card">
+              <h3>Performance Portfolio</h3>
+              <div class="chart-container">
+                <div class="chart-placeholder">
+                  📈 Grafico performance ultimi 12 mesi
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Allocazione per Settore</h3>
+              <div class="chart-container">
+                <div class="chart-placeholder">
+                  🥧 Grafico allocazione settoriale
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card" style="margin-top:24px">
+            <h3>Attività Recenti</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Titolo</th>
+                  <th>Quantità</th>
+                  <th>Prezzo</th>
+                  <th>Valore</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>15/01/2024</td>
+                  <td class="positive">Acquisto</td>
+                  <td>AAPL</td>
+                  <td>10</td>
+                  <td>€ 185,20</td>
+                  <td>€ 1.852,00</td>
+                </tr>
+                <tr>
+                  <td>12/01/2024</td>
+                  <td class="positive">Dividendo</td>
+                  <td>ENEL</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td class="positive">€ 89,50</td>
+                </tr>
+                <tr>
+                  <td>10/01/2024</td>
+                  <td class="negative">Vendita</td>
+                  <td>TSLA</td>
+                  <td>5</td>
+                  <td>€ 240,80</td>
+                  <td>€ 1.204,00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Portfolio Section -->
+        <section id="portfolio" class="section" style="display:none">
+          <h2>Portafoglio</h2>
+          
+          <div class="grid cols-4">
+            <div class="card">
+              <h3>Azioni</h3>
+              <div style="font-size:24px;font-weight:700;color:var(--accent)">€ 31.130</div>
+              <div style="color:var(--muted);font-size:14px">65% del portafoglio</div>
+            </div>
+            <div class="card">
+              <h3>Obbligazioni</h3>
+              <div style="font-size:24px;font-weight:700;color:var(--primary-2)">€ 14.368</div>
+              <div style="color:var(--muted);font-size:14px">30% del portafoglio</div>
+            </div>
+            <div class="card">
+              <h3>Cash</h3>
+              <div style="font-size:24px;font-weight:700;color:#64748b">€ 2.394</div>
+              <div style="color:var(--muted);font-size:14px">5% del portafoglio</div>
+            </div>
+            <div class="card">
+              <h3>Totale</h3>
+              <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892</div>
+              <div style="color:var(--muted);font-size:14px">100% del portafoglio</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:24px">
+            <h3>Posizioni</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Titolo</th>
+                  <th>Quantità</th>
+                  <th>Prezzo</th>
+                  <th>Valore</th>
+                  <th>Peso</th>
+                  <th>Performance</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
+                  <td>25</td>
+                  <td>€ 185,20</td>
+                  <td>€ 4.630,00</td>
+                  <td>9,7%</td>
+                  <td class="positive">+8,2%</td>
+                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                </tr>
+                <tr>
+                  <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
+                  <td>15</td>
+                  <td>€ 378,50</td>
+                  <td>€ 5.677,50</td>
+                  <td>11,9%</td>
+                  <td class="positive">+15,4%</td>
+                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                </tr>
+                <tr>
+                  <td><strong>ENEL</strong><br><span style="color:var(--muted);font-size:12px">Enel S.p.A.</span></td>
+                  <td>500</td>
+                  <td>€ 6,80</td>
+                  <td>€ 3.400,00</td>
+                  <td>7,1%</td>
+                  <td class="negative">-2,1%</td>
+                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                </tr>
+                <tr>
+                  <td><strong>NVDA</strong><br><span style="color:var(--muted);font-size:12px">NVIDIA Corp.</span></td>
+                  <td>8</td>
+                  <td>€ 520,00</td>
+                  <td>€ 4.160,00</td>
+                  <td>8,7%</td>
+                  <td class="positive">+45,2%</td>
+                  <td><button class="btn secondary" style="padding:4px 8px;font-size:12px">Gestisci</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="orders" class="section" style="display:none">
+          <h2>Gestione Ordini</h2>
+          
+          <div class="grid cols-2">
+            <div class="card">
+              <h3>Nuovo Ordine</h3>
+              <div class="field">
+                <label>Tipo ordine</label>
+                <select id="orderType">
+                  <option value="market">Mercato</option>
+                  <option value="limit">Limite</option>
+                  <option value="stop">Stop Loss</option>
+                  <option value="take">Take Profit</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Titolo</label>
+                <input type="text" placeholder="Es: AAPL, MSFT..." id="orderSymbol">
+              </div>
+              <div class="field">
+                <label>Quantità</label>
+                <input type="number" placeholder="Numero di azioni" id="orderQuantity">
+              </div>
+              <div class="field">
+                <label>Prezzo (per ordini limite)</label>
+                <input type="number" placeholder="€ 0,00" id="orderPrice" step="0.01">
+              </div>
+              <div class="field">
+                <label>Valido fino</label>
+                <input type="date" id="orderValidUntil">
+              </div>
+              <button class="btn" onclick="placeOrder()">Piazza Ordine</button>
+            </div>
+            
+            <div class="card">
+              <h3>Ordini Aperti</h3>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Titolo</th>
+                    <th>Quantità</th>
+                    <th>Prezzo</th>
+                    <th>Stato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>15/01/2024</td>
+                    <td>Limite</td>
+                    <td>TSLA</td>
+                    <td>10</td>
+                    <td>€ 250,00</td>
+                    <td style="color:var(--warn)">In attesa</td>
+                  </tr>
+                  <tr>
+                    <td>14/01/2024</td>
+                    <td>Stop Loss</td>
+                    <td>NVDA</td>
+                    <td>5</td>
+                    <td>€ 480,00</td>
+                    <td style="color:var(--warn)">Attivo</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:24px">
+            <h3>Cronologia Ordini</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Titolo</th>
+                  <th>Quantità</th>
+                  <th>Prezzo Eseguito</th>
+                  <th>Stato</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>15/01/2024</td>
+                  <td class="positive">Acquisto</td>
+                  <td>AAPL</td>
+                  <td>10</td>
+                  <td>€ 185,20</td>
+                  <td class="positive">Eseguito</td>
+                </tr>
+                <tr>
+                  <td>10/01/2024</td>
+                  <td class="negative">Vendita</td>
+                  <td>TSLA</td>
+                  <td>5</td>
+                  <td>€ 240,80</td>
+                  <td class="positive">Eseguito</td>
+                </tr>
+                <tr>
+                  <td>08/01/2024</td>
+                  <td class="positive">Acquisto</td>
+                  <td>MSFT</td>
+                  <td>8</td>
+                  <td>€ 378,50</td>
+                  <td class="positive">Eseguito</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="reports" class="section" style="display:none">
+          <h2>Report e Analisi</h2>
+          
+          <div class="grid cols-3">
+            <div class="card">
+              <h3>Performance per Periodo</h3>
+              <div style="margin-bottom:16px">
+                <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin-right:8px">1M</button>
+                <button class="btn" style="padding:6px 12px;font-size:12px;margin-right:8px">3M</button>
+                <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin-right:8px">6M</button>
+                <button class="btn secondary" style="padding:6px 12px;font-size:12px">1Y</button>
+              </div>
+              <div class="chart-container" style="height:200px">
+                <div class="chart-placeholder">
+                  📊 Grafico performance 3 mesi
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3>Analisi di Rischio</h3>
+              <div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                  <span>Volatilità</span>
+                  <span style="color:var(--warn)">15,2%</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                  <span>Beta</span>
+                  <span style="color:var(--muted)">0,85</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                  <span>Sharpe Ratio</span>
+                  <span style="color:var(--ok)">1,24</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                  <span>Max Drawdown</span>
+                  <span style="color:var(--danger)">-8,5%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card">
+              <h3>Correlazioni</h3>
+              <div class="chart-container" style="height:200px">
+                <div class="chart-placeholder">
+                  🔗 Matrice correlazioni
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:24px">
+            <h3>Report Mensile - Gennaio 2024</h3>
+            <div class="grid cols-2">
+              <div>
+                <h4>Performance</h4>
+                <ul style="color:var(--muted);line-height:1.8">
+                  <li>Performance mensile: +2,4%</li>
+                  <li>Performance YTD: +12,4%</li>
+                  <li>Dividendi ricevuti: € 89,50</li>
+                  <li>Operazioni eseguite: 3</li>
+                </ul>
+              </div>
+              <div>
+                <h4>Allocazione</h4>
+                <ul style="color:var(--muted);line-height:1.8">
+                  <li>Azioni: 65% (€ 31.130)</li>
+                  <li>Obbligazioni: 30% (€ 14.368)</li>
+                  <li>Cash: 5% (€ 2.394)</li>
+                  <li>Numero titoli: 12</li>
+                </ul>
+              </div>
+            </div>
+            <button class="btn" style="margin-top:16px">Scarica PDF</button>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="section" style="display:none">
+          <h2>Impostazioni</h2>
+          
+          <div class="grid cols-2">
+            <div class="card">
+              <h3>Profilo</h3>
+              <div class="field">
+                <label>Nome</label>
+                <input type="text" value="Mario Rossi" id="profileName">
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" value="mario.rossi@email.com" id="profileEmail">
+              </div>
+              <div class="field">
+                <label>Valuta preferita</label>
+                <select id="profileCurrency">
+                  <option value="EUR" selected>Euro (EUR)</option>
+                  <option value="USD">Dollaro (USD)</option>
+                  <option value="GBP">Sterlina (GBP)</option>
+                </select>
+              </div>
+              <button class="btn">Salva Profilo</button>
+            </div>
+            
+            <div class="card">
+              <h3>Notifiche</h3>
+              <div class="field">
+                <label><input type="checkbox" checked> Ordini eseguiti</label>
+              </div>
+              <div class="field">
+                <label><input type="checkbox" checked> Dividendi ricevuti</label>
+              </div>
+              <div class="field">
+                <label><input type="checkbox"> Stop loss attivati</label>
+              </div>
+              <div class="field">
+                <label><input type="checkbox" checked> Report settimanali</label>
+              </div>
+              <div class="field">
+                <label><input type="checkbox"> Alert prezzi</label>
+              </div>
+              <button class="btn">Salva Preferenze</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:24px">
+            <h3>Integrazione Broker</h3>
+            <div class="field">
+              <label>Broker</label>
+              <select id="brokerSelect">
+                <option value="">Seleziona broker...</option>
+                <option value="degiro">DEGIRO</option>
+                <option value="fineco">Fineco Bank</option>
+                <option value="directa">Directa</option>
+                <option value="interactive">Interactive Brokers</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>API Key</label>
+              <input type="password" placeholder="Inserisci API key" id="brokerApiKey">
+            </div>
+            <div class="field">
+              <label>API Secret</label>
+              <input type="password" placeholder="Inserisci API secret" id="brokerApiSecret">
+            </div>
+            <button class="btn">Connetti Broker</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Navigation
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.section').forEach(section => {
+        section.style.display = 'none';
+      });
+      
+      // Show selected section
+      document.getElementById(sectionId).style.display = 'block';
+      
+      // Update active menu item
+      document.querySelectorAll('.menu a').forEach(link => {
+        link.classList.remove('active');
+      });
+      event.target.classList.add('active');
+    }
+
+    // Order placement
+    function placeOrder() {
+      const type = document.getElementById('orderType').value;
+      const symbol = document.getElementById('orderSymbol').value;
+      const quantity = document.getElementById('orderQuantity').value;
+      const price = document.getElementById('orderPrice').value;
+      const validUntil = document.getElementById('orderValidUntil').value;
+      
+      if (!symbol || !quantity) {
+        alert('Inserisci simbolo e quantità');
+        return;
+      }
+      
+      alert(`Ordine piazzato:\nTipo: ${type}\nTitolo: ${symbol}\nQuantità: ${quantity}\nPrezzo: ${price || 'Mercato'}\nValido fino: ${validUntil || 'Giorno'}`);
+      
+      // Clear form
+      document.getElementById('orderSymbol').value = '';
+      document.getElementById('orderQuantity').value = '';
+      document.getElementById('orderPrice').value = '';
+      document.getElementById('orderValidUntil').value = '';
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default date for orders
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      document.getElementById('orderValidUntil').value = nextWeek.toISOString().split('T')[0];
+    });
+  </script>
+</body>
+</html>
