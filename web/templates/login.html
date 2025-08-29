@@ -5,47 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DollarPunk – Login</title>
   <meta name="description" content="Accedi al tuo portafoglio DollarPunk" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    :root{
-      --bg:#0b0f14;          /* page background (very dark) */
-      --card:#111827;        /* card background */
-      --muted:#94a3b8;       /* muted text */
-      --text:#e5e7eb;        /* primary text */
-      --primary:#06b6d4;     /* cyan */
-      --primary-2:#0ea5a0;   /* teal */
-      --accent:#38bdf8;      /* light blue */
-      --ok:#22c55e;          /* green */
-      --warn:#f59e0b;        /* amber */
-      --danger:#ef4444;      /* red */
-      --radius:16px;
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --shadow-soft:0 6px 18px rgba(0,0,0,.25);
-      --max:1400px;
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;background:linear-gradient(180deg,#0b0f14 0%,#0b1220 60%,#0a1426 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;line-height:1.5}
-    a{color:var(--accent);text-decoration:none}
-    .container{max-width:var(--max);margin:0 auto;padding:0 20px}
-    
-    /* Header */
-    header{position:sticky;top:0;backdrop-filter:saturate(160%) blur(10px);background:rgba(11,15,20,.6);border-bottom:1px solid rgba(148,163,184,.12);z-index:50}
-    .nav{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-    .brand{display:flex;gap:10px;align-items:center;font-weight:700}
-    .logo{width:34px;height:34px;background:conic-gradient(from 0deg, var(--primary), var(--accent));border-radius:10px;box-shadow:var(--shadow-soft)}
-    
-    /* Login Form */
+    /* Login specific styles */
     .login-container{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 80px);padding:40px 20px}
     .login-card{background:var(--card);border:1px solid rgba(148,163,184,.18);border-radius:var(--radius);padding:40px;box-shadow:var(--shadow);max-width:400px;width:100%}
     .login-card h1{margin:0 0 8px;text-align:center;font-size:28px;font-weight:700}
     .login-card p{margin:0 0 32px;text-align:center;color:var(--muted)}
-    
-    /* Forms */
-    .field{display:grid;gap:8px;margin-bottom:20px}
-    .field label{font-size:14px;color:#cbd5e1;font-weight:500}
-    input{background:#0b1424;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:12px 16px;color:var(--text);font-size:16px;width:100%}
-    input:focus{outline:none;border-color:var(--primary)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#001014;font-weight:700;padding:14px 20px;border-radius:12px;box-shadow:var(--shadow);cursor:pointer;width:100%;font-size:16px;margin-top:8px}
-    .btn:active{transform:translateY(1px)}
     
     /* Messages */
     .message{background:var(--card);border:1px solid rgba(148,163,184,.18);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:14px}
