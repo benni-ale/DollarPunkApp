@@ -123,6 +123,44 @@ def get_stock_quote(symbol):
         print(f"Errore nell'ottenere quote per {symbol}: {e}")
         return None
 
+def get_historical_price(symbol, date):
+    """Ottiene il prezzo di chiusura storico per una data specifica"""
+    try:
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": symbol,
+            "apikey": ALPHA_VANTAGE_API_KEY
+        }
+        
+        response = requests.get(BASE_URL, params=params)
+        data = response.json()
+        
+        if "Time Series (Daily)" in data:
+            time_series = data["Time Series (Daily)"]
+            
+            # Cerca la data esatta o la data più vicina precedente
+            if date in time_series:
+                close_price = float(time_series[date]["4. close"])
+                return close_price
+            else:
+                # Se la data non esiste (weekend/holiday), cerca la data più vicina precedente
+                available_dates = sorted(time_series.keys(), reverse=True)
+                for available_date in available_dates:
+                    if available_date <= date:
+                        close_price = float(time_series[available_date]["4. close"])
+                        print(f"Usando prezzo del {available_date} per {symbol} (data richiesta: {date})")
+                        return close_price
+                
+                print(f"Nessun dato storico trovato per {symbol} alla data {date}")
+                return None
+        else:
+            print(f"Errore per {symbol}: {data}")
+            return None
+            
+    except Exception as e:
+        print(f"Errore nell'ottenere prezzo storico per {symbol} alla data {date}: {e}")
+        return None
+
 def get_portfolio_data(user_email):
     """Calcola i dati del portafoglio per un utente specifico"""
     # Prima controlla se l'utente ha un portafoglio personalizzato
@@ -239,15 +277,20 @@ def api_add_position():
         
         symbol = data.get('symbol', '').upper().strip()
         quantity = float(data.get('quantity', 0))
-        avg_price = float(data.get('avg_price', 0))
+        purchase_date = data.get('purchase_date', '')
         
-        if not symbol or quantity <= 0 or avg_price <= 0:
+        if not symbol or quantity <= 0 or not purchase_date:
             return jsonify({"error": "Dati non validi"}), 400
         
         # Verifica che il titolo esista
         quote = get_stock_quote(symbol)
         if not quote:
             return jsonify({"error": f"Titolo {symbol} non trovato"}), 404
+        
+        # Ottieni il prezzo di chiusura alla data di acquisto
+        historical_price = get_historical_price(symbol, purchase_date)
+        if not historical_price:
+            return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
         
         # Carica i portafogli esistenti
         user_portfolios = load_user_portfolios()
@@ -259,12 +302,16 @@ def api_add_position():
         # Aggiungi o aggiorna la posizione
         user_portfolios[user_email][symbol] = {
             "quantity": quantity,
-            "avg_price": avg_price
+            "purchase_date": purchase_date,
+            "avg_price": historical_price
         }
         
         # Salva i portafogli
         if save_user_portfolios(user_portfolios):
-            return jsonify({"success": True, "message": f"Posizione {symbol} aggiunta con successo"})
+            return jsonify({
+                "success": True, 
+                "message": f"Posizione {symbol} aggiunta con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
+            })
         else:
             return jsonify({"error": "Errore nel salvataggio"}), 500
             
@@ -312,9 +359,9 @@ def api_update_position():
         
         symbol = data.get('symbol', '').upper().strip()
         quantity = float(data.get('quantity', 0))
-        avg_price = float(data.get('avg_price', 0))
+        purchase_date = data.get('purchase_date', '')
         
-        if not symbol or quantity <= 0 or avg_price <= 0:
+        if not symbol or quantity <= 0 or not purchase_date:
             return jsonify({"error": "Dati non validi"}), 400
         
         # Carica i portafogli esistenti
@@ -323,15 +370,24 @@ def api_update_position():
         if user_email not in user_portfolios or symbol not in user_portfolios[user_email]:
             return jsonify({"error": f"Posizione {symbol} non trovata"}), 404
         
+        # Ottieni il prezzo di chiusura alla data di acquisto
+        historical_price = get_historical_price(symbol, purchase_date)
+        if not historical_price:
+            return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
+        
         # Aggiorna la posizione
         user_portfolios[user_email][symbol] = {
             "quantity": quantity,
-            "avg_price": avg_price
+            "purchase_date": purchase_date,
+            "avg_price": historical_price
         }
         
         # Salva i portafogli
         if save_user_portfolios(user_portfolios):
-            return jsonify({"success": True, "message": f"Posizione {symbol} aggiornata con successo"})
+            return jsonify({
+                "success": True, 
+                "message": f"Posizione {symbol} aggiornata con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
+            })
         else:
             return jsonify({"error": "Errore nel salvataggio"}), 500
             

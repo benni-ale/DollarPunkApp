@@ -77,6 +77,18 @@
     input,select,textarea{background:#0b1424;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px}
     input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
     .inline{display:flex;gap:10px;align-items:center}
+    
+    /* Date input styling */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+    input[type="date"]::-webkit-datetime-edit {
+      color: var(--text);
+    }
+    input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+      color: var(--text);
+    }
 
     /* Charts */
     .chart-container{height:300px;background:#0b1424;border-radius:12px;padding:16px;border:1px solid rgba(148,163,184,.18)}
@@ -432,10 +444,10 @@
         <label>Quantità</label>
         <input type="number" id="addQuantity" placeholder="100" min="1" step="1">
       </div>
-      <div class="field">
-        <label>Prezzo Medio di Acquisto</label>
-        <input type="number" id="addAvgPrice" placeholder="180.50" min="0.01" step="0.01">
-      </div>
+                              <div class="field">
+                          <label>Data di Acquisto</label>
+                          <input type="date" id="addPurchaseDate" required>
+                        </div>
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn" onclick="addPosition()">Aggiungi</button>
         <button class="btn secondary" onclick="hideModal('addPositionModal')">Annulla</button>
@@ -458,10 +470,10 @@
         <label>Quantità</label>
         <input type="number" id="editQuantity" placeholder="100" min="1" step="1">
       </div>
-      <div class="field">
-        <label>Prezzo Medio di Acquisto</label>
-        <input type="number" id="editAvgPrice" placeholder="180.50" min="0.01" step="0.01">
-      </div>
+             <div class="field">
+         <label>Data di Acquisto</label>
+         <input type="date" id="editPurchaseDate" required>
+       </div>
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn" onclick="updatePosition()">Aggiorna</button>
         <button class="btn secondary" onclick="hideModal('editPositionModal')">Annulla</button>
@@ -614,7 +626,9 @@
       // Clear form
       document.getElementById('addSymbol').value = '';
       document.getElementById('addQuantity').value = '';
-      document.getElementById('addAvgPrice').value = '';
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('addPurchaseDate').value = today;
     }
 
     function showEditPositionModal(symbol) {
@@ -622,7 +636,10 @@
       if (position) {
         document.getElementById('editSymbol').value = symbol;
         document.getElementById('editQuantity').value = position.quantity;
-        document.getElementById('editAvgPrice').value = position.avg_price;
+        // Convert avg_price to purchase_date (we'll need to store this in the future)
+        // For now, we'll use a default date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('editPurchaseDate').value = today;
         document.getElementById('editPositionModal').style.display = 'block';
       }
     }
@@ -634,9 +651,9 @@
     async function addPosition() {
       const symbol = document.getElementById('addSymbol').value.toUpperCase().trim();
       const quantity = parseFloat(document.getElementById('addQuantity').value);
-      const avgPrice = parseFloat(document.getElementById('addAvgPrice').value);
+      const purchaseDate = document.getElementById('addPurchaseDate').value;
 
-      if (!symbol || !quantity || !avgPrice || quantity <= 0 || avgPrice <= 0) {
+      if (!symbol || !quantity || !purchaseDate || quantity <= 0) {
         showError('Inserisci tutti i campi con valori validi');
         return;
       }
@@ -652,7 +669,7 @@
           body: JSON.stringify({
             symbol: symbol,
             quantity: quantity,
-            avg_price: avgPrice
+            purchase_date: purchaseDate
           })
         });
 
@@ -676,9 +693,9 @@
     async function updatePosition() {
       const symbol = document.getElementById('editSymbol').value;
       const quantity = parseFloat(document.getElementById('editQuantity').value);
-      const avgPrice = parseFloat(document.getElementById('editAvgPrice').value);
+      const purchaseDate = document.getElementById('editPurchaseDate').value;
 
-      if (!symbol || !quantity || !avgPrice || quantity <= 0 || avgPrice <= 0) {
+      if (!symbol || !quantity || !purchaseDate || quantity <= 0) {
         showError('Inserisci tutti i campi con valori validi');
         return;
       }
@@ -694,7 +711,7 @@
           body: JSON.stringify({
             symbol: symbol,
             quantity: quantity,
-            avg_price: avgPrice
+            purchase_date: purchaseDate
           })
         });
 
