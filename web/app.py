@@ -155,17 +155,18 @@ def get_portfolio_data(user_email):
     # Ottieni le posizioni dal database
     portfolio_positions = get_user_portfolio(user.id)
     
-    # Se non ci sono posizioni personalizzate, usa il portafoglio demo
-    if not portfolio_positions and user_email in USERS:
-        portfolio = USERS[user_email]["portfolio"]
-        portfolio_positions = []
-        for symbol, position in portfolio.items():
-            portfolio_positions.append({
-                "symbol": symbol,
-                "quantity": position["quantity"],
-                "avg_price": position["avg_price"],
-                "purchase_date": "2024-01-01"  # Data demo
-            })
+    # Se non ci sono posizioni personalizzate, restituisci portafoglio vuoto
+    if not portfolio_positions:
+        return {
+            "positions": [],
+            "summary": {
+                "total_value": 0,
+                "total_cost": 0,
+                "total_gain": 0,
+                "total_gain_percent": 0,
+                "positions_count": 0
+            }
+        }
     
     portfolio_data = []
     total_value = 0
@@ -266,6 +267,21 @@ def api_portfolio():
     """API endpoint per i dati del portafoglio"""
     try:
         user_email = session['user_email']
+        user_id = session.get('user_id')
+        
+        # Se è un utente demo (senza ID nel database), restituisci portafoglio vuoto
+        if user_id is None:
+            return jsonify({
+                "positions": [],
+                "summary": {
+                    "total_value": 0,
+                    "total_cost": 0,
+                    "total_gain": 0,
+                    "total_gain_percent": 0,
+                    "positions_count": 0
+                }
+            })
+        
         portfolio = get_portfolio_data(user_email)
         if portfolio:
             return jsonify(portfolio)

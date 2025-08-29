@@ -434,22 +434,35 @@
       const tbody = document.querySelector('#portfolio .table tbody');
       tbody.innerHTML = '';
 
-      positions.forEach(position => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
-          <td>${position.quantity}</td>
-          <td>${formatCurrency(position.current_price)}</td>
-          <td>${formatCurrency(position.current_value)}</td>
-          <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-          <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-          <td>
-            <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('${position.symbol}')">Modifica</button>
-            <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('${position.symbol}')">Rimuovi</button>
+      if (positions.length === 0) {
+        // Show empty state message
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `
+          <td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">
+            <div style="font-size:48px;margin-bottom:16px;">📊</div>
+            <div style="font-size:18px;margin-bottom:8px;">Portafoglio Vuoto</div>
+            <div style="font-size:14px;">Clicca su "➕ Aggiungi Posizione" per iniziare a costruire il tuo portafoglio</div>
           </td>
         `;
-        tbody.appendChild(row);
-      });
+        tbody.appendChild(emptyRow);
+      } else {
+        positions.forEach(position => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+            <td>${position.quantity}</td>
+            <td>${formatCurrency(position.current_price)}</td>
+            <td>${formatCurrency(position.current_value)}</td>
+            <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+            <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+            <td>
+              <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('${position.symbol}')">Modifica</button>
+              <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('${position.symbol}')">Rimuovi</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
     }
 
     // Update allocation cards with real data
@@ -462,20 +475,35 @@
       // Update allocation cards
       const allocationCards = document.querySelectorAll('#portfolio .grid.cols-4 .card');
       if (allocationCards.length >= 4) {
-        allocationCards[0].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(stocksValue);
-        allocationCards[0].querySelector('div[style*="color:var(--muted)"]').textContent = 
-          ((stocksValue / totalValue) * 100).toFixed(0) + '%';
-        
-        allocationCards[1].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(bondsValue);
-        allocationCards[1].querySelector('div[style*="color:var(--muted)"]').textContent = 
-          ((bondsValue / totalValue) * 100).toFixed(0) + '%';
-        
-        allocationCards[2].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(cashValue);
-        allocationCards[2].querySelector('div[style*="color:var(--muted)"]').textContent = 
-          ((cashValue / totalValue) * 100).toFixed(0) + '%';
-        
-        allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(totalValue);
-        allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '100%';
+        if (totalValue === 0) {
+          // Show empty state for allocation cards
+          allocationCards[0].querySelector('div[style*="font-size:24px"]').textContent = '€0';
+          allocationCards[0].querySelector('div[style*="color:var(--muted)"]').textContent = '0%';
+          
+          allocationCards[1].querySelector('div[style*="font-size:24px"]').textContent = '€0';
+          allocationCards[1].querySelector('div[style*="color:var(--muted)"]').textContent = '0%';
+          
+          allocationCards[2].querySelector('div[style*="font-size:24px"]').textContent = '€0';
+          allocationCards[2].querySelector('div[style*="color:var(--muted)"]').textContent = '0%';
+          
+          allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = '€0';
+          allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '0%';
+        } else {
+          allocationCards[0].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(stocksValue);
+          allocationCards[0].querySelector('div[style*="color:var(--muted)"]').textContent = 
+            ((stocksValue / totalValue) * 100).toFixed(0) + '%';
+          
+          allocationCards[1].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(bondsValue);
+          allocationCards[1].querySelector('div[style*="color:var(--muted)"]').textContent = 
+            ((bondsValue / totalValue) * 100).toFixed(0) + '%';
+          
+          allocationCards[2].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(cashValue);
+          allocationCards[2].querySelector('div[style*="color:var(--muted)"]').textContent = 
+            ((cashValue / totalValue) * 100).toFixed(0) + '%';
+          
+          allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(totalValue);
+          allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '100%';
+        }
       }
     }
 
