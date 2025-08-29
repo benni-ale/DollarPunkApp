@@ -1,31 +1,47 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
 import os
 import requests
 import json
 from datetime import datetime, timedelta
 import time
 from dotenv import load_dotenv
+from functools import wraps
 
 # Carica le variabili d'ambiente dal file .env nella root del progetto
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'dollarpunk-secret-key-change-in-production')
 
 # Configurazione Alpha Vantage
 ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 BASE_URL = "https://www.alphavantage.co/query"
 
-# Portafoglio di esempio (può essere espanso)
-SAMPLE_PORTFOLIO = {
-    "AAPL": {"quantity": 25, "avg_price": 180.00},
-    "MSFT": {"quantity": 15, "avg_price": 350.00},
-    "NVDA": {"quantity": 8, "avg_price": 480.00},
-    "TSLA": {"quantity": 10, "avg_price": 220.00},
-    "ENEL.MI": {"quantity": 500, "avg_price": 6.50},
-    "GOOGL": {"quantity": 5, "avg_price": 140.00},
-    "AMZN": {"quantity": 12, "avg_price": 130.00},
-    "META": {"quantity": 8, "avg_price": 280.00}
+# Database utenti di esempio (in produzione usare un database reale)
+USERS = {
+    "demo@dollarpunk.com": {
+        "password": "demo123",
+        "name": "Demo User",
+        "portfolio": {
+            "AAPL": {"quantity": 25, "avg_price": 180.00},
+            "MSFT": {"quantity": 15, "avg_price": 350.00},
+            "NVDA": {"quantity": 8, "avg_price": 480.00},
+            "TSLA": {"quantity": 10, "avg_price": 220.00},
+            "ENEL.MI": {"quantity": 500, "avg_price": 6.50},
+            "GOOGL": {"quantity": 5, "avg_price": 140.00},
+            "AMZN": {"quantity": 12, "avg_price": 130.00},
+            "META": {"quantity": 8, "avg_price": 280.00}
+        }
+    }
 }
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_email' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_stock_quote(symbol):
     """Ottiene il prezzo corrente di un titolo"""
@@ -57,14 +73,18 @@ def get_stock_quote(symbol):
         print(f"Errore nell'ottenere quote per {symbol}: {e}")
         return None
 
-def get_portfolio_data():
-    """Calcola i dati del portafoglio"""
+def get_portfolio_data(user_email):
+    """Calcola i dati del portafoglio per un utente specifico"""
+    if user_email not in USERS:
+        return None
+        
+    portfolio = USERS[user_email]["portfolio"]
     portfolio_data = []
     total_value = 0
     total_cost = 0
     total_gain = 0
     
-    for symbol, position in SAMPLE_PORTFOLIO.items():
+    for symbol, position in portfolio.items():
         quote = get_stock_quote(symbol)
         if quote:
             current_value = quote["price"] * position["quantity"]
@@ -105,18 +125,57 @@ def get_portfolio_data():
 
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+@app.route('/portfolio')
+def portfolio():
+    if 'user_email' in session:
+        return render_template('portfolio-software.html')
+    return redirect(url_for('login'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        
+        if email in USERS and USERS[email]['password'] == password:
+            session['user_email'] = email
+            session['user_name'] = USERS[email]['name']
+            flash('Login effettuato con successo!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Email o password non validi', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logout effettuato con successo', 'success')
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
     return render_template('portfolio-software.html')
 
 @app.route('/api/portfolio')
+@login_required
 def api_portfolio():
     """API endpoint per i dati del portafoglio"""
     try:
-        portfolio = get_portfolio_data()
-        return jsonify(portfolio)
+        user_email = session['user_email']
+        portfolio = get_portfolio_data(user_email)
+        if portfolio:
+            return jsonify(portfolio)
+        else:
+            return jsonify({"error": "Portafoglio non trovato"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/stock/<symbol>')
+@login_required
 def api_stock(symbol):
     """API endpoint per i dati di un singolo titolo"""
     try:
@@ -129,16 +188,20 @@ def api_stock(symbol):
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/search')
+@login_required
 def api_search():
     """API endpoint per cercare titoli"""
     query = request.args.get('q', '').upper()
     if not query:
         return jsonify([])
     
-    # Per ora restituisce solo titoli dal portafoglio di esempio
+    user_email = session['user_email']
+    portfolio = USERS[user_email]["portfolio"]
+    
+    # Per ora restituisce solo titoli dal portafoglio dell'utente
     # In futuro si può integrare con Alpha Vantage Search API
     results = []
-    for symbol in SAMPLE_PORTFOLIO.keys():
+    for symbol in portfolio.keys():
         if query in symbol:
             results.append({"symbol": symbol, "name": f"{symbol} Stock"})
     
@@ -152,4 +215,5 @@ if __name__ == '__main__':
     
     print("✅ ALPHA_VANTAGE_API_KEY trovata")
     print("🚀 Avvio server Flask...")
+    print("👤 Credenziali demo: demo@dollarpunk.com / demo123")
     app.run(debug=True, host='0.0.0.0', port=5000)

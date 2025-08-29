@@ -4,6 +4,7 @@ Applicazione web per la gestione del portafoglio investimenti con dati reali da 
 
 ## Caratteristiche
 
+- 🔐 Sistema di autenticazione utenti
 - 📊 Dashboard con dati reali del portafoglio
 - 📈 Prezzi in tempo reale da Alpha Vantage
 - 💰 Calcolo automatico di guadagni/perdite
@@ -51,6 +52,13 @@ docker run -p 5000:5000 --env-file ../.env dollarpunk
 
 L'applicazione sarà disponibile su: http://localhost:5000
 
+## Accesso
+
+L'applicazione include un account demo per testare le funzionalità:
+
+- **Email:** `demo@dollarpunk.com`
+- **Password:** `demo123`
+
 ## Portafoglio di Esempio
 
 L'applicazione include un portafoglio di esempio con i seguenti titoli:
@@ -85,6 +93,8 @@ DollarPunk/
 │   ├── requirements.txt    # Dipendenze Python
 │   ├── env.example        # Esempio configurazione
 │   ├── templates/         # Template HTML
+│   │   ├── index.html           # Landing page
+│   │   ├── login.html           # Pagina di login
 │   │   └── portfolio-software.html
 │   ├── docker-compose.yml # Docker compose
 │   ├── Dockerfile        # Docker image

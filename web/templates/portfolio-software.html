@@ -104,22 +104,26 @@
   <header>
     <div class="container nav">
       <div class="brand"><div class="logo" aria-hidden></div> DollarPunk</div>
-      <nav class="menu">
-        <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
-        <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
-        <a href="#orders" onclick="showSection('orders')">Ordini</a>
-        <a href="#reports" onclick="showSection('reports')">Report</a>
-        <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
-        <a class="btn secondary" href="moneyfarm.html">← Home</a>
-      </nav>
+             <nav class="menu">
+         <a href="#dashboard" class="active" onclick="showSection('dashboard')">Dashboard</a>
+         <a href="#portfolio" onclick="showSection('portfolio')">Portafoglio</a>
+         <a href="#orders" onclick="showSection('orders')">Ordini</a>
+         <a href="#reports" onclick="showSection('reports')">Report</a>
+         <a href="#settings" onclick="showSection('settings')">Impostazioni</a>
+         <a class="btn secondary" href="{{ url_for('logout') }}">Logout</a>
+       </nav>
     </div>
   </header>
 
   <div class="container">
     <div class="app-layout">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <h3>Portafoglio</h3>
+             <!-- Sidebar -->
+       <aside class="sidebar">
+         <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(148,163,184,.18)">
+           <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Benvenuto</div>
+           <div style="font-size:18px;font-weight:600;color:var(--text)">{{ session.user_name }}</div>
+         </div>
+         <h3>Portafoglio</h3>
         <div class="field">
           <label>Valore</label>
           <div style="font-size:24px;font-weight:700;color:var(--ok)">€ 47.892</div>
