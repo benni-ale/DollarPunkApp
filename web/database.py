@@ -83,29 +83,15 @@ def get_user_portfolio(user_id):
 def add_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price):
     """Aggiunge una posizione al portafoglio"""
     try:
-        # Controlla se la posizione esiste già
-        existing_position = PortfolioPosition.query.filter_by(
-            user_id=user_id, 
-            symbol=symbol
-        ).first()
-        
-        if existing_position:
-            # Aggiorna la posizione esistente
-            existing_position.quantity = quantity
-            existing_position.purchase_date = purchase_date
-            existing_position.avg_price = avg_price
-            existing_position.updated_at = datetime.utcnow()
-        else:
-            # Crea una nuova posizione
-            position = PortfolioPosition(
-                user_id=user_id,
-                symbol=symbol,
-                quantity=quantity,
-                purchase_date=purchase_date,
-                avg_price=avg_price
-            )
-            db.session.add(position)
-        
+        # Ora permettiamo più posizioni dello stesso simbolo
+        position = PortfolioPosition(
+            user_id=user_id,
+            symbol=symbol,
+            quantity=quantity,
+            purchase_date=purchase_date,
+            avg_price=avg_price
+        )
+        db.session.add(position)
         db.session.commit()
         return True, "Posizione salvata con successo"
         
@@ -113,33 +99,34 @@ def add_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price):
         db.session.rollback()
         return False, f"Errore nel salvataggio: {str(e)}"
 
-def remove_portfolio_position(user_id, symbol):
-    """Rimuove una posizione dal portafoglio"""
+def remove_portfolio_position(user_id, position_id):
+    """Rimuove una posizione dal portafoglio per ID"""
     try:
         position = PortfolioPosition.query.filter_by(
-            user_id=user_id, 
-            symbol=symbol
+            user_id=user_id,
+            id=position_id
         ).first()
-        
+
         if position:
+            symbol = position.symbol
             db.session.delete(position)
             db.session.commit()
-            return True, "Posizione rimossa con successo"
+            return True, f"Posizione {symbol} rimossa con successo"
         else:
-            return False, f"Posizione {symbol} non trovata"
-            
+            return False, f"Posizione con ID {position_id} non trovata"
+
     except Exception as e:
         db.session.rollback()
         return False, f"Errore nella rimozione: {str(e)}"
 
-def update_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price):
-    """Aggiorna una posizione esistente"""
+def update_portfolio_position(user_id, position_id, quantity, purchase_date, avg_price):
+    """Aggiorna una posizione esistente per ID"""
     try:
         position = PortfolioPosition.query.filter_by(
-            user_id=user_id, 
-            symbol=symbol
+            user_id=user_id,
+            id=position_id
         ).first()
-        
+
         if position:
             position.quantity = quantity
             position.purchase_date = purchase_date
@@ -148,8 +135,8 @@ def update_portfolio_position(user_id, symbol, quantity, purchase_date, avg_pric
             db.session.commit()
             return True, "Posizione aggiornata con successo"
         else:
-            return False, f"Posizione {symbol} non trovata"
-            
+            return False, f"Posizione con ID {position_id} non trovata"
+
     except Exception as e:
         db.session.rollback()
         return False, f"Errore nell'aggiornamento: {str(e)}"

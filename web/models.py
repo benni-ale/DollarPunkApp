@@ -33,10 +33,10 @@ class PortfolioPosition(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Indice composito per evitare duplicati
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'symbol', name='unique_user_symbol'),
-    )
+    # Rimuoviamo il vincolo unique per permettere più posizioni dello stesso simbolo
+    # __table_args__ = (
+    #     db.UniqueConstraint('user_id', 'symbol', name='unique_user_symbol'),
+    # )
     
     def __repr__(self):
         return f'<PortfolioPosition {self.symbol} x {self.quantity}>'

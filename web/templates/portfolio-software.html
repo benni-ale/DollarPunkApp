@@ -131,17 +131,18 @@
           <div class="card" style="margin-top:24px">
             <h3>Posizioni</h3>
             <table class="table">
-              <thead>
-                <tr>
-                  <th>Titolo</th>
-                  <th>Quantità</th>
-                  <th>Prezzo</th>
-                  <th>Valore</th>
-                  <th>Peso</th>
-                  <th>Performance</th>
-                  <th>Azioni</th>
-                </tr>
-              </thead>
+                             <thead>
+                 <tr>
+                   <th>Titolo</th>
+                   <th>Quantità</th>
+                   <th>Data Acquisto</th>
+                   <th>Prezzo</th>
+                   <th>Valore</th>
+                   <th>Peso</th>
+                   <th>Performance</th>
+                   <th>Azioni</th>
+                 </tr>
+               </thead>
               <tbody>
                 <tr>
                   <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
@@ -340,10 +341,11 @@
         <h3>Modifica Posizione</h3>
         <button class="modal-close" onclick="hideModal('editPositionModal')">&times;</button>
       </div>
-      <div class="field">
-        <label>Simbolo Titolo</label>
-        <input type="text" id="editSymbol" readonly>
-      </div>
+             <div class="field">
+         <label>Simbolo Titolo</label>
+         <input type="text" id="editSymbol" readonly>
+         <input type="hidden" id="editPositionId">
+       </div>
       <div class="field">
         <label>Quantità</label>
         <input type="number" id="editQuantity" placeholder="100" min="1" step="1">
@@ -434,35 +436,36 @@
       const tbody = document.querySelector('#portfolio .table tbody');
       tbody.innerHTML = '';
 
-      if (positions.length === 0) {
-        // Show empty state message
-        const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = `
-          <td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">
-            <div style="font-size:48px;margin-bottom:16px;">📊</div>
-            <div style="font-size:18px;margin-bottom:8px;">Portafoglio Vuoto</div>
-            <div style="font-size:14px;">Clicca su "➕ Aggiungi Posizione" per iniziare a costruire il tuo portafoglio</div>
-          </td>
-        `;
-        tbody.appendChild(emptyRow);
-      } else {
-        positions.forEach(position => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
-            <td>${position.quantity}</td>
-            <td>${formatCurrency(position.current_price)}</td>
-            <td>${formatCurrency(position.current_value)}</td>
-            <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-            <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-            <td>
-              <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('${position.symbol}')">Modifica</button>
-              <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('${position.symbol}')">Rimuovi</button>
-            </td>
-          `;
-          tbody.appendChild(row);
-        });
-      }
+             if (positions.length === 0) {
+         // Show empty state message
+         const emptyRow = document.createElement('tr');
+         emptyRow.innerHTML = `
+           <td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">
+             <div style="font-size:48px;margin-bottom:16px;">📊</div>
+             <div style="font-size:18px;margin-bottom:8px;">Portafoglio Vuoto</div>
+             <div style="font-size:14px;">Clicca su "➕ Aggiungi Posizione" per iniziare a costruire il tuo portafoglio</div>
+           </td>
+         `;
+         tbody.appendChild(emptyRow);
+       } else {
+         positions.forEach(position => {
+           const row = document.createElement('tr');
+           row.innerHTML = `
+             <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+             <td>${position.quantity}</td>
+             <td>${formatDate(position.purchase_date)}</td>
+             <td>${formatCurrency(position.current_price)}</td>
+             <td>${formatCurrency(position.current_value)}</td>
+             <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+             <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+             <td>
+               <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
+               <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
+             </td>
+           `;
+           tbody.appendChild(row);
+         });
+       }
     }
 
     // Update allocation cards with real data
@@ -546,15 +549,13 @@
       dateField.parentNode.appendChild(note);
     }
 
-    function showEditPositionModal(symbol) {
-      const position = portfolioData.positions.find(p => p.symbol === symbol);
+    function showEditPositionModal(positionId) {
+      const position = portfolioData.positions.find(p => p.id === positionId);
       if (position) {
-        document.getElementById('editSymbol').value = symbol;
+        document.getElementById('editSymbol').value = position.symbol;
         document.getElementById('editQuantity').value = position.quantity;
-        // Convert avg_price to purchase_date (we'll need to store this in the future)
-        // For now, we'll use a default date
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('editPurchaseDate').value = today;
+        document.getElementById('editPurchaseDate').value = position.purchase_date;
+        document.getElementById('editPositionId').value = position.id;
         document.getElementById('editPositionModal').style.display = 'block';
       }
     }
@@ -606,11 +607,11 @@
     }
 
     async function updatePosition() {
-      const symbol = document.getElementById('editSymbol').value;
+      const positionId = document.getElementById('editPositionId').value;
       const quantity = parseFloat(document.getElementById('editQuantity').value);
       const purchaseDate = document.getElementById('editPurchaseDate').value;
 
-      if (!symbol || !quantity || !purchaseDate || quantity <= 0) {
+      if (!positionId || !quantity || !purchaseDate || quantity <= 0) {
         showError('Inserisci tutti i campi con valori validi');
         return;
       }
@@ -624,7 +625,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            symbol: symbol,
+            position_id: parseInt(positionId),
             quantity: quantity,
             purchase_date: purchaseDate
           })
@@ -647,8 +648,8 @@
       }
     }
 
-    async function removePosition(symbol) {
-      if (!confirm(`Sei sicuro di voler rimuovere la posizione ${symbol}?`)) {
+    async function removePosition(positionId) {
+      if (!confirm(`Sei sicuro di voler rimuovere questa posizione?`)) {
         return;
       }
 
@@ -661,7 +662,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            symbol: symbol
+            position_id: positionId
           })
         });
 
@@ -689,6 +690,15 @@
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(amount);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('it-IT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
     }
 
     function getStockName(symbol) {

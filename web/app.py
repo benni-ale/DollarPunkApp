@@ -7,6 +7,7 @@ import time
 from dotenv import load_dotenv
 from functools import wraps
 from database import init_db, get_user_by_email, verify_user_password, get_user_portfolio, add_portfolio_position, remove_portfolio_position, update_portfolio_position
+from models import PortfolioPosition
 
 # Carica le variabili d'ambiente dal file .env nella root del progetto
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -199,9 +200,11 @@ def get_portfolio_data(user_email):
             gain_loss_percent = (gain_loss / cost_basis * 100) if cost_basis > 0 else 0
             
             portfolio_data.append({
+                "id": position["id"],
                 "symbol": symbol,
                 "quantity": position["quantity"],
                 "avg_price": position["avg_price"],
+                "purchase_date": position["purchase_date"],
                 "current_price": quote["price"],
                 "current_value": current_value,
                 "cost_basis": cost_basis,
@@ -361,16 +364,16 @@ def api_remove_position():
         
         data = request.get_json()
         
-        symbol = data.get('symbol', '').upper().strip()
+        position_id = data.get('position_id')
         
-        if not symbol:
-            return jsonify({"error": "Simbolo non specificato"}), 400
+        if not position_id:
+            return jsonify({"error": "ID posizione non specificato"}), 400
         
         # Rimuovi la posizione dal database
-        success, message = remove_portfolio_position(user_id, symbol)
+        success, message = remove_portfolio_position(user_id, position_id)
         
         if success:
-            return jsonify({"success": True, "message": f"Posizione {symbol} rimossa con successo"})
+            return jsonify({"success": True, "message": message})
         else:
             return jsonify({"error": message}), 404 if "non trovata" in message else 500
             
@@ -388,12 +391,19 @@ def api_update_position():
         
         data = request.get_json()
         
-        symbol = data.get('symbol', '').upper().strip()
+        position_id = data.get('position_id')
         quantity = float(data.get('quantity', 0))
         purchase_date = data.get('purchase_date', '')
         
-        if not symbol or quantity <= 0 or not purchase_date:
+        if not position_id or quantity <= 0 or not purchase_date:
             return jsonify({"error": "Dati non validi"}), 400
+        
+        # Ottieni il simbolo dalla posizione esistente
+        position = PortfolioPosition.query.filter_by(user_id=user_id, id=position_id).first()
+        if not position:
+            return jsonify({"error": "Posizione non trovata"}), 404
+        
+        symbol = position.symbol
         
         # Ottieni il prezzo di chiusura alla data di acquisto
         historical_price = get_historical_price(symbol, purchase_date)
@@ -402,7 +412,7 @@ def api_update_position():
         
         # Aggiorna la posizione nel database
         success, message = update_portfolio_position(
-            user_id, symbol, quantity, purchase_date, historical_price
+            user_id, position_id, quantity, purchase_date, historical_price
         )
         
         if success:
