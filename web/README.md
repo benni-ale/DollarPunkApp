@@ -1,112 +1,191 @@
 # DollarPunk - Software Portafoglio
 
-Applicazione web per la gestione del portafoglio investimenti con dati reali da Alpha Vantage API.
+Software per la gestione e analisi di portafogli di investimento con dati real-time da Alpha Vantage API.
 
-## Caratteristiche
+## 🚀 Caratteristiche
 
-- 🔐 Sistema di autenticazione utenti
-- 📊 Dashboard con dati reali del portafoglio
-- 📈 Prezzi in tempo reale da Alpha Vantage
-- 💰 Calcolo automatico di guadagni/perdite
-- 📋 Gestione posizioni e ordini
-- 📊 Report e analisi
+- **Dashboard interattiva** con metriche in tempo reale
+- **Gestione portafogli personalizzati** con posizioni multiple
+- **Dati real-time** da Alpha Vantage API
+- **Autenticazione utenti** con sistema di login
+- **Database PostgreSQL** per scalabilità
+- **Autocompletamento ticker** con 12.000+ simboli
+- **Prezzi storici automatici** basati su data di acquisto
+- **Interfaccia moderna** con tema scuro
 
-## Configurazione
+## 🛠️ Tecnologie
 
-### 1. Installazione dipendenze
+- **Backend:** Flask (Python)
+- **Database:** PostgreSQL con SQLAlchemy ORM
+- **Frontend:** HTML5, CSS3, JavaScript vanilla
+- **API:** Alpha Vantage per dati finanziari
+- **Containerizzazione:** Docker & Docker Compose
 
+## 📋 Prerequisiti
+
+- Docker e Docker Compose
+- Alpha Vantage API Key (gratuita)
+
+## ⚙️ Installazione
+
+### 1. Clona il Repository
 ```bash
-pip install -r requirements.txt
+git clone <repository-url>
+cd DollarPunk/web
 ```
 
-### 2. Configurazione API Key
-
-1. Ottieni una API key gratuita su [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
-2. Crea un file `.env` nella **root del progetto** (cartella principale DollarPunk):
+### 2. Configura le Variabili d'Ambiente
+Crea un file `.env` nella root del progetto (non in `web/`):
 ```bash
-# Dalla root del progetto
-cp web/env.example .env
-```
-3. Inserisci la tua API key nel file `.env`:
-```
-ALPHA_VANTAGE_API_KEY=your_actual_api_key_here
+# Alpha Vantage API Key
+ALPHA_VANTAGE_API_KEY=your_api_key_here
+
+# Secret Key per Flask
+SECRET_KEY=your_secret_key_here
+
+# Database PostgreSQL (opzionale)
+DATABASE_URL=postgresql://dollarpunk_user:dollarpunk_password@postgres:5432/dollarpunk
 ```
 
-### 3. Avvio applicazione
-
-#### Opzione 1: Avvio diretto
+### 3. Avvia l'Applicazione
 ```bash
-python app.py
+docker-compose up --build
 ```
 
-#### Opzione 2: Con Docker
+### 4. Accedi all'App
+- URL: http://localhost:5000
+- **Credenziali demo:** `demo@dollarpunk.com` / `demo123`
+
+## 🗄️ Database PostgreSQL
+
+L'applicazione utilizza PostgreSQL per:
+- **Utenti:** Gestione account e autenticazione
+- **Portafogli:** Posizioni personalizzate degli utenti
+- **Scalabilità:** Supporto per migliaia di utenti
+
+### Struttura Database
+- **`users`:** Informazioni utenti (email, password hash, nome)
+- **`portfolio_positions`:** Posizioni portafoglio (simbolo, quantità, prezzo medio, data acquisto)
+
+### Migrazione da JSON
+Gli utenti esistenti con portafogli JSON verranno migrati automaticamente al database PostgreSQL.
+
+## 📊 Funzionalità
+
+### Gestione Portafoglio
+- ✅ **Aggiungi posizioni** con autocompletamento ticker
+- ✅ **Modifica posizioni** esistenti
+- ✅ **Rimuovi posizioni** dal portafoglio
+- ✅ **Prezzi storici automatici** basati su data di acquisto
+- ✅ **Calcolo performance** in tempo reale
+
+### Dashboard
+- 📈 **Metriche portfolio** (valore totale, performance YTD, dividendi)
+- 📊 **Allocazione asset** (azioni, obbligazioni, cash)
+- 📋 **Tabella posizioni** con azioni rapide
+- 🔄 **Aggiornamento dati** in tempo reale
+
+### Autenticazione
+- 🔐 **Login/logout** con sessioni sicure
+- 👤 **Account demo** per test
+- 🛡️ **Protezione route** con decoratori
+
+## 🔧 Sviluppo
+
+### Struttura Progetto
+```
+web/
+├── app.py              # Applicazione Flask principale
+├── models.py           # Modelli SQLAlchemy
+├── database.py         # Funzioni database
+├── requirements.txt    # Dipendenze Python
+├── docker-compose.yml  # Configurazione Docker
+├── Dockerfile         # Immagine Docker
+├── static/
+│   └── style.css      # Stili CSS
+├── templates/         # Template HTML
+│   ├── index.html     # Landing page
+│   ├── login.html     # Pagina login
+│   └── portfolio-software.html  # Dashboard principale
+└── symbols.csv        # Lista ticker per autocompletamento
+```
+
+### Comandi Utili
 ```bash
-# Build e avvio con docker-compose (dalla cartella web/)
-cd web
+# Avvia in modalità sviluppo
 docker-compose up --build
 
-# Oppure solo con Docker
-docker build -t dollarpunk .
-docker run -p 5000:5000 --env-file ../.env dollarpunk
+# Visualizza log
+docker-compose logs -f
+
+# Ricostruisci container
+docker-compose down && docker-compose up --build
+
+# Accedi al database
+docker-compose exec postgres psql -U dollarpunk_user -d dollarpunk
 ```
 
-L'applicazione sarà disponibile su: http://localhost:5000
+## 🌐 API Endpoints
 
-## Accesso
+### Portfolio
+- `GET /api/portfolio` - Dati portfolio utente
+- `POST /api/portfolio/add` - Aggiungi posizione
+- `POST /api/portfolio/update` - Modifica posizione
+- `POST /api/portfolio/remove` - Rimuovi posizione
 
-L'applicazione include un account demo per testare le funzionalità:
+### Titoli
+- `GET /api/stock/<symbol>` - Dati singolo titolo
+- `GET /api/search?q=<query>` - Ricerca ticker
+- `GET /api/tickers` - Lista completa ticker
 
-- **Email:** `demo@dollarpunk.com`
-- **Password:** `demo123`
+### Debug
+- `GET /api/test` - Test API
+- `GET /api/debug/routes` - Lista route
+- `GET /api/debug/session` - Stato sessione
 
-## Portafoglio di Esempio
+## 🔒 Sicurezza
 
-L'applicazione include un portafoglio di esempio con i seguenti titoli:
-- AAPL (Apple)
-- MSFT (Microsoft)
-- NVDA (NVIDIA)
-- TSLA (Tesla)
-- ENEL.MI (Enel)
-- GOOGL (Alphabet)
-- AMZN (Amazon)
-- META (Meta)
+- **Password hashate** con Werkzeug
+- **Sessioni sicure** con secret key
+- **Validazione input** su tutti gli endpoint
+- **Rate limiting** per Alpha Vantage API
+- **Protezione CSRF** (da implementare)
 
-## API Endpoints
+## 📈 Scalabilità
 
-- `GET /api/portfolio` - Dati completi del portafoglio
-- `GET /api/stock/<symbol>` - Dati di un singolo titolo
-- `GET /api/search?q=<query>` - Ricerca titoli
+### Database
+- **PostgreSQL** per performance e affidabilità
+- **Indici ottimizzati** per query frequenti
+- **Connection pooling** per connessioni multiple
 
-## Limitazioni Alpha Vantage
+### API
+- **Rate limiting** per Alpha Vantage (5 calls/min)
+- **Caching** per dati statici (da implementare)
+- **Async processing** per operazioni pesanti (da implementare)
 
-- **Free Tier**: 5 chiamate API al minuto
-- **Rate Limiting**: L'applicazione include un delay di 0.2 secondi tra le chiamate
-- **Simboli**: Supporta simboli NASDAQ, NYSE e alcuni mercati europei
+## 🚀 Roadmap
 
-## Struttura Progetto
+- [ ] **Registrazione utenti** con email verification
+- [ ] **Recupero password** con reset via email
+- [ ] **Notifiche** per eventi portfolio
+- [ ] **Export dati** in CSV/PDF
+- [ ] **Grafici interattivi** con Chart.js
+- [ ] **Mobile app** React Native
+- [ ] **WebSocket** per aggiornamenti real-time
+- [ ] **Multi-tenant** per consulenti finanziari
 
-```
-DollarPunk/
-├── .env               # API Key (da creare)
-├── web/
-│   ├── app.py              # Server Flask
-│   ├── requirements.txt    # Dipendenze Python
-│   ├── env.example        # Esempio configurazione
-│   ├── templates/         # Template HTML
-│   │   ├── index.html           # Landing page
-│   │   ├── login.html           # Pagina di login
-│   │   └── portfolio-software.html
-│   ├── docker-compose.yml # Docker compose
-│   ├── Dockerfile        # Docker image
-│   └── README.md         # Questo file
-└── ... (altri file del progetto)
-```
+## 📝 Licenza
 
-## Sviluppo
+Demo software - non rappresenta un servizio finanziario reale.
 
-Per modificare il portafoglio di esempio, edita la variabile `SAMPLE_PORTFOLIO` in `app.py`.
+## 🤝 Contributi
 
-Per aggiungere nuove funzionalità, puoi:
-1. Aggiungere nuovi endpoint API in `app.py`
-2. Modificare l'interfaccia in `templates/portfolio-software.html`
-3. Aggiungere nuove sezioni e funzionalità JavaScript
+1. Fork il progetto
+2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
+3. Commit le modifiche (`git commit -m 'Add AmazingFeature'`)
+4. Push al branch (`git push origin feature/AmazingFeature`)
+5. Apri una Pull Request
+
+---
+
+**DollarPunk** - Gestione portafogli intelligente 🚀

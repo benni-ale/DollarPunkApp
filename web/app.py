@@ -6,12 +6,17 @@ from datetime import datetime, timedelta
 import time
 from dotenv import load_dotenv
 from functools import wraps
+from database import init_db, get_user_by_email, verify_user_password, get_user_portfolio, add_portfolio_position, remove_portfolio_position, update_portfolio_position
 
 # Carica le variabili d'ambiente dal file .env nella root del progetto
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dollarpunk-secret-key-change-in-production')
+
+# Configurazione database PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://dollarpunk_user:dollarpunk_password@postgres:5432/dollarpunk')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configurazione Alpha Vantage
 ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
@@ -34,30 +39,6 @@ USERS = {
         }
     }
 }
-
-# File per salvare i portafogli personalizzati
-PORTFOLIO_FILE = "user_portfolios.json"
-
-def load_user_portfolios():
-    """Carica i portafogli personalizzati dal file"""
-    try:
-        if os.path.exists(PORTFOLIO_FILE):
-            with open(PORTFOLIO_FILE, 'r') as f:
-                return json.load(f)
-        return {}
-    except Exception as e:
-        print(f"Errore nel caricamento portafogli: {e}")
-        return {}
-
-def save_user_portfolios(portfolios):
-    """Salva i portafogli personalizzati nel file"""
-    try:
-        with open(PORTFOLIO_FILE, 'w') as f:
-            json.dump(portfolios, f, indent=2)
-        return True
-    except Exception as e:
-        print(f"Errore nel salvataggio portafogli: {e}")
-        return False
 
 def login_required(f):
     @wraps(f)
@@ -166,21 +147,33 @@ def get_historical_price(symbol, date):
 
 def get_portfolio_data(user_email):
     """Calcola i dati del portafoglio per un utente specifico"""
-    # Prima controlla se l'utente ha un portafoglio personalizzato
-    user_portfolios = load_user_portfolios()
-    if user_email in user_portfolios:
-        portfolio = user_portfolios[user_email]
-    elif user_email in USERS:
-        portfolio = USERS[user_email]["portfolio"]
-    else:
+    # Ottieni l'utente dal database
+    user = get_user_by_email(user_email)
+    if not user:
         return None
-        
+    
+    # Ottieni le posizioni dal database
+    portfolio_positions = get_user_portfolio(user.id)
+    
+    # Se non ci sono posizioni personalizzate, usa il portafoglio demo
+    if not portfolio_positions and user_email in USERS:
+        portfolio = USERS[user_email]["portfolio"]
+        portfolio_positions = []
+        for symbol, position in portfolio.items():
+            portfolio_positions.append({
+                "symbol": symbol,
+                "quantity": position["quantity"],
+                "avg_price": position["avg_price"],
+                "purchase_date": "2024-01-01"  # Data demo
+            })
+    
     portfolio_data = []
     total_value = 0
     total_cost = 0
     total_gain = 0
     
-    for symbol, position in portfolio.items():
+    for position in portfolio_positions:
+        symbol = position["symbol"]
         quote = get_stock_quote(symbol)
         if quote:
             current_value = quote["price"] * position["quantity"]
@@ -235,9 +228,20 @@ def login():
         email = request.form['email']
         password = request.form['password']
         
-        if email in USERS and USERS[email]['password'] == password:
+        # Prima prova con il database
+        user = get_user_by_email(email)
+        if user and verify_user_password(user, password):
+            session['user_email'] = email
+            session['user_name'] = user.name
+            session['user_id'] = user.id
+            flash('Login effettuato con successo!', 'success')
+            return redirect(url_for('dashboard'))
+        
+        # Fallback per utenti demo
+        elif email in USERS and USERS[email]['password'] == password:
             session['user_email'] = email
             session['user_name'] = USERS[email]['name']
+            session['user_id'] = None  # Utente demo
             flash('Login effettuato con successo!', 'success')
             return redirect(url_for('dashboard'))
         else:
@@ -275,7 +279,10 @@ def api_portfolio():
 def api_add_position():
     """API endpoint per aggiungere una posizione al portafoglio"""
     try:
-        user_email = session['user_email']
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Utente demo non può aggiungere posizioni personalizzate"}), 403
+        
         data = request.get_json()
         
         symbol = data.get('symbol', '').upper().strip()
@@ -295,28 +302,18 @@ def api_add_position():
         if not historical_price:
             return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
         
-        # Carica i portafogli esistenti
-        user_portfolios = load_user_portfolios()
+        # Aggiungi la posizione al database
+        success, message = add_portfolio_position(
+            user_id, symbol, quantity, purchase_date, historical_price
+        )
         
-        # Inizializza il portafoglio dell'utente se non esiste
-        if user_email not in user_portfolios:
-            user_portfolios[user_email] = {}
-        
-        # Aggiungi o aggiorna la posizione
-        user_portfolios[user_email][symbol] = {
-            "quantity": quantity,
-            "purchase_date": purchase_date,
-            "avg_price": historical_price
-        }
-        
-        # Salva i portafogli
-        if save_user_portfolios(user_portfolios):
+        if success:
             return jsonify({
                 "success": True, 
                 "message": f"Posizione {symbol} aggiunta con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
             })
         else:
-            return jsonify({"error": "Errore nel salvataggio"}), 500
+            return jsonify({"error": message}), 500
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -326,7 +323,10 @@ def api_add_position():
 def api_remove_position():
     """API endpoint per rimuovere una posizione dal portafoglio"""
     try:
-        user_email = session['user_email']
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Utente demo non può rimuovere posizioni personalizzate"}), 403
+        
         data = request.get_json()
         
         symbol = data.get('symbol', '').upper().strip()
@@ -334,20 +334,13 @@ def api_remove_position():
         if not symbol:
             return jsonify({"error": "Simbolo non specificato"}), 400
         
-        # Carica i portafogli esistenti
-        user_portfolios = load_user_portfolios()
+        # Rimuovi la posizione dal database
+        success, message = remove_portfolio_position(user_id, symbol)
         
-        if user_email not in user_portfolios or symbol not in user_portfolios[user_email]:
-            return jsonify({"error": f"Posizione {symbol} non trovata"}), 404
-        
-        # Rimuovi la posizione
-        del user_portfolios[user_email][symbol]
-        
-        # Salva i portafogli
-        if save_user_portfolios(user_portfolios):
+        if success:
             return jsonify({"success": True, "message": f"Posizione {symbol} rimossa con successo"})
         else:
-            return jsonify({"error": "Errore nel salvataggio"}), 500
+            return jsonify({"error": message}), 404 if "non trovata" in message else 500
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -357,7 +350,10 @@ def api_remove_position():
 def api_update_position():
     """API endpoint per aggiornare una posizione esistente"""
     try:
-        user_email = session['user_email']
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({"error": "Utente demo non può aggiornare posizioni personalizzate"}), 403
+        
         data = request.get_json()
         
         symbol = data.get('symbol', '').upper().strip()
@@ -367,32 +363,23 @@ def api_update_position():
         if not symbol or quantity <= 0 or not purchase_date:
             return jsonify({"error": "Dati non validi"}), 400
         
-        # Carica i portafogli esistenti
-        user_portfolios = load_user_portfolios()
-        
-        if user_email not in user_portfolios or symbol not in user_portfolios[user_email]:
-            return jsonify({"error": f"Posizione {symbol} non trovata"}), 404
-        
         # Ottieni il prezzo di chiusura alla data di acquisto
         historical_price = get_historical_price(symbol, purchase_date)
         if not historical_price:
             return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
         
-        # Aggiorna la posizione
-        user_portfolios[user_email][symbol] = {
-            "quantity": quantity,
-            "purchase_date": purchase_date,
-            "avg_price": historical_price
-        }
+        # Aggiorna la posizione nel database
+        success, message = update_portfolio_position(
+            user_id, symbol, quantity, purchase_date, historical_price
+        )
         
-        # Salva i portafogli
-        if save_user_portfolios(user_portfolios):
+        if success:
             return jsonify({
                 "success": True, 
                 "message": f"Posizione {symbol} aggiornata con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
             })
         else:
-            return jsonify({"error": "Errore nel salvataggio"}), 500
+            return jsonify({"error": message}), 404 if "non trovata" in message else 500
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -508,6 +495,14 @@ if __name__ == '__main__':
         exit(1)
     
     print("✅ ALPHA_VANTAGE_API_KEY trovata")
-    print("🚀 Avvio server Flask...")
-    print("👤 Credenziali demo: demo@dollarpunk.com / demo123")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # Inizializza il database
+    print("🗄️ Inizializzazione database PostgreSQL...")
+    if init_db(app):
+        print("✅ Database inizializzato con successo")
+        print("🚀 Avvio server Flask...")
+        print("👤 Credenziali demo: demo@dollarpunk.com / demo123")
+        app.run(debug=True, host='0.0.0.0', port=5000)
+    else:
+        print("❌ Errore nell'inizializzazione del database")
+        exit(1)

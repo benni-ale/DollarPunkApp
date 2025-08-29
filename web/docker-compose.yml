@@ -5,8 +5,39 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      - FLASK_ENV=development
     env_file:
       - ../.env
     volumes:
       - .:/app
-    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dollarpunk-network
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: dollarpunk
+      POSTGRES_USER: dollarpunk_user
+      POSTGRES_PASSWORD: dollarpunk_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - dollarpunk-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dollarpunk_user -d dollarpunk"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  dollarpunk-network:
+    driver: bridge
