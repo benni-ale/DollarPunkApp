@@ -52,6 +52,22 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def get_stock_currency(symbol):
+    """Determina la valuta locale di un titolo"""
+    # Titoli USA (NYSE, NASDAQ)
+    us_stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'ACN']
+    
+    # Titoli italiani (Borsa Italiana)
+    it_stocks = ['ENEL.MI', 'ENI.MI', 'ISP.MI', 'UCG.MI', 'TIT.MI', 'STM.MI', 'PRY.MI', 'DIA.MI', 'SPM.MI', 'TEN.MI', 'RACE.MI', 'CNHI.MI', 'EXO.MI']
+    
+    if symbol in us_stocks:
+        return 'USD'
+    elif symbol in it_stocks:
+        return 'EUR'
+    else:
+        # Default: assumi USD per titoli sconosciuti
+        return 'USD'
+
 def get_stock_name(symbol):
     """Restituisce il nome del titolo dato il simbolo"""
     names = {
@@ -63,6 +79,7 @@ def get_stock_name(symbol):
         'GOOGL': 'Alphabet Inc.',
         'AMZN': 'Amazon.com Inc.',
         'META': 'Meta Platforms Inc.',
+        'ACN': 'Accenture plc',
         'ENI.MI': 'Eni S.p.A.',
         'ISP.MI': 'Intesa Sanpaolo S.p.A.',
         'UCG.MI': 'UniCredit S.p.A.',
@@ -276,21 +293,25 @@ def get_portfolio_data(user_email, target_currency='EUR'):
         symbol = position["symbol"]
         quote = get_stock_quote(symbol)
         if quote:
-            # Ottieni tassi di cambio per data di acquisto e corrente
+            # Ottieni la valuta locale del titolo
+            stock_currency = get_stock_currency(symbol)
             purchase_date = position["purchase_date"]
             
-            # Tasso di cambio alla data di acquisto
-            purchase_rate = get_exchange_rate('EUR', target_currency, purchase_date) or 1.0
+            # Prezzi in valuta locale (senza conversione)
+            local_current_price = quote["price"]  # Prezzo corrente in valuta locale
+            local_avg_price = position["avg_price"]  # Prezzo di acquisto in valuta locale
             
-            # Tasso di cambio corrente
-            current_rate = get_exchange_rate('EUR', target_currency) or 1.0
+            # Calcola il controvalore nella valuta selezionata dall'utente
+            if stock_currency != target_currency:
+                # Tasso di cambio corrente per convertire dalla valuta locale alla valuta target
+                exchange_rate = get_exchange_rate(stock_currency, target_currency) or 1.0
+                current_value = local_current_price * position["quantity"] * exchange_rate
+                cost_basis = local_avg_price * position["quantity"] * exchange_rate
+            else:
+                # Stessa valuta, nessuna conversione
+                current_value = local_current_price * position["quantity"]
+                cost_basis = local_avg_price * position["quantity"]
             
-            # Converti prezzi nella valuta target
-            current_price = quote["price"] * current_rate
-            avg_price = position["avg_price"] * purchase_rate
-            
-            current_value = current_price * position["quantity"]
-            cost_basis = avg_price * position["quantity"]
             gain_loss = current_value - cost_basis
             gain_loss_percent = (gain_loss / cost_basis * 100) if cost_basis > 0 else 0
             
@@ -298,15 +319,15 @@ def get_portfolio_data(user_email, target_currency='EUR'):
                 "id": position["id"],
                 "symbol": symbol,
                 "quantity": position["quantity"],
-                "avg_price": avg_price,
-                "current_price": current_price,
-                "current_value": current_value,
+                "local_avg_price": local_avg_price,  # Prezzo carico in valuta locale
+                "local_current_price": local_current_price,  # Prezzo corrente in valuta locale
+                "current_value": current_value,  # Controvalore in valuta selezionata
                 "cost_basis": cost_basis,
                 "gain_loss": gain_loss,
                 "gain_loss_percent": gain_loss_percent,
                 "purchase_date": purchase_date,
-                "purchase_rate": purchase_rate,
-                "current_rate": current_rate
+                "stock_currency": stock_currency,  # Valuta locale del titolo
+                "target_currency": target_currency  # Valuta selezionata dall'utente
             })
             
             total_value += current_value

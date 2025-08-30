@@ -153,9 +153,9 @@
                     <th>Titolo</th>
                     <th>Quantità</th>
                     <th>Data Acquisto</th>
-                    <th>Prezzo Carico</th>
-                    <th>Prezzo Corrente</th>
-                    <th>Valore</th>
+                    <th>Prezzo Carico (Locale)</th>
+                    <th>Prezzo Corrente (Locale)</th>
+                    <th>Controvalore</th>
                     <th>Peso</th>
                     <th>Performance</th>
                     <th>Azioni</th>
@@ -165,8 +165,8 @@
                                  <tr>
                    <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
                    <td>25</td>
-                   <td>€ 185,20</td>
-                   <td>€ 200,40</td>
+                   <td>$ 185,20</td>
+                   <td>$ 200,40</td>
                    <td>€ 4.630,00</td>
                    <td>9,7%</td>
                    <td class="positive">+8,2%</td>
@@ -178,8 +178,8 @@
                                  <tr>
                    <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
                    <td>15</td>
-                   <td>€ 378,50</td>
-                   <td>€ 436,50</td>
+                   <td>$ 378,50</td>
+                   <td>$ 436,50</td>
                    <td>€ 5.677,50</td>
                    <td>11,9%</td>
                    <td class="positive">+15,4%</td>
@@ -495,8 +495,8 @@
               <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
               <td>${position.quantity}</td>
               <td>${formatDate(position.purchase_date)}</td>
-              <td>${formatCurrency(position.avg_price)}</td>
-              <td>${formatCurrency(position.current_price)}</td>
+              <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
+              <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
               <td>${formatCurrency(position.current_value)}</td>
               <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
               <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
@@ -761,6 +761,28 @@
       return new Intl.NumberFormat('it-IT', { 
         style: 'currency', 
         currency: currencyMap[currentCurrency] || currentCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+
+    function formatLocalCurrency(amount, currency) {
+      // Mappa simboli valuta per compatibilità
+      const currencyMap = {
+        'EUR': 'EUR',
+        'USD': 'USD',
+        'INR': 'INR',
+        'GBP': 'GBP',
+        'CAD': 'CAD',
+        'AUD': 'AUD',
+        'NZD': 'NZD',
+        'HKD': 'HKD',
+        'SGD': 'SGD'
+      };
+      
+      return new Intl.NumberFormat('it-IT', { 
+        style: 'currency', 
+        currency: currencyMap[currency] || currency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(amount);
