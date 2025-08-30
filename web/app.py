@@ -105,53 +105,50 @@ def get_stock_region(symbol):
         return 'USA'
 
 def get_stock_sector(symbol):
-    """Determina il settore GICS di un titolo"""
-    # Technology
-    tech_stocks = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META', 'ASML', 'SAP.DE', 'STM.MI']
+    """Determina il settore GICS di un titolo (livello più alto)"""
+    # Information Technology (GICS 45)
+    info_tech = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META', 'ASML', 'SAP.DE', 'STM.MI', 'ACN', 'CAP.PA']
     
-    # Consumer Discretionary
-    consumer_disc = ['AMZN', 'TSLA', 'OR.PA', 'MC.PA', 'BMW.DE', 'DAI.DE', 'RACE.MI']
+    # Consumer Discretionary (GICS 25)
+    consumer_disc = ['AMZN', 'TSLA', 'OR.PA', 'MC.PA', 'BMW.DE', 'DAI.DE', 'RACE.MI', 'ADS.DE']
     
-    # Energy
-    energy_stocks = ['BP', 'TOT.PA', 'ENI.MI', 'SPM.MI']
+    # Energy (GICS 10)
+    energy = ['BP', 'TOT.PA', 'ENI.MI', 'SPM.MI']
     
-    # Financials
+    # Financials (GICS 40)
     financials = ['HSBC', 'BNP.PA', 'UBSG.SW', 'CSGN.SW', 'ISP.MI', 'UCG.MI']
     
-    # Healthcare
-    healthcare = ['GSK', 'ROG.SW', 'NOVN.SW', 'BAYN.DE', 'DIA.MI']
+    # Health Care (GICS 35)
+    health_care = ['GSK', 'ROG.SW', 'NOVN.SW', 'BAYN.DE', 'DIA.MI']
     
-    # Industrials
+    # Industrials (GICS 20)
     industrials = ['SIE.DE', 'AIR.PA', 'ABBN.SW', 'CNHI.MI', 'TEN.MI']
     
-    # Materials
+    # Materials (GICS 15)
     materials = ['RIO', 'BHP', 'CRH.PA', 'BAS.DE', 'PRY.MI']
     
-    # Consumer Staples
-    consumer_staples = ['ULVR', 'DGE', 'NESN.SW', 'CAP.PA']
+    # Consumer Staples (GICS 30)
+    consumer_staples = ['ULVR', 'DGE', 'NESN.SW']
     
-    # Utilities
+    # Utilities (GICS 55)
     utilities = ['ENEL.MI']
     
-    # Communication Services
+    # Communication Services (GICS 50)
     communication = ['VOD', 'TIT.MI', 'DTE.DE']
     
-    # Real Estate
-    real_estate = ['ADS.DE']
+    # Real Estate (GICS 60)
+    real_estate = []
     
-    # Professional Services
-    professional = ['ACN']
-    
-    if symbol in tech_stocks:
-        return 'Technology'
+    if symbol in info_tech:
+        return 'Information Technology'
     elif symbol in consumer_disc:
         return 'Consumer Discretionary'
-    elif symbol in energy_stocks:
+    elif symbol in energy:
         return 'Energy'
     elif symbol in financials:
         return 'Financials'
-    elif symbol in healthcare:
-        return 'Healthcare'
+    elif symbol in health_care:
+        return 'Health Care'
     elif symbol in industrials:
         return 'Industrials'
     elif symbol in materials:
@@ -164,8 +161,6 @@ def get_stock_sector(symbol):
         return 'Communication Services'
     elif symbol in real_estate:
         return 'Real Estate'
-    elif symbol in professional:
-        return 'Professional Services'
     else:
         return 'Other'
 

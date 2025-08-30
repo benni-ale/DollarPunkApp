@@ -167,7 +167,7 @@
                                  <tr>
                    <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
                    <td><span class="region-badge usa">USA</span></td>
-                   <td><span class="sector-badge tech">Technology</span></td>
+                   <td><span class="sector-badge info-tech">Information Technology</span></td>
                    <td>25</td>
                    <td>$ 185,20</td>
                    <td>$ 200,40</td>
@@ -182,7 +182,7 @@
                                  <tr>
                    <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
                    <td><span class="region-badge usa">USA</span></td>
-                   <td><span class="sector-badge tech">Technology</span></td>
+                   <td><span class="sector-badge info-tech">Information Technology</span></td>
                    <td>15</td>
                    <td>$ 378,50</td>
                    <td>$ 436,50</td>
@@ -835,18 +835,17 @@
 
     function getSectorClass(sector) {
       const sectorClasses = {
-        'Technology': 'tech',
+        'Information Technology': 'info-tech',
         'Consumer Discretionary': 'consumer-disc',
         'Energy': 'energy',
         'Financials': 'financials',
-        'Healthcare': 'healthcare',
+        'Health Care': 'health-care',
         'Industrials': 'industrials',
         'Materials': 'materials',
         'Consumer Staples': 'consumer-staples',
         'Utilities': 'utilities',
         'Communication Services': 'communication',
-        'Real Estate': 'real-estate',
-        'Professional Services': 'professional'
+        'Real Estate': 'real-estate'
       };
       return sectorClasses[sector] || 'other';
     }
