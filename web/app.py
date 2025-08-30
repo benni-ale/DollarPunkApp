@@ -412,7 +412,7 @@ def api_portfolio():
 def get_exchange_rates():
     """Endpoint per ottenere tutti i tassi di cambio supportati"""
     base_currency = request.args.get('base', 'EUR')
-    supported_currencies = ['EUR', 'INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
+    supported_currencies = ['EUR', 'USD', 'INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
     
     rates = {}
     for currency in supported_currencies:
@@ -432,7 +432,7 @@ def get_exchange_rates():
 def get_currency_info():
     """Endpoint per ottenere informazioni sui tassi di cambio con performance"""
     base_currency = 'EUR'
-    supported_currencies = ['INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
+    supported_currencies = ['USD', 'INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
     
     currency_info = []
     

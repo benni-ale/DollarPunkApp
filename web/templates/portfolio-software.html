@@ -36,6 +36,7 @@
           <div style="font-size:14px;color:var(--muted);margin-bottom:8px">Valuta</div>
           <select id="currencySelect" onchange="changeCurrency()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:4px;font-size:14px;">
             <option value="EUR">€ EUR</option>
+            <option value="USD">$ USD</option>
             <option value="INR">₹ INR</option>
             <option value="GBP">£ GBP</option>
             <option value="CAD">$ CAD</option>
@@ -147,55 +148,59 @@
           <div class="card" style="margin-top:24px">
             <h3>Posizioni</h3>
             <table class="table">
-                             <thead>
-                 <tr>
-                   <th>Titolo</th>
-                   <th>Quantità</th>
-                   <th>Data Acquisto</th>
-                   <th>Prezzo</th>
-                   <th>Valore</th>
-                   <th>Peso</th>
-                   <th>Performance</th>
-                   <th>Azioni</th>
-                 </tr>
-               </thead>
+                                             <thead>
+                  <tr>
+                    <th>Titolo</th>
+                    <th>Quantità</th>
+                    <th>Data Acquisto</th>
+                    <th>Prezzo Carico</th>
+                    <th>Prezzo Corrente</th>
+                    <th>Valore</th>
+                    <th>Peso</th>
+                    <th>Performance</th>
+                    <th>Azioni</th>
+                  </tr>
+                </thead>
               <tbody>
-                <tr>
-                  <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
-                  <td>25</td>
-                  <td>€ 185,20</td>
-                  <td>€ 4.630,00</td>
-                  <td>9,7%</td>
-                  <td class="positive">+8,2%</td>
-                  <td>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('AAPL')">Modifica</button>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('AAPL')">Rimuovi</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
-                  <td>15</td>
-                  <td>€ 378,50</td>
-                  <td>€ 5.677,50</td>
-                  <td>11,9%</td>
-                  <td class="positive">+15,4%</td>
-                  <td>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('MSFT')">Modifica</button>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('MSFT')">Rimuovi</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>ENEL</strong><br><span style="color:var(--muted);font-size:12px">Enel S.p.A.</span></td>
-                  <td>500</td>
-                  <td>€ 6,80</td>
-                  <td>€ 3.400,00</td>
-                  <td>7,1%</td>
-                  <td class="negative">-2,1%</td>
-                  <td>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('ENEL.MI')">Modifica</button>
-                    <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('ENEL.MI')">Rimuovi</button>
-                  </td>
-                </tr>
+                                 <tr>
+                   <td><strong>AAPL</strong><br><span style="color:var(--muted);font-size:12px">Apple Inc.</span></td>
+                   <td>25</td>
+                   <td>€ 185,20</td>
+                   <td>€ 200,40</td>
+                   <td>€ 4.630,00</td>
+                   <td>9,7%</td>
+                   <td class="positive">+8,2%</td>
+                   <td>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('AAPL')">Modifica</button>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('AAPL')">Rimuovi</button>
+                   </td>
+                 </tr>
+                                 <tr>
+                   <td><strong>MSFT</strong><br><span style="color:var(--muted);font-size:12px">Microsoft Corp.</span></td>
+                   <td>15</td>
+                   <td>€ 378,50</td>
+                   <td>€ 436,50</td>
+                   <td>€ 5.677,50</td>
+                   <td>11,9%</td>
+                   <td class="positive">+15,4%</td>
+                   <td>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('MSFT')">Modifica</button>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('MSFT')">Rimuovi</button>
+                   </td>
+                 </tr>
+                                 <tr>
+                   <td><strong>ENEL</strong><br><span style="color:var(--muted);font-size:12px">Enel S.p.A.</span></td>
+                   <td>500</td>
+                   <td>€ 6,80</td>
+                   <td>€ 6,66</td>
+                   <td>€ 3.400,00</td>
+                   <td>7,1%</td>
+                   <td class="negative">-2,1%</td>
+                   <td>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal('ENEL.MI')">Modifica</button>
+                     <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition('ENEL.MI')">Rimuovi</button>
+                   </td>
+                 </tr>
               </tbody>
             </table>
           </div>
@@ -476,7 +481,7 @@
          // Show empty state message
          const emptyRow = document.createElement('tr');
          emptyRow.innerHTML = `
-           <td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">
+                       <td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">
              <div style="font-size:48px;margin-bottom:16px;">📊</div>
              <div style="font-size:18px;margin-bottom:8px;">Portafoglio Vuoto</div>
              <div style="font-size:14px;">Clicca su "➕ Aggiungi Posizione" per iniziare a costruire il tuo portafoglio</div>
@@ -486,19 +491,20 @@
        } else {
          positions.forEach(position => {
            const row = document.createElement('tr');
-           row.innerHTML = `
-             <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
-             <td>${position.quantity}</td>
-             <td>${formatDate(position.purchase_date)}</td>
-             <td>${formatCurrency(position.current_price)}</td>
-             <td>${formatCurrency(position.current_value)}</td>
-             <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-             <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-             <td>
-               <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
-               <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
-             </td>
-           `;
+                       row.innerHTML = `
+              <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+              <td>${position.quantity}</td>
+              <td>${formatDate(position.purchase_date)}</td>
+              <td>${formatCurrency(position.avg_price)}</td>
+              <td>${formatCurrency(position.current_price)}</td>
+              <td>${formatCurrency(position.current_value)}</td>
+              <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+              <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+              <td>
+                <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
+                <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
+              </td>
+            `;
            tbody.appendChild(row);
          });
        }
@@ -739,9 +745,22 @@
 
     // Utility functions
     function formatCurrency(amount) {
+      // Mappa simboli valuta per compatibilità
+      const currencyMap = {
+        'EUR': 'EUR',
+        'USD': 'USD',
+        'INR': 'INR',
+        'GBP': 'GBP',
+        'CAD': 'CAD',
+        'AUD': 'AUD',
+        'NZD': 'NZD',
+        'HKD': 'HKD',
+        'SGD': 'SGD'
+      };
+      
       return new Intl.NumberFormat('it-IT', { 
         style: 'currency', 
-        currency: currentCurrency,
+        currency: currencyMap[currentCurrency] || currentCurrency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(amount);
