@@ -30,6 +30,22 @@
           <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Benvenuto</div>
           <div style="font-size:18px;font-weight:600;color:var(--text)">{{ session.user_name }}</div>
         </div>
+        
+        <!-- Currency Selector -->
+        <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(148,163,184,.18)">
+          <div style="font-size:14px;color:var(--muted);margin-bottom:8px">Valuta</div>
+          <select id="currencySelect" onchange="changeCurrency()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:4px;font-size:14px;">
+            <option value="EUR">€ EUR</option>
+            <option value="INR">₹ INR</option>
+            <option value="GBP">£ GBP</option>
+            <option value="CAD">$ CAD</option>
+            <option value="AUD">$ AUD</option>
+            <option value="NZD">$ NZD</option>
+            <option value="HKD">$ HKD</option>
+            <option value="SGD">$ SGD</option>
+          </select>
+        </div>
+        
         <h3>Portafoglio</h3>
         <div class="field">
           <label>Valore</label>
@@ -365,6 +381,7 @@
     // Global variables
     let portfolioData = null;
     let isLoading = false;
+    let currentCurrency = 'EUR'; // Default currency
 
     // Navigation
     function showSection(sectionId) {
@@ -396,7 +413,7 @@
       showLoading('Caricamento dati portafoglio...');
       
       try {
-        const response = await fetch('/api/portfolio');
+        const response = await fetch(`/api/portfolio?currency=${currentCurrency}`);
         if (!response.ok) {
           throw new Error('Errore nel caricamento dati');
         }
@@ -410,6 +427,25 @@
         showError('Errore nel caricamento dei dati del portafoglio');
       } finally {
         isLoading = false;
+        hideLoading();
+      }
+    }
+
+    // Currency change handler
+    async function changeCurrency() {
+      const newCurrency = document.getElementById('currencySelect').value;
+      if (newCurrency === currentCurrency) return;
+      
+      showLoading('Aggiornamento valuta...');
+      
+      try {
+        currentCurrency = newCurrency;
+        await loadPortfolioData();
+        
+      } catch (error) {
+        console.error('Errore nel cambio valuta:', error);
+        showError('Errore nell\'aggiornamento della valuta');
+      } finally {
         hideLoading();
       }
     }
@@ -682,11 +718,30 @@
       }
     }
 
+    // Currency change handler
+    async function changeCurrency() {
+      const newCurrency = document.getElementById('currencySelect').value;
+      if (newCurrency === currentCurrency) return;
+      
+      showLoading('Aggiornamento valuta...');
+      
+      try {
+        currentCurrency = newCurrency;
+        await loadPortfolioData();
+        
+      } catch (error) {
+        console.error('Errore nel cambio valuta:', error);
+        showError('Errore nell\'aggiornamento della valuta');
+      } finally {
+        hideLoading();
+      }
+    }
+
     // Utility functions
     function formatCurrency(amount) {
       return new Intl.NumberFormat('it-IT', { 
         style: 'currency', 
-        currency: 'EUR',
+        currency: currentCurrency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       }).format(amount);

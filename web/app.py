@@ -162,8 +162,89 @@ def get_historical_price(symbol, date):
         print(f"Errore nell'ottenere prezzo storico per {symbol} alla data {date}: {e}")
         return None
 
-def get_portfolio_data(user_email):
-    """Calcola i dati del portafoglio per un utente specifico"""
+# Cache per i tassi di cambio (per evitare troppe chiamate API)
+exchange_rates_cache = {}
+exchange_rates_cache_time = {}
+
+def get_exchange_rate(from_currency, to_currency, date=None):
+    """Ottiene il tasso di cambio tra due valute per una data specifica"""
+    cache_key = f"{from_currency}_{to_currency}_{date or 'current'}"
+    current_time = time.time()
+    
+    # Controlla se abbiamo un tasso in cache valido (max 1 ora per tassi correnti, 24 ore per storici)
+    cache_duration = 3600 if date is None else 86400
+    if (cache_key in exchange_rates_cache and 
+        current_time - exchange_rates_cache_time.get(cache_key, 0) < cache_duration):
+        return exchange_rates_cache[cache_key]
+    
+    try:
+        if date is None:
+            # Tasso corrente
+            params = {
+                "function": "CURRENCY_EXCHANGE_RATE",
+                "from_currency": from_currency,
+                "to_currency": to_currency,
+                "apikey": ALPHA_VANTAGE_API_KEY
+            }
+        else:
+            # Tasso storico
+            params = {
+                "function": "FX_DAILY",
+                "from_symbol": from_currency,
+                "to_symbol": to_currency,
+                "apikey": ALPHA_VANTAGE_API_KEY
+            }
+        
+        response = requests.get(BASE_URL, params=params)
+        data = response.json()
+        
+        if date is None:
+            # Tasso corrente
+            if "Realtime Currency Exchange Rate" in data:
+                rate_info = data["Realtime Currency Exchange Rate"]
+                rate = float(rate_info["5. Exchange Rate"])
+            else:
+                print(f"Errore nel tasso di cambio corrente {from_currency}->{to_currency}: {data}")
+                return None
+        else:
+            # Tasso storico
+            if "Time Series FX (Daily)" in data:
+                time_series = data["Time Series FX (Daily)"]
+                
+                # Cerca la data esatta
+                if date in time_series:
+                    rate = float(time_series[date]["4. close"])
+                else:
+                    # Se la data non esiste, cerca la data più vicina precedente
+                    available_dates = sorted(time_series.keys(), reverse=True)
+                    
+                    for available_date in available_dates:
+                        if available_date <= date:
+                            rate = float(time_series[available_date]["4. close"])
+                            break
+                    else:
+                        # Se non trova date precedenti, usa il tasso più recente
+                        if available_dates:
+                            rate = float(time_series[available_dates[0]]["4. close"])
+                        else:
+                            print(f"Nessun dato storico trovato per {from_currency}->{to_currency} alla data {date}")
+                            return None
+            else:
+                print(f"Errore nel tasso di cambio storico {from_currency}->{to_currency}: {data}")
+                return None
+        
+        # Salva in cache
+        exchange_rates_cache[cache_key] = rate
+        exchange_rates_cache_time[cache_key] = current_time
+        
+        return rate
+        
+    except Exception as e:
+        print(f"Errore nell'ottenere tasso di cambio {from_currency}->{to_currency}: {e}")
+        return None
+
+def get_portfolio_data(user_email, target_currency='EUR'):
+    """Calcola i dati del portafoglio per un utente specifico con conversione valuta"""
     # Ottieni l'utente dal database
     user = get_user_by_email(user_email)
     if not user:
@@ -181,7 +262,8 @@ def get_portfolio_data(user_email):
                 "total_cost": 0,
                 "total_gain": 0,
                 "total_gain_percent": 0,
-                "positions_count": 0
+                "positions_count": 0,
+                "currency": target_currency
             }
         }
     
@@ -194,8 +276,21 @@ def get_portfolio_data(user_email):
         symbol = position["symbol"]
         quote = get_stock_quote(symbol)
         if quote:
-            current_value = quote["price"] * position["quantity"]
-            cost_basis = position["avg_price"] * position["quantity"]
+            # Ottieni tassi di cambio per data di acquisto e corrente
+            purchase_date = position["purchase_date"]
+            
+            # Tasso di cambio alla data di acquisto
+            purchase_rate = get_exchange_rate('EUR', target_currency, purchase_date) or 1.0
+            
+            # Tasso di cambio corrente
+            current_rate = get_exchange_rate('EUR', target_currency) or 1.0
+            
+            # Converti prezzi nella valuta target
+            current_price = quote["price"] * current_rate
+            avg_price = position["avg_price"] * purchase_rate
+            
+            current_value = current_price * position["quantity"]
+            cost_basis = avg_price * position["quantity"]
             gain_loss = current_value - cost_basis
             gain_loss_percent = (gain_loss / cost_basis * 100) if cost_basis > 0 else 0
             
@@ -203,15 +298,15 @@ def get_portfolio_data(user_email):
                 "id": position["id"],
                 "symbol": symbol,
                 "quantity": position["quantity"],
-                "avg_price": position["avg_price"],
-                "purchase_date": position["purchase_date"],
-                "current_price": quote["price"],
+                "avg_price": avg_price,
+                "current_price": current_price,
                 "current_value": current_value,
                 "cost_basis": cost_basis,
                 "gain_loss": gain_loss,
                 "gain_loss_percent": gain_loss_percent,
-                "change_today": quote["change"],
-                "change_percent_today": quote["change_percent"]
+                "purchase_date": purchase_date,
+                "purchase_rate": purchase_rate,
+                "current_rate": current_rate
             })
             
             total_value += current_value
@@ -228,7 +323,8 @@ def get_portfolio_data(user_email):
             "total_cost": total_cost,
             "total_gain": total_gain,
             "total_gain_percent": (total_gain / total_cost * 100) if total_cost > 0 else 0,
-            "positions_count": len(portfolio_data)
+            "positions_count": len(portfolio_data),
+            "currency": target_currency
         }
     }
 
@@ -280,13 +376,14 @@ def logout():
 def dashboard():
     return render_template('portfolio-software.html')
 
-@app.route('/api/portfolio')
+@app.route('/api/portfolio', methods=['GET'])
 @login_required
 def api_portfolio():
-    """API endpoint per i dati del portafoglio"""
+    """API endpoint per i dati del portafoglio con supporto valuta"""
     try:
         user_email = session['user_email']
         user_id = session.get('user_id')
+        currency = request.args.get('currency', 'EUR')
         
         # Se è un utente demo (senza ID nel database), restituisci portafoglio vuoto
         if user_id is None:
@@ -297,17 +394,70 @@ def api_portfolio():
                     "total_cost": 0,
                     "total_gain": 0,
                     "total_gain_percent": 0,
-                    "positions_count": 0
+                    "positions_count": 0,
+                    "currency": currency
                 }
             })
         
-        portfolio = get_portfolio_data(user_email)
+        portfolio = get_portfolio_data(user_email, currency)
         if portfolio:
             return jsonify(portfolio)
         else:
             return jsonify({"error": "Portafoglio non trovato"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/exchange-rates', methods=['GET'])
+@login_required
+def get_exchange_rates():
+    """Endpoint per ottenere tutti i tassi di cambio supportati"""
+    base_currency = request.args.get('base', 'EUR')
+    supported_currencies = ['EUR', 'INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
+    
+    rates = {}
+    for currency in supported_currencies:
+        if currency != base_currency:
+            rate = get_exchange_rate(base_currency, currency)
+            if rate:
+                rates[currency] = rate
+    
+    return jsonify({
+        "base_currency": base_currency,
+        "rates": rates,
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/api/currency-info', methods=['GET'])
+@login_required
+def get_currency_info():
+    """Endpoint per ottenere informazioni sui tassi di cambio con performance"""
+    base_currency = 'EUR'
+    supported_currencies = ['INR', 'GBP', 'CAD', 'AUD', 'NZD', 'HKD', 'SGD']
+    
+    currency_info = []
+    
+    for currency in supported_currencies:
+        current_rate = get_exchange_rate(base_currency, currency)
+        
+        # Calcola il tasso di cambio di una settimana fa per la performance
+        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        week_ago_rate = get_exchange_rate(base_currency, currency, week_ago)
+        
+        if current_rate and week_ago_rate:
+            change_percent = ((current_rate - week_ago_rate) / week_ago_rate) * 100
+            
+            currency_info.append({
+                'currency': currency,
+                'rate': current_rate,
+                'change_percent': change_percent,
+                'week_ago_rate': week_ago_rate
+            })
+    
+    return jsonify({
+        'base_currency': base_currency,
+        'currencies': currency_info,
+        'timestamp': datetime.now().isoformat()
+    })
 
 @app.route('/api/portfolio/add', methods=['POST'])
 @login_required
