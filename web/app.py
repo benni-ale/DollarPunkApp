@@ -68,18 +68,152 @@ def get_stock_currency(symbol):
         # Default: assumi USD per titoli sconosciuti
         return 'USD'
 
+def get_stock_region(symbol):
+    """Determina l'area geografica di un titolo"""
+    # Titoli USA
+    us_stocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'NVDA', 'META', 'ACN']
+    
+    # Titoli UK
+    uk_stocks = ['HSBC', 'BP', 'GSK', 'VOD', 'RIO', 'BHP', 'ULVR', 'DGE']
+    
+    # Titoli francesi
+    fr_stocks = ['OR.PA', 'MC.PA', 'ASML', 'TOT.PA', 'BNP.PA', 'CRH.PA', 'AIR.PA', 'CAP.PA']
+    
+    # Titoli tedeschi
+    de_stocks = ['SAP.DE', 'SIE.DE', 'BMW.DE', 'DAI.DE', 'BAYN.DE', 'BAS.DE', 'ADS.DE', 'DTE.DE']
+    
+    # Titoli italiani
+    it_stocks = ['ENEL.MI', 'ENI.MI', 'ISP.MI', 'UCG.MI', 'TIT.MI', 'STM.MI', 'PRY.MI', 'DIA.MI', 'SPM.MI', 'TEN.MI', 'RACE.MI', 'CNHI.MI', 'EXO.MI']
+    
+    # Titoli svizzeri
+    ch_stocks = ['NOVN.SW', 'ROG.SW', 'NESN.SW', 'UBSG.SW', 'CSGN.SW', 'ABBN.SW']
+    
+    if symbol in us_stocks:
+        return 'USA'
+    elif symbol in uk_stocks:
+        return 'UK'
+    elif symbol in fr_stocks:
+        return 'Francia'
+    elif symbol in de_stocks:
+        return 'Germania'
+    elif symbol in it_stocks:
+        return 'Italia'
+    elif symbol in ch_stocks:
+        return 'Svizzera'
+    else:
+        # Default: assumi USA per titoli sconosciuti
+        return 'USA'
+
+def get_stock_sector(symbol):
+    """Determina il settore GICS di un titolo"""
+    # Technology
+    tech_stocks = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META', 'ASML', 'SAP.DE', 'STM.MI']
+    
+    # Consumer Discretionary
+    consumer_disc = ['AMZN', 'TSLA', 'OR.PA', 'MC.PA', 'BMW.DE', 'DAI.DE', 'RACE.MI']
+    
+    # Energy
+    energy_stocks = ['BP', 'TOT.PA', 'ENI.MI', 'SPM.MI']
+    
+    # Financials
+    financials = ['HSBC', 'BNP.PA', 'UBSG.SW', 'CSGN.SW', 'ISP.MI', 'UCG.MI']
+    
+    # Healthcare
+    healthcare = ['GSK', 'ROG.SW', 'NOVN.SW', 'BAYN.DE', 'DIA.MI']
+    
+    # Industrials
+    industrials = ['SIE.DE', 'AIR.PA', 'ABBN.SW', 'CNHI.MI', 'TEN.MI']
+    
+    # Materials
+    materials = ['RIO', 'BHP', 'CRH.PA', 'BAS.DE', 'PRY.MI']
+    
+    # Consumer Staples
+    consumer_staples = ['ULVR', 'DGE', 'NESN.SW', 'CAP.PA']
+    
+    # Utilities
+    utilities = ['ENEL.MI']
+    
+    # Communication Services
+    communication = ['VOD', 'TIT.MI', 'DTE.DE']
+    
+    # Real Estate
+    real_estate = ['ADS.DE']
+    
+    # Professional Services
+    professional = ['ACN']
+    
+    if symbol in tech_stocks:
+        return 'Technology'
+    elif symbol in consumer_disc:
+        return 'Consumer Discretionary'
+    elif symbol in energy_stocks:
+        return 'Energy'
+    elif symbol in financials:
+        return 'Financials'
+    elif symbol in healthcare:
+        return 'Healthcare'
+    elif symbol in industrials:
+        return 'Industrials'
+    elif symbol in materials:
+        return 'Materials'
+    elif symbol in consumer_staples:
+        return 'Consumer Staples'
+    elif symbol in utilities:
+        return 'Utilities'
+    elif symbol in communication:
+        return 'Communication Services'
+    elif symbol in real_estate:
+        return 'Real Estate'
+    elif symbol in professional:
+        return 'Professional Services'
+    else:
+        return 'Other'
+
 def get_stock_name(symbol):
     """Restituisce il nome del titolo dato il simbolo"""
     names = {
+        # USA
         'AAPL': 'Apple Inc.',
         'MSFT': 'Microsoft Corp.',
-        'NVDA': 'NVIDIA Corp.',
-        'TSLA': 'Tesla Inc.',
-        'ENEL.MI': 'Enel S.p.A.',
         'GOOGL': 'Alphabet Inc.',
         'AMZN': 'Amazon.com Inc.',
+        'TSLA': 'Tesla Inc.',
+        'NVDA': 'NVIDIA Corp.',
         'META': 'Meta Platforms Inc.',
         'ACN': 'Accenture plc',
+        
+        # UK
+        'HSBC': 'HSBC Holdings plc',
+        'BP': 'BP plc',
+        'GSK': 'GlaxoSmithKline plc',
+        'VOD': 'Vodafone Group plc',
+        'RIO': 'Rio Tinto Group',
+        'BHP': 'BHP Group Ltd',
+        'ULVR': 'Unilever plc',
+        'DGE': 'Diageo plc',
+        
+        # Francia
+        'OR.PA': 'L\'Oréal S.A.',
+        'MC.PA': 'LVMH Moët Hennessy Louis Vuitton',
+        'ASML': 'ASML Holding N.V.',
+        'TOT.PA': 'TotalEnergies SE',
+        'BNP.PA': 'BNP Paribas S.A.',
+        'CRH.PA': 'Crédit Agricole S.A.',
+        'AIR.PA': 'Airbus SE',
+        'CAP.PA': 'Capgemini SE',
+        
+        # Germania
+        'SAP.DE': 'SAP SE',
+        'SIE.DE': 'Siemens AG',
+        'BMW.DE': 'BMW AG',
+        'DAI.DE': 'Daimler AG',
+        'BAYN.DE': 'Bayer AG',
+        'BAS.DE': 'BASF SE',
+        'ADS.DE': 'Adidas AG',
+        'DTE.DE': 'Deutsche Telekom AG',
+        
+        # Italia
+        'ENEL.MI': 'Enel S.p.A.',
         'ENI.MI': 'Eni S.p.A.',
         'ISP.MI': 'Intesa Sanpaolo S.p.A.',
         'UCG.MI': 'UniCredit S.p.A.',
@@ -91,7 +225,15 @@ def get_stock_name(symbol):
         'TEN.MI': 'Tenaris S.A.',
         'RACE.MI': 'Ferrari N.V.',
         'CNHI.MI': 'CNH Industrial N.V.',
-        'EXO.MI': 'Exor N.V.'
+        'EXO.MI': 'Exor N.V.',
+        
+        # Svizzera
+        'NOVN.SW': 'Novartis AG',
+        'ROG.SW': 'Roche Holding AG',
+        'NESN.SW': 'Nestlé S.A.',
+        'UBSG.SW': 'UBS Group AG',
+        'CSGN.SW': 'Credit Suisse Group AG',
+        'ABBN.SW': 'ABB Ltd'
     }
     return names.get(symbol, f"{symbol} Stock")
 
@@ -327,7 +469,9 @@ def get_portfolio_data(user_email, target_currency='EUR'):
                 "gain_loss_percent": gain_loss_percent,
                 "purchase_date": purchase_date,
                 "stock_currency": stock_currency,  # Valuta locale del titolo
-                "target_currency": target_currency  # Valuta selezionata dall'utente
+                "target_currency": target_currency,  # Valuta selezionata dall'utente
+                "region": get_stock_region(symbol),  # Area geografica
+                "sector": get_stock_sector(symbol)  # Settore GICS
             })
             
             total_value += current_value
