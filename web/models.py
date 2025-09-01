@@ -36,6 +36,7 @@ class PortfolioPosition(db.Model):
     quantity = db.Column(db.Float, nullable=False)
     avg_price = db.Column(db.Float, nullable=False)
     purchase_date = db.Column(db.Date, nullable=False)
+    asset_type = db.Column(db.String(20), default='stock', nullable=False)  # 'stock' o 'cash'
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
@@ -52,6 +53,7 @@ class PortfolioPosition(db.Model):
             'quantity': float(self.quantity),
             'purchase_date': self.purchase_date.isoformat(),
             'avg_price': float(self.avg_price),
+            'asset_type': self.asset_type,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }

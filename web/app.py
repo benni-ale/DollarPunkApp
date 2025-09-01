@@ -470,53 +470,89 @@ def get_portfolio_data(user_email, target_currency='EUR'):
     
     for position in portfolio_positions:
         symbol = position["symbol"]
-        quote = get_stock_quote(symbol)
-        if quote:
-            # Ottieni la valuta locale del titolo
-            stock_currency = get_stock_currency(symbol)
-            purchase_date = position["purchase_date"]
-            
-            # Prezzi in valuta locale (senza conversione)
-            local_current_price = quote["price"]  # Prezzo corrente in valuta locale
-            local_avg_price = position["avg_price"]  # Prezzo di acquisto in valuta locale
-            
-            # Calcola il controvalore nella valuta selezionata dall'utente
-            if stock_currency != target_currency:
-                # Tasso di cambio corrente per convertire dalla valuta locale alla valuta target
-                exchange_rate = get_exchange_rate(stock_currency, target_currency) or 1.0
-                current_value = local_current_price * position["quantity"] * exchange_rate
-                cost_basis = local_avg_price * position["quantity"] * exchange_rate
-            else:
-                # Stessa valuta, nessuna conversione
-                current_value = local_current_price * position["quantity"]
-                cost_basis = local_avg_price * position["quantity"]
-            
-            gain_loss = current_value - cost_basis
-            gain_loss_percent = (gain_loss / cost_basis * 100) if cost_basis > 0 else 0
+        asset_type = position.get("asset_type", "stock")
+        purchase_date = position["purchase_date"]
+        
+        if asset_type == "cash":
+            # Per il cash, il valore è sempre uguale alla quantità
+            local_avg_price = 1.0  # 1 unità di cash = 1 unità di valuta
+            local_current_price = 1.0  # Il cash non cambia valore
+            current_value = position["quantity"]  # Il valore del cash è la quantità
+            cost_basis = position["quantity"]  # Il costo è uguale alla quantità
+            gain_loss = 0  # Il cash non ha guadagni/perdite
+            gain_loss_percent = 0
             
             portfolio_data.append({
                 "id": position["id"],
                 "symbol": symbol,
                 "quantity": position["quantity"],
-                "local_avg_price": local_avg_price,  # Prezzo carico in valuta locale
-                "local_current_price": local_current_price,  # Prezzo corrente in valuta locale
-                "current_value": current_value,  # Controvalore in valuta selezionata
+                "local_avg_price": local_avg_price,
+                "local_current_price": local_current_price,
+                "current_value": current_value,
                 "cost_basis": cost_basis,
                 "gain_loss": gain_loss,
                 "gain_loss_percent": gain_loss_percent,
                 "purchase_date": purchase_date,
-                "stock_currency": stock_currency,  # Valuta locale del titolo
-                "target_currency": target_currency,  # Valuta selezionata dall'utente
-                "region": get_stock_region(symbol),  # Area geografica
-                "sector": get_stock_sector(symbol)  # Settore GICS
+                "stock_currency": target_currency,  # Il cash è nella valuta selezionata
+                "target_currency": target_currency,
+                "region": "Cash",  # Area geografica per il cash
+                "sector": "Cash",  # Settore per il cash
+                "asset_type": "cash"
             })
             
             total_value += current_value
             total_cost += cost_basis
             total_gain += gain_loss
-        
-        # Rate limiting per Alpha Vantage (5 calls per minuto per free tier)
-        time.sleep(0.2)
+            
+        else:
+            # Per le azioni, usa la logica esistente
+            quote = get_stock_quote(symbol)
+            if quote:
+                # Ottieni la valuta locale del titolo
+                stock_currency = get_stock_currency(symbol)
+                
+                # Prezzi in valuta locale (senza conversione)
+                local_current_price = quote["price"]  # Prezzo corrente in valuta locale
+                local_avg_price = position["avg_price"]  # Prezzo di acquisto in valuta locale
+                
+                # Calcola il controvalore nella valuta selezionata dall'utente
+                if stock_currency != target_currency:
+                    # Tasso di cambio corrente per convertire dalla valuta locale alla valuta target
+                    exchange_rate = get_exchange_rate(stock_currency, target_currency) or 1.0
+                    current_value = local_current_price * position["quantity"] * exchange_rate
+                    cost_basis = local_avg_price * position["quantity"] * exchange_rate
+                else:
+                    # Stessa valuta, nessuna conversione
+                    current_value = local_current_price * position["quantity"]
+                    cost_basis = local_avg_price * position["quantity"]
+                
+                gain_loss = current_value - cost_basis
+                gain_loss_percent = (gain_loss / cost_basis * 100) if cost_basis > 0 else 0
+                
+                portfolio_data.append({
+                    "id": position["id"],
+                    "symbol": symbol,
+                    "quantity": position["quantity"],
+                    "local_avg_price": local_avg_price,  # Prezzo carico in valuta locale
+                    "local_current_price": local_current_price,  # Prezzo corrente in valuta locale
+                    "current_value": current_value,  # Controvalore in valuta selezionata
+                    "cost_basis": cost_basis,
+                    "gain_loss": gain_loss,
+                    "gain_loss_percent": gain_loss_percent,
+                    "purchase_date": purchase_date,
+                    "stock_currency": stock_currency,  # Valuta locale del titolo
+                    "target_currency": target_currency,  # Valuta selezionata dall'utente
+                    "region": get_stock_region(symbol),  # Area geografica
+                    "sector": get_stock_sector(symbol),  # Settore GICS
+                    "asset_type": "stock"
+                })
+                
+                total_value += current_value
+                total_cost += cost_basis
+                total_gain += gain_loss
+            
+            # Rate limiting per Alpha Vantage (5 calls per minuto per free tier)
+            time.sleep(0.2)
     
     return {
         "positions": portfolio_data,
@@ -675,32 +711,48 @@ def api_add_position():
         symbol = data.get('symbol', '').upper().strip()
         quantity = float(data.get('quantity', 0))
         purchase_date = data.get('purchase_date', '')
+        asset_type = data.get('asset_type', 'stock')  # 'stock' o 'cash'
         
         if not symbol or quantity <= 0 or not purchase_date:
             return jsonify({"error": "Dati non validi"}), 400
         
-        # Verifica che il titolo esista
-        quote = get_stock_quote(symbol)
-        if not quote:
-            return jsonify({"error": f"Titolo {symbol} non trovato"}), 404
-        
-        # Ottieni il prezzo di chiusura alla data di acquisto
-        historical_price = get_historical_price(symbol, purchase_date)
-        if not historical_price:
-            return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
-        
-        # Aggiungi la posizione al database
-        success, message = add_portfolio_position(
-            user_id, symbol, quantity, purchase_date, historical_price
-        )
-        
-        if success:
-            return jsonify({
-                "success": True, 
-                "message": f"Posizione {symbol} aggiunta con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
-            })
+        if asset_type == 'cash':
+            # Per il cash, il prezzo è sempre 1 (1 unità di cash = 1 unità di valuta)
+            avg_price = 1.0
+            success, message = add_portfolio_position(
+                user_id, symbol, quantity, purchase_date, avg_price, asset_type
+            )
+            
+            if success:
+                return jsonify({
+                    "success": True, 
+                    "message": f"Cash {symbol} aggiunto con successo: {quantity} unità"
+                })
+            else:
+                return jsonify({"error": message}), 500
         else:
-            return jsonify({"error": message}), 500
+            # Per le azioni, verifica che il titolo esista
+            quote = get_stock_quote(symbol)
+            if not quote:
+                return jsonify({"error": f"Titolo {symbol} non trovato"}), 404
+            
+            # Ottieni il prezzo di chiusura alla data di acquisto
+            historical_price = get_historical_price(symbol, purchase_date)
+            if not historical_price:
+                return jsonify({"error": f"Impossibile ottenere il prezzo storico per {symbol} alla data {purchase_date}"}), 404
+            
+            # Aggiungi la posizione al database
+            success, message = add_portfolio_position(
+                user_id, symbol, quantity, purchase_date, historical_price, asset_type
+            )
+            
+            if success:
+                return jsonify({
+                    "success": True, 
+                    "message": f"Posizione {symbol} aggiunta con successo al prezzo di €{historical_price:.2f} del {purchase_date}"
+                })
+            else:
+                return jsonify({"error": message}), 500
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500

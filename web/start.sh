@@ -48,6 +48,19 @@ echo ""
 echo "🗄️ Database PostgreSQL connesso con successo!"
 echo ""
 
+echo "🔄 Esecuzione migrazione database..."
+if [ -f "migrate_add_asset_type.py" ]; then
+    python migrate_add_asset_type.py
+    if [ $? -eq 0 ]; then
+        echo "✅ Migrazione completata con successo!"
+    else
+        echo "❌ Errore durante la migrazione!"
+    fi
+else
+    echo "⚠️  Script di migrazione non trovato, saltando..."
+fi
+echo ""
+
 echo "🔧 Verifica configurazione Alpha Vantage..."
 
 # Verifica semplice della chiave API

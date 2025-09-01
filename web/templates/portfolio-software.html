@@ -112,14 +112,17 @@
         <section id="portfolio" class="section" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
             <h2>Portafoglio</h2>
-            <div style="display:flex;gap:10px">
-              <button class="btn" onclick="showAddPositionModal()" style="padding:8px 16px;font-size:14px">
-                ➕ Aggiungi Posizione
-              </button>
-              <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
-                🔄 Aggiorna
-              </button>
-            </div>
+                         <div style="display:flex;gap:10px">
+               <button class="btn" onclick="showAddPositionModal()" style="padding:8px 16px;font-size:14px">
+                 ➕ Aggiungi Posizione
+               </button>
+               <button class="btn" onclick="showAddCashModal()" style="padding:8px 16px;font-size:14px;background:var(--ok);border-color:var(--ok)">
+                 💰 Aggiungi Cash
+               </button>
+               <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
+                 🔄 Aggiorna
+               </button>
+             </div>
           </div>
           
           <div class="grid cols-4">
@@ -405,32 +408,63 @@
     </div>
   </div>
 
-  <!-- Edit Position Modal -->
-  <div id="editPositionModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Modifica Posizione</h3>
-        <button class="modal-close" onclick="hideModal('editPositionModal')">&times;</button>
-      </div>
-             <div class="field">
-         <label>Simbolo Titolo</label>
-         <input type="text" id="editSymbol" readonly>
-         <input type="hidden" id="editPositionId">
+     <!-- Edit Position Modal -->
+   <div id="editPositionModal" class="modal">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h3>Modifica Posizione</h3>
+         <button class="modal-close" onclick="hideModal('editPositionModal')">&times;</button>
        </div>
-      <div class="field">
-        <label>Quantità</label>
-        <input type="number" id="editQuantity" placeholder="100" min="1" step="1">
-      </div>
-             <div class="field">
-         <label>Data di Acquisto</label>
-         <input type="date" id="editPurchaseDate" required>
+              <div class="field">
+          <label>Simbolo Titolo</label>
+          <input type="text" id="editSymbol" readonly>
+          <input type="hidden" id="editPositionId">
+        </div>
+       <div class="field">
+         <label>Quantità</label>
+         <input type="number" id="editQuantity" placeholder="100" min="1" step="1">
        </div>
-      <div style="display:flex;gap:10px;margin-top:20px">
-        <button class="btn" onclick="updatePosition()">Aggiorna</button>
-        <button class="btn secondary" onclick="hideModal('editPositionModal')">Annulla</button>
-      </div>
-    </div>
-  </div>
+              <div class="field">
+          <label>Data di Acquisto</label>
+          <input type="date" id="editPurchaseDate" required>
+        </div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+         <button class="btn" onclick="updatePosition()">Aggiorna</button>
+         <button class="btn secondary" onclick="hideModal('editPositionModal')">Annulla</button>
+       </div>
+     </div>
+   </div>
+
+   <!-- Add Cash Modal -->
+   <div id="addCashModal" class="modal">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h3>💰 Aggiungi Cash</h3>
+         <button class="modal-close" onclick="hideModal('addCashModal')">&times;</button>
+       </div>
+       <div class="field">
+         <label>Valuta</label>
+         <select id="cashCurrency">
+           <option value="EUR">€ EUR</option>
+           <option value="USD">$ USD</option>
+           <option value="GBP">£ GBP</option>
+           <option value="CHF">CHF</option>
+         </select>
+       </div>
+       <div class="field">
+         <label>Importo</label>
+         <input type="number" id="cashAmount" placeholder="1000" min="0.01" step="0.01">
+       </div>
+       <div class="field">
+         <label>Data</label>
+         <input type="date" id="cashDate" required>
+       </div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+         <button class="btn" onclick="addCash()" style="background:var(--ok);border-color:var(--ok)">Aggiungi Cash</button>
+         <button class="btn secondary" onclick="hideModal('addCashModal')">Annulla</button>
+       </div>
+     </div>
+   </div>
 
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -542,22 +576,43 @@
        } else {
          positions.forEach(position => {
            const row = document.createElement('tr');
-                       row.innerHTML = `
-              <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
-              <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
-              <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
-              <td>${position.quantity}</td>
-              <td>${formatDate(position.purchase_date)}</td>
-              <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
-              <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
-              <td>${formatCurrency(position.current_value)}</td>
-              <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-              <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-              <td>
-                <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
-                <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
-              </td>
-            `;
+           
+           // Gestisci il cash diversamente dalle azioni
+           if (position.asset_type === 'cash') {
+             row.innerHTML = `
+                <td><strong>💰 ${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">Cash</span></td>
+                <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
+                <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
+                <td>${formatCurrency(position.quantity)}</td>
+                <td>${formatDate(position.purchase_date)}</td>
+                <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
+                <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
+                <td>${formatCurrency(position.current_value)}</td>
+                <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+                <td class="neutral">0.0%</td>
+                <td>
+                  <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
+                  <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
+                </td>
+              `;
+           } else {
+             row.innerHTML = `
+                <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+                <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
+                <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
+                <td>${position.quantity}</td>
+                <td>${formatDate(position.purchase_date)}</td>
+                <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
+                <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
+                <td>${formatCurrency(position.current_value)}</td>
+                <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+                <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+                <td>
+                  <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
+                  <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
+                </td>
+              `;
+           }
            tbody.appendChild(row);
          });
        }
@@ -647,6 +702,17 @@
       dateField.parentNode.appendChild(note);
     }
 
+    function showAddCashModal() {
+      document.getElementById('addCashModal').style.display = 'block';
+      // Clear form
+      document.getElementById('cashAmount').value = '';
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('cashDate').value = today;
+      // Set default currency to current currency
+      document.getElementById('cashCurrency').value = currentCurrency;
+    }
+
     function showEditPositionModal(positionId) {
       const position = portfolioData.positions.find(p => p.id === positionId);
       if (position) {
@@ -683,7 +749,8 @@
           body: JSON.stringify({
             symbol: symbol,
             quantity: quantity,
-            purchase_date: purchaseDate
+            purchase_date: purchaseDate,
+            asset_type: 'stock'
           })
         });
 
@@ -695,6 +762,49 @@
           loadPortfolioData(); // Reload portfolio data
         } else {
           showError(result.error || 'Errore nell\'aggiunta della posizione');
+        }
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore di rete');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function addCash() {
+      const currency = document.getElementById('cashCurrency').value;
+      const amount = parseFloat(document.getElementById('cashAmount').value);
+      const date = document.getElementById('cashDate').value;
+      
+      if (!currency || !amount || !date || amount <= 0) {
+        showError('Inserisci tutti i campi con valori validi');
+        return;
+      }
+      
+      showLoading('Aggiunta cash...');
+      
+      try {
+        const response = await fetch('/api/portfolio/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            symbol: currency, // Il simbolo è la valuta (es: EUR, USD)
+            quantity: amount,
+            purchase_date: date,
+            asset_type: 'cash'
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          hideModal('addCashModal');
+          showSuccess(result.message);
+          loadPortfolioData(); // Reload portfolio data
+        } else {
+          showError(result.error || 'Errore nell\'aggiunta del cash');
         }
       } catch (error) {
         console.error('Errore:', error);

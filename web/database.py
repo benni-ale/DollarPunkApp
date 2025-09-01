@@ -80,7 +80,7 @@ def get_user_portfolio(user_id):
     positions = PortfolioPosition.query.filter_by(user_id=user_id).all()
     return [pos.to_dict() for pos in positions]
 
-def add_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price):
+def add_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price, asset_type='stock'):
     """Aggiunge una posizione al portafoglio"""
     try:
         # Ora permettiamo più posizioni dello stesso simbolo
@@ -89,7 +89,8 @@ def add_portfolio_position(user_id, symbol, quantity, purchase_date, avg_price):
             symbol=symbol,
             quantity=quantity,
             purchase_date=purchase_date,
-            avg_price=avg_price
+            avg_price=avg_price,
+            asset_type=asset_type
         )
         db.session.add(position)
         db.session.commit()
