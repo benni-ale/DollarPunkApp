@@ -554,34 +554,6 @@ footer {
 }
 
 /* Stili per i Grafici Portfolio */
-.chart-filters {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: var(--card);
-  border-radius: 8px;
-  border: 1px solid rgba(148,163,184,.18);
-}
-
-.chart-filters label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.chart-filters select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(148,163,184,.25);
-  border-radius: 6px;
-  background: #1a1a1a;
-  color: var(--text);
-  margin-bottom: 10px;
-}
-
-.chart-filters select[multiple] {
-  height: 120px;
-}
 
 .charts-container {
   display: grid;

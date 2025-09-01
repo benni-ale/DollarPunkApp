@@ -216,14 +216,7 @@
           <div class="card" style="margin-top:24px">
             <h3>📊 Analisi Portfolio</h3>
             
-            <!-- Filtri per i Grafici -->
-            <div class="chart-filters">
-              <label for="stockFilter">Filtra per Stock:</label>
-              <select id="stockFilter" multiple>
-                <option value="">Tutti gli stock</option>
-              </select>
-              <button class="btn secondary" onclick="updateCharts()">Aggiorna Grafici</button>
-            </div>
+
             
             <div class="charts-container">
               <!-- Grafico Esposizione Geografica -->
@@ -1107,48 +1100,12 @@
         return;
       }
       
-      // Popola il filtro degli stock
-      populateStockFilter();
-      
       // Crea i grafici
       createGeographicChart();
       createSectorChart();
       
       // Aggiorna i riepiloghi
       updateSummaryCards();
-    }
-    
-    function populateStockFilter() {
-      const stockFilter = document.getElementById('stockFilter');
-      if (!stockFilter) return;
-      
-      // Mantieni l'opzione "Tutti gli stock"
-      stockFilter.innerHTML = '<option value="">Tutti gli stock</option>';
-      
-      // Aggiungi tutti gli stock disponibili
-      portfolioData.positions.forEach(position => {
-        const option = document.createElement('option');
-        option.value = position.symbol;
-        option.textContent = position.symbol;
-        stockFilter.appendChild(option);
-      });
-    }
-    
-    function getFilteredPositions() {
-      const stockFilter = document.getElementById('stockFilter');
-      if (!stockFilter) return portfolioData.positions;
-      
-      const selectedStocks = Array.from(stockFilter.selectedOptions).map(option => option.value);
-      
-      // Se nessun stock è selezionato o è selezionato "Tutti gli stock", restituisci tutto
-      if (selectedStocks.length === 0 || selectedStocks.includes('')) {
-        return portfolioData.positions;
-      }
-      
-      // Filtra solo gli stock selezionati
-      return portfolioData.positions.filter(position => 
-        selectedStocks.includes(position.symbol)
-      );
     }
     
     function createGeographicChart() {
@@ -1163,12 +1120,9 @@
         geographicChart.destroy();
       }
       
-      // Ottieni i dati filtrati
-      const filteredPositions = getFilteredPositions();
-      
       // Raggruppa per regione
       const regionData = {};
-      filteredPositions.forEach(position => {
+      portfolioData.positions.forEach(position => {
         const region = position.region || 'Altri';
         if (!regionData[region]) {
           regionData[region] = 0;
@@ -1220,12 +1174,9 @@
         sectorChart.destroy();
       }
       
-      // Ottieni i dati filtrati
-      const filteredPositions = getFilteredPositions();
-      
       // Raggruppa per settore
       const sectorData = {};
-      filteredPositions.forEach(position => {
+      portfolioData.positions.forEach(position => {
         const sector = position.sector || 'Altri';
         if (!sectorData[sector]) {
           sectorData[sector] = 0;
@@ -1273,13 +1224,12 @@
       
       legend.innerHTML = labels.map((label, index) => {
         const percentage = ((data[index] / total) * 100).toFixed(1);
-        const value = formatCurrency(data[index], currentCurrency);
         
         return `
           <div class="legend-item">
             <div class="legend-color" style="background-color: ${colors[index]}"></div>
             <span>${label}</span>
-            <span>${percentage}% (${value})</span>
+            <span>${percentage}%</span>
           </div>
         `;
       }).join('');
@@ -1373,10 +1323,7 @@
       return result;
     }
     
-    function updateCharts() {
-      // Ricrea i grafici con i dati aggiornati
-      createCharts();
-    }
+
     
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
