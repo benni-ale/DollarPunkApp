@@ -15,8 +15,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
-    # Relazione con le posizioni del portafoglio
-    portfolio_positions = db.relationship('PortfolioPosition', backref='user', lazy=True, cascade='all, delete-orphan')
+
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -40,7 +39,7 @@ class PortfolioPosition(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
-    user = db.relationship('User', backref=db.backref('positions', lazy=True))
+
     
     def __repr__(self):
         return f'<PortfolioPosition {self.symbol} x {self.quantity}>'
