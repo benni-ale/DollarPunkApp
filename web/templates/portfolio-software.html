@@ -212,6 +212,55 @@
               </tbody>
             </table>
           </div>
+          <!-- Sezione Grafici Portfolio -->
+          <div class="card" style="margin-top:24px">
+            <h3>📊 Analisi Portfolio</h3>
+            
+            <!-- Filtri per i Grafici -->
+            <div class="chart-filters">
+              <label for="stockFilter">Filtra per Stock:</label>
+              <select id="stockFilter" multiple>
+                <option value="">Tutti gli stock</option>
+              </select>
+              <button class="btn secondary" onclick="updateCharts()">Aggiorna Grafici</button>
+            </div>
+            
+            <div class="charts-container">
+              <!-- Grafico Esposizione Geografica -->
+              <div class="chart-card">
+                <h3>🌍 Esposizione Geografica</h3>
+                <div class="chart-wrapper">
+                  <canvas id="geographicChart"></canvas>
+                </div>
+                <div class="chart-legend" id="geographicLegend"></div>
+              </div>
+              
+              <!-- Grafico Esposizione Settoriale -->
+              <div class="chart-card">
+                <h3>🏭 Esposizione Settoriale</h3>
+                <div class="chart-wrapper">
+                  <canvas id="sectorChart"></canvas>
+                </div>
+                <div class="chart-legend" id="sectorLegend"></div>
+              </div>
+            </div>
+            
+            <!-- Riepilogo Numerico -->
+            <div class="summary-cards">
+              <div class="summary-card">
+                <h4>📈 Top 3 Regioni</h4>
+                <div id="topRegions"></div>
+              </div>
+              <div class="summary-card">
+                <h4>🏆 Top 3 Settori</h4>
+                <div id="topSectors"></div>
+              </div>
+              <div class="summary-card">
+                <h4>💰 Concentrazione</h4>
+                <div id="concentration"></div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Orders Section -->
@@ -390,7 +439,8 @@
     </div>
   </div>
 
-  <script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
     // Global variables
     let portfolioData = null;
     let isLoading = false;
@@ -518,6 +568,9 @@
            tbody.appendChild(row);
          });
        }
+       
+       // Create charts after updating the table
+       createCharts();
     }
 
     // Update allocation cards with real data
@@ -1044,6 +1097,287 @@
       });
     }
 
+    // Funzioni per i Grafici Portfolio
+    function createCharts() {
+      if (!portfolioData || !portfolioData.positions) return;
+      
+      // Controlla se Chart.js è caricato
+      if (typeof Chart === 'undefined') {
+        console.error('Chart.js non è caricato');
+        return;
+      }
+      
+      // Popola il filtro degli stock
+      populateStockFilter();
+      
+      // Crea i grafici
+      createGeographicChart();
+      createSectorChart();
+      
+      // Aggiorna i riepiloghi
+      updateSummaryCards();
+    }
+    
+    function populateStockFilter() {
+      const stockFilter = document.getElementById('stockFilter');
+      if (!stockFilter) return;
+      
+      // Mantieni l'opzione "Tutti gli stock"
+      stockFilter.innerHTML = '<option value="">Tutti gli stock</option>';
+      
+      // Aggiungi tutti gli stock disponibili
+      portfolioData.positions.forEach(position => {
+        const option = document.createElement('option');
+        option.value = position.symbol;
+        option.textContent = position.symbol;
+        stockFilter.appendChild(option);
+      });
+    }
+    
+    function getFilteredPositions() {
+      const stockFilter = document.getElementById('stockFilter');
+      if (!stockFilter) return portfolioData.positions;
+      
+      const selectedStocks = Array.from(stockFilter.selectedOptions).map(option => option.value);
+      
+      // Se nessun stock è selezionato o è selezionato "Tutti gli stock", restituisci tutto
+      if (selectedStocks.length === 0 || selectedStocks.includes('')) {
+        return portfolioData.positions;
+      }
+      
+      // Filtra solo gli stock selezionati
+      return portfolioData.positions.filter(position => 
+        selectedStocks.includes(position.symbol)
+      );
+    }
+    
+    function createGeographicChart() {
+      const ctx = document.getElementById('geographicChart');
+      if (!ctx) {
+        console.error('Canvas geographicChart non trovato');
+        return;
+      }
+      
+      // Distruggi il grafico esistente se presente
+      if (geographicChart && typeof geographicChart.destroy === 'function') {
+        geographicChart.destroy();
+      }
+      
+      // Ottieni i dati filtrati
+      const filteredPositions = getFilteredPositions();
+      
+      // Raggruppa per regione
+      const regionData = {};
+      filteredPositions.forEach(position => {
+        const region = position.region || 'Altri';
+        if (!regionData[region]) {
+          regionData[region] = 0;
+        }
+        regionData[region] += position.current_value;
+      });
+      
+      // Prepara i dati per Chart.js
+      const labels = Object.keys(regionData);
+      const data = Object.values(regionData);
+      const colors = generateColors(labels.length);
+      
+      // Crea il grafico
+      geographicChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+      
+      // Crea la legenda personalizzata
+      createLegend('geographicLegend', labels, data, colors);
+    }
+    
+    function createSectorChart() {
+      const ctx = document.getElementById('sectorChart');
+      if (!ctx) {
+        console.error('Canvas sectorChart non trovato');
+        return;
+      }
+      
+      // Distruggi il grafico esistente se presente
+      if (sectorChart && typeof sectorChart.destroy === 'function') {
+        sectorChart.destroy();
+      }
+      
+      // Ottieni i dati filtrati
+      const filteredPositions = getFilteredPositions();
+      
+      // Raggruppa per settore
+      const sectorData = {};
+      filteredPositions.forEach(position => {
+        const sector = position.sector || 'Altri';
+        if (!sectorData[sector]) {
+          sectorData[sector] = 0;
+        }
+        sectorData[sector] += position.current_value;
+      });
+      
+      // Prepara i dati per Chart.js
+      const labels = Object.keys(sectorData);
+      const data = Object.values(sectorData);
+      const colors = generateColors(labels.length);
+      
+      // Crea il grafico
+      sectorChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          }
+        }
+      });
+      
+      // Crea la legenda personalizzata
+      createLegend('sectorLegend', labels, data, colors);
+    }
+    
+    function createLegend(legendId, labels, data, colors) {
+      const legend = document.getElementById(legendId);
+      if (!legend) return;
+      
+      const total = data.reduce((sum, value) => sum + value, 0);
+      
+      legend.innerHTML = labels.map((label, index) => {
+        const percentage = ((data[index] / total) * 100).toFixed(1);
+        const value = formatCurrency(data[index], currentCurrency);
+        
+        return `
+          <div class="legend-item">
+            <div class="legend-color" style="background-color: ${colors[index]}"></div>
+            <span>${label}</span>
+            <span>${percentage}% (${value})</span>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function updateSummaryCards() {
+      if (!portfolioData || !portfolioData.positions) return;
+      
+      // Top 3 Regioni
+      const regionData = {};
+      portfolioData.positions.forEach(position => {
+        const region = position.region || 'Altri';
+        if (!regionData[region]) {
+          regionData[region] = 0;
+        }
+        regionData[region] += position.current_value;
+      });
+      
+      const topRegions = Object.entries(regionData)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3);
+      
+      document.getElementById('topRegions').innerHTML = topRegions.map(([region, value]) => {
+        const percentage = ((value / portfolioData.summary.total_value) * 100).toFixed(1);
+        return `
+          <div class="summary-item">
+            <span class="summary-label">${region}</span>
+            <span class="summary-value">${percentage}%</span>
+          </div>
+        `;
+      }).join('');
+      
+      // Top 3 Settori
+      const sectorData = {};
+      portfolioData.positions.forEach(position => {
+        const sector = position.sector || 'Altri';
+        if (!sectorData[sector]) {
+          sectorData[sector] = 0;
+        }
+        sectorData[sector] += position.current_value;
+      });
+      
+      const topSectors = Object.entries(sectorData)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3);
+      
+      document.getElementById('topSectors').innerHTML = topSectors.map(([sector, value]) => {
+        const percentage = ((value / portfolioData.summary.total_value) * 100).toFixed(1);
+        return `
+          <div class="summary-item">
+            <span class="summary-label">${sector}</span>
+            <span class="summary-value">${percentage}%</span>
+          </div>
+        `;
+      }).join('');
+      
+      // Concentrazione (Herfindahl-Hirschman Index)
+      const totalValue = portfolioData.summary.total_value;
+      const hhi = portfolioData.positions.reduce((sum, position) => {
+        const weight = position.current_value / totalValue;
+        return sum + (weight * weight);
+      }, 0);
+      
+      let concentration = 'Bassa';
+      if (hhi > 0.25) concentration = 'Alta';
+      else if (hhi > 0.15) concentration = 'Media';
+      
+      document.getElementById('concentration').innerHTML = `
+        <div class="summary-item">
+          <span class="summary-label">HHI</span>
+          <span class="summary-value">${(hhi * 100).toFixed(1)}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Livello</span>
+          <span class="summary-value">${concentration}</span>
+        </div>
+      `;
+    }
+    
+    function generateColors(count) {
+      const colors = [
+        '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+        '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+      ];
+      
+      // Ripeti i colori se necessario
+      const result = [];
+      for (let i = 0; i < count; i++) {
+        result.push(colors[i % colors.length]);
+      }
+      return result;
+    }
+    
+    function updateCharts() {
+      // Ricrea i grafici con i dati aggiornati
+      createCharts();
+    }
+    
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       // Set current date
