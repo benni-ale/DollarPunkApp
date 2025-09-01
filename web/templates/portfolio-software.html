@@ -137,9 +137,17 @@
               <h3>💰 Cash</h3>
               <div id="cashValue" style="font-size:24px;font-weight:700;color:#64748b">€0</div>
               <div id="cashPercentage" style="color:var(--muted);font-size:14px">0%</div>
-              <button class="btn" onclick="showAddCashModal()" style="margin-top:8px;padding:4px 8px;font-size:12px;background:var(--ok);border-color:var(--ok)">
-                ➕ Aggiungi
-              </button>
+              <div id="cashBreakdown" style="margin-top:8px;font-size:12px;color:var(--muted)">
+                <!-- Scomposizione valutaria verrà popolata qui -->
+              </div>
+              <div style="display:flex;gap:4px;margin-top:8px">
+                <button class="btn" onclick="showAddCashModal()" style="padding:4px 8px;font-size:12px;background:var(--ok);border-color:var(--ok);flex:1">
+                  ➕ Aggiungi
+                </button>
+                <button class="btn" onclick="showCashDetailsModal()" style="padding:4px 8px;font-size:12px;background:var(--primary);border-color:var(--primary)">
+                  📊 Dettagli
+                </button>
+              </div>
             </div>
             <div class="card">
               <h3>Totale</h3>
@@ -466,6 +474,23 @@
      </div>
    </div>
 
+   <!-- Cash Details Modal -->
+   <div id="cashDetailsModal" class="modal">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h3>💰 Scomposizione Cash</h3>
+         <button class="modal-close" onclick="hideModal('cashDetailsModal')">&times;</button>
+       </div>
+       <div id="cashDetailsContent">
+         <!-- Contenuto dettagliato del cash -->
+       </div>
+       <div style="display:flex;gap:10px;margin-top:20px">
+         <button class="btn" onclick="showAddCashModal(); hideModal('cashDetailsModal')" style="background:var(--ok);border-color:var(--ok)">➕ Aggiungi Cash</button>
+         <button class="btn secondary" onclick="hideModal('cashDetailsModal')">Chiudi</button>
+       </div>
+     </div>
+   </div>
+
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     // Global variables
@@ -643,15 +668,67 @@
           // Update cash card using new IDs
           const cashElement = document.getElementById('cashValue');
           const cashPercentageElement = document.getElementById('cashPercentage');
+          const cashBreakdownElement = document.getElementById('cashBreakdown');
+          
           if (cashElement && cashPercentageElement) {
             cashElement.textContent = formatCurrency(cashValue);
             cashPercentageElement.textContent = `${((cashValue / totalValue) * 100).toFixed(1)}%`;
+          }
+          
+          // Aggiorna scomposizione valutaria del cash
+          if (cashBreakdownElement) {
+            const cashBreakdown = calculateCashBreakdown(cashPositions, currentCurrency);
+            cashBreakdownElement.innerHTML = cashBreakdown;
           }
           
           allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(totalValue);
           allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '100%';
         }
       }
+    }
+
+    // Calcola la scomposizione valutaria del cash
+    function calculateCashBreakdown(cashPositions, targetCurrency) {
+      if (!cashPositions || cashPositions.length === 0) {
+        return '<div style="font-style:italic">Nessun cash</div>';
+      }
+      
+      // Raggruppa per valuta
+      const currencyGroups = {};
+      cashPositions.forEach(position => {
+        const currency = position.symbol; // Il simbolo è la valuta (EUR, USD, etc.)
+        if (!currencyGroups[currency]) {
+          currencyGroups[currency] = 0;
+        }
+        currencyGroups[currency] += position.quantity; // Quantità originale
+      });
+      
+      // Crea la scomposizione
+      const breakdown = Object.entries(currencyGroups)
+        .map(([currency, amount]) => {
+          const symbol = getCurrencySymbol(currency);
+          return `${symbol} ${amount.toFixed(0)}`;
+        })
+        .join(' • ');
+      
+      return breakdown || '<div style="font-style:italic">Nessun cash</div>';
+    }
+    
+    // Ottieni il simbolo della valuta
+    function getCurrencySymbol(currency) {
+      const symbols = {
+        'EUR': '€',
+        'USD': '$',
+        'GBP': '£',
+        'CHF': 'CHF',
+        'JPY': '¥',
+        'CAD': 'C$',
+        'AUD': 'A$',
+        'NZD': 'NZ$',
+        'HKD': 'HK$',
+        'SGD': 'S$'
+      };
+      return symbols[currency] || currency;
     }
 
     // Update sidebar with real data
@@ -702,6 +779,90 @@
       document.getElementById('cashDate').value = today;
       // Set default currency to current currency
       document.getElementById('cashCurrency').value = currentCurrency;
+    }
+
+    function showCashDetailsModal() {
+      if (!portfolioData || !portfolioData.positions) {
+        showError('Nessun dato del portafoglio disponibile');
+        return;
+      }
+      
+      const cashPositions = portfolioData.positions.filter(pos => pos.asset_type === 'cash');
+      const detailsContent = document.getElementById('cashDetailsContent');
+      
+      if (cashPositions.length === 0) {
+        detailsContent.innerHTML = `
+          <div style="text-align:center;padding:20px;color:var(--muted)">
+            <div style="font-size:48px;margin-bottom:16px;">💰</div>
+            <div style="font-size:18px;margin-bottom:8px;">Nessun Cash</div>
+            <div style="font-size:14px;">Clicca su "➕ Aggiungi Cash" per iniziare</div>
+          </div>
+        `;
+      } else {
+        // Raggruppa per valuta
+        const currencyGroups = {};
+        cashPositions.forEach(position => {
+          const currency = position.symbol;
+          if (!currencyGroups[currency]) {
+            currencyGroups[currency] = {
+              total: 0,
+              positions: []
+            };
+          }
+          currencyGroups[currency].total += position.quantity;
+          currencyGroups[currency].positions.push(position);
+        });
+        
+        // Crea la tabella dettagliata
+        let tableHTML = `
+          <div style="margin-bottom:16px">
+            <h4 style="margin-bottom:12px">Scomposizione per Valuta</h4>
+            <table style="width:100%;border-collapse:collapse;font-size:14px">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="text-align:left;padding:8px">Valuta</th>
+                  <th style="text-align:right;padding:8px">Importo Originale</th>
+                  <th style="text-align:right;padding:8px">Valore in ${currentCurrency}</th>
+                  <th style="text-align:center;padding:8px">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        
+        Object.entries(currencyGroups).forEach(([currency, data]) => {
+          const symbol = getCurrencySymbol(currency);
+          const totalInTargetCurrency = data.positions.reduce((sum, pos) => sum + pos.current_value, 0);
+          
+          tableHTML += `
+            <tr style="border-bottom:1px solid rgba(148,163,184,.1)">
+              <td style="padding:8px">
+                <strong>${symbol} ${currency}</strong>
+              </td>
+              <td style="text-align:right;padding:8px">
+                ${symbol} ${data.total.toFixed(2)}
+              </td>
+              <td style="text-align:right;padding:8px">
+                ${formatCurrency(totalInTargetCurrency)}
+              </td>
+              <td style="text-align:center;padding:8px">
+                <button class="btn secondary" onclick="removeCashPosition(${data.positions[0].id})" style="padding:2px 6px;font-size:11px;background:var(--danger);border-color:var(--danger)">
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+        
+        tableHTML += `
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        detailsContent.innerHTML = tableHTML;
+      }
+      
+      document.getElementById('cashDetailsModal').style.display = 'block';
     }
 
     function showEditPositionModal(positionId) {
@@ -796,6 +957,41 @@
           loadPortfolioData(); // Reload portfolio data
         } else {
           showError(result.error || 'Errore nell\'aggiunta del cash');
+        }
+      } catch (error) {
+        console.error('Errore:', error);
+        showError('Errore di rete');
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function removeCashPosition(positionId) {
+      if (!confirm('Sei sicuro di voler rimuovere questa posizione cash?')) {
+        return;
+      }
+      
+      showLoading('Rimozione cash...');
+      
+      try {
+        const response = await fetch('/api/portfolio/remove', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            position_id: positionId
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          showSuccess(result.message);
+          loadPortfolioData(); // Reload portfolio data
+          hideModal('cashDetailsModal'); // Chiudi il modal dei dettagli
+        } else {
+          showError(result.error || 'Errore nella rimozione del cash');
         }
       } catch (error) {
         console.error('Errore:', error);
