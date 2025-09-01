@@ -1,191 +1,106 @@
-# DollarPunk - Software Portafoglio
+# DollarPunk Web Application
 
-Software per la gestione e analisi di portafogli di investimento con dati real-time da Alpha Vantage API.
+Applicazione web per la gestione del portafoglio azionario con supporto multi-valuta e classificazione GICS.
 
-## 🚀 Caratteristiche
+## 🚀 Avvio con Docker Compose
 
-- **Dashboard interattiva** con metriche in tempo reale
-- **Gestione portafogli personalizzati** con posizioni multiple
-- **Dati real-time** da Alpha Vantage API
-- **Autenticazione utenti** con sistema di login
-- **Database PostgreSQL** per scalabilità
-- **Autocompletamento ticker** con 12.000+ simboli
-- **Prezzi storici automatici** basati su data di acquisto
-- **Interfaccia moderna** con tema scuro
-
-## 🛠️ Tecnologie
-
-- **Backend:** Flask (Python)
-- **Database:** PostgreSQL con SQLAlchemy ORM
-- **Frontend:** HTML5, CSS3, JavaScript vanilla
-- **API:** Alpha Vantage per dati finanziari
-- **Containerizzazione:** Docker & Docker Compose
-
-## 📋 Prerequisiti
-
-- Docker e Docker Compose
-- Alpha Vantage API Key (gratuita)
-
-## ⚙️ Installazione
-
-### 1. Clona il Repository
 ```bash
-git clone <repository-url>
-cd DollarPunk/web
+docker-compose up --build
 ```
 
-### 2. Configura le Variabili d'Ambiente
-Crea un file `.env` nella root del progetto (non in `web/`):
-```bash
-# Alpha Vantage API Key
+L'applicazione si avvia automaticamente senza richiedere interventi manuali. La classificazione GICS viene gestita tramite il file CSV `symbol,gics_cat.csv` che contiene oltre 300 titoli classificati secondo lo standard GICS ufficiale.
+
+## 🔧 Configurazione
+
+### Variabili d'Ambiente
+Crea un file `.env` nella root del progetto con:
+
+```env
 ALPHA_VANTAGE_API_KEY=your_api_key_here
-
-# Secret Key per Flask
 SECRET_KEY=your_secret_key_here
-
-# Database PostgreSQL (opzionale)
 DATABASE_URL=postgresql://dollarpunk_user:dollarpunk_password@postgres:5432/dollarpunk
 ```
 
-### 3. Avvia l'Applicazione
-```bash
-docker-compose up --build
-```
-
-### 4. Accedi all'App
-- URL: http://localhost:5000
-- **Credenziali demo:** `demo@dollarpunk.com` / `demo123`
-
-## 🗄️ Database PostgreSQL
-
-L'applicazione utilizza PostgreSQL per:
-- **Utenti:** Gestione account e autenticazione
-- **Portafogli:** Posizioni personalizzate degli utenti
-- **Scalabilità:** Supporto per migliaia di utenti
-
-### Struttura Database
-- **`users`:** Informazioni utenti (email, password hash, nome)
-- **`portfolio_positions`:** Posizioni portafoglio (simbolo, quantità, prezzo medio, data acquisto)
-
-### Migrazione da JSON
-Gli utenti esistenti con portafogli JSON verranno migrati automaticamente al database PostgreSQL.
+### Chiave API Alpha Vantage
+1. Registrati su [Alpha Vantage](https://www.alphavantage.co/support/#api-key)
+2. Ottieni la tua chiave API gratuita
+3. Aggiungila al file `.env`
 
 ## 📊 Funzionalità
 
-### Gestione Portafoglio
-- ✅ **Aggiungi posizioni** con autocompletamento ticker
-- ✅ **Modifica posizioni** esistenti
-- ✅ **Rimuovi posizioni** dal portafoglio
-- ✅ **Prezzi storici automatici** basati su data di acquisto
-- ✅ **Calcolo performance** in tempo reale
+### Multi-Valuta
+- Supporto per EUR, USD, GBP, CHF e altre valute
+- Conversione automatica dei prezzi
+- Tassi di cambio storici per calcoli accurati
 
-### Dashboard
-- 📈 **Metriche portfolio** (valore totale, performance YTD, dividendi)
-- 📊 **Allocazione asset** (azioni, obbligazioni, cash)
-- 📋 **Tabella posizioni** con azioni rapide
-- 🔄 **Aggiornamento dati** in tempo reale
+### Classificazione GICS
+- 11 settori ufficiali GICS (Global Industry Classification Standard)
+- 300+ titoli pre-classificati tramite file CSV
+- Fallback a mappatura statica per titoli non nel CSV
 
-### Autenticazione
-- 🔐 **Login/logout** con sessioni sicure
-- 👤 **Account demo** per test
-- 🛡️ **Protezione route** con decoratori
+### Portfolio Management
+- Aggiunta/rimozione posizioni
+- Calcolo automatico di profitti/perdite
+- Visualizzazione prezzi in valuta locale e convertiti
 
-## 🔧 Sviluppo
+## 🗄️ Database
 
-### Struttura Progetto
-```
-web/
-├── app.py              # Applicazione Flask principale
-├── models.py           # Modelli SQLAlchemy
-├── database.py         # Funzioni database
-├── requirements.txt    # Dipendenze Python
-├── docker-compose.yml  # Configurazione Docker
-├── Dockerfile         # Immagine Docker
-├── static/
-│   └── style.css      # Stili CSS
-├── templates/         # Template HTML
-│   ├── index.html     # Landing page
-│   ├── login.html     # Pagina login
-│   └── portfolio-software.html  # Dashboard principale
-└── symbols.csv        # Lista ticker per autocompletamento
+L'applicazione utilizza PostgreSQL per:
+- **Utenti**: Gestione account e autenticazione
+- **Portfolio**: Posizioni azionarie personali
+
+La classificazione GICS viene gestita tramite il file CSV `symbol,gics_cat.csv` che contiene oltre 300 titoli classificati secondo lo standard ufficiale GICS.
+
 ```
 
-### Comandi Utili
-```bash
-# Avvia in modalità sviluppo
-docker-compose up --build
-
-# Visualizza log
-docker-compose logs -f
-
-# Ricostruisci container
-docker-compose down && docker-compose up --build
-
-# Accedi al database
-docker-compose exec postgres psql -U dollarpunk_user -d dollarpunk
-```
-
-## 🌐 API Endpoints
+## 🔍 API Endpoints
 
 ### Portfolio
-- `GET /api/portfolio` - Dati portfolio utente
+- `GET /api/portfolio?currency=EUR` - Dati portfolio con conversione valuta
 - `POST /api/portfolio/add` - Aggiungi posizione
-- `POST /api/portfolio/update` - Modifica posizione
 - `POST /api/portfolio/remove` - Rimuovi posizione
+- `POST /api/portfolio/update` - Aggiorna posizione
 
-### Titoli
-- `GET /api/stock/<symbol>` - Dati singolo titolo
-- `GET /api/search?q=<query>` - Ricerca ticker
-- `GET /api/tickers` - Lista completa ticker
+### Settori GICS
+- `GET /api/sector/<symbol>` - Info settore per un titolo
+- `GET /api/sectors` - Lista tutti i settori disponibili
 
-### Debug
-- `GET /api/test` - Test API
-- `GET /api/debug/routes` - Lista route
-- `GET /api/debug/session` - Stato sessione
+### Valute
+- `GET /api/exchange-rates` - Tassi di cambio supportati
+- `GET /api/currency-info` - Info performance valute
 
-## 🔒 Sicurezza
+## 👤 Credenziali Demo
 
-- **Password hashate** con Werkzeug
-- **Sessioni sicure** con secret key
-- **Validazione input** su tutti gli endpoint
-- **Rate limiting** per Alpha Vantage API
-- **Protezione CSRF** (da implementare)
+- **Email**: `demo@dollarpunk.com`
+- **Password**: `demo123`
 
-## 📈 Scalabilità
+## 🐛 Troubleshooting
 
-### Database
-- **PostgreSQL** per performance e affidabilità
-- **Indici ottimizzati** per query frequenti
-- **Connection pooling** per connessioni multiple
+### Problemi di Connessione Database
+```bash
+# Verifica lo stato del container PostgreSQL
+docker-compose ps
 
-### API
-- **Rate limiting** per Alpha Vantage (5 calls/min)
-- **Caching** per dati statici (da implementare)
-- **Async processing** per operazioni pesanti (da implementare)
+# Controlla i log
+docker-compose logs postgres
+```
 
-## 🚀 Roadmap
+### Aggiornamento Mappature GICS
+```bash
+# Forza l'aggiornamento delle mappature
+docker exec -it dollarpunk-app python init_gics_data.py
+```
 
-- [ ] **Registrazione utenti** con email verification
-- [ ] **Recupero password** con reset via email
-- [ ] **Notifiche** per eventi portfolio
-- [ ] **Export dati** in CSV/PDF
-- [ ] **Grafici interattivi** con Chart.js
-- [ ] **Mobile app** React Native
-- [ ] **WebSocket** per aggiornamenti real-time
-- [ ] **Multi-tenant** per consulenti finanziari
+### Reset Database
+```bash
+# Rimuovi i volumi e ricrea tutto
+docker-compose down -v
+docker-compose up --build
+```
 
-## 📝 Licenza
+## 📝 Note
 
-Demo software - non rappresenta un servizio finanziario reale.
-
-## 🤝 Contributi
-
-1. Fork il progetto
-2. Crea un branch per la feature (`git checkout -b feature/AmazingFeature`)
-3. Commit le modifiche (`git commit -m 'Add AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
-5. Apri una Pull Request
-
----
-
-**DollarPunk** - Gestione portafogli intelligente 🚀
+- L'applicazione attende automaticamente che PostgreSQL sia pronto
+- Le mappature GICS sono basate sulla classificazione ufficiale
+- XOM è correttamente classificato come "Energy" ✅
+- Supporto per titoli USA, Europa, UK, Svizzera

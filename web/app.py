@@ -105,7 +105,49 @@ def get_stock_region(symbol):
         return 'USA'
 
 def get_stock_sector(symbol):
-    """Determina il settore GICS di un titolo (livello più alto)"""
+    """Ottiene il settore GICS per un simbolo azionario dal CSV"""
+    try:
+        # Carica il CSV una volta sola e lo mantiene in memoria
+        if not hasattr(get_stock_sector, 'gics_data'):
+            gics_data = {}
+            csv_path = os.path.join(os.path.dirname(__file__), 'symbol,gics_cat.csv')
+            if os.path.exists(csv_path):
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    next(f)  # Salta l'header
+                    for line in f:
+                        parts = line.strip().split(',')
+                        if len(parts) >= 2:
+                            gics_data[parts[0]] = parts[1]
+                get_stock_sector.gics_data = gics_data
+        
+        # Cerca nel CSV
+        if symbol in get_stock_sector.gics_data:
+            sector = get_stock_sector.gics_data[symbol]
+            # Mappa i settori dal CSV ai nomi completi GICS
+            sector_mapping = {
+                'Information Technology': 'Information Technology',
+                'Consumer Discretionary': 'Consumer Discretionary',
+                'Energy': 'Energy',
+                'Financials': 'Financials',
+                'Health Care': 'Health Care',
+                'Industrials': 'Industrials',
+                'Materials': 'Materials',
+                'Consumer Staples': 'Consumer Staples',
+                'Utilities': 'Utilities',
+                'Communication Services': 'Communication Services',
+                'Real Estate': 'Real Estate',
+                'N/A': 'Other'
+            }
+            return sector_mapping.get(sector, sector)
+        else:
+            # Fallback alla mappatura statica se non trovato nel CSV
+            return get_stock_sector_fallback(symbol)
+    except Exception as e:
+        print(f"Errore nel caricamento CSV per {symbol}: {e}")
+        return get_stock_sector_fallback(symbol)
+
+def get_stock_sector_fallback(symbol):
+    """Mappatura statica di fallback per i settori GICS"""
     # Information Technology (GICS 45)
     info_tech = ['AAPL', 'MSFT', 'GOOGL', 'NVDA', 'META', 'ASML', 'SAP.DE', 'STM.MI', 'ACN', 'CAP.PA']
     
@@ -113,31 +155,31 @@ def get_stock_sector(symbol):
     consumer_disc = ['AMZN', 'TSLA', 'OR.PA', 'MC.PA', 'BMW.DE', 'DAI.DE', 'RACE.MI', 'ADS.DE']
     
     # Energy (GICS 10)
-    energy = ['BP', 'TOT.PA', 'ENI.MI', 'SPM.MI']
+    energy = ['BP', 'TOT.PA', 'ENI.MI', 'SPM.MI', 'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'HAL']
     
     # Financials (GICS 40)
-    financials = ['HSBC', 'BNP.PA', 'UBSG.SW', 'CSGN.SW', 'ISP.MI', 'UCG.MI']
+    financials = ['HSBC', 'BNP.PA', 'UBSG.SW', 'CSGN.SW', 'ISP.MI', 'UCG.MI', 'JPM', 'BAC', 'WFC', 'GS']
     
     # Health Care (GICS 35)
-    health_care = ['GSK', 'ROG.SW', 'NOVN.SW', 'BAYN.DE', 'DIA.MI']
+    health_care = ['GSK', 'ROG.SW', 'NOVN.SW', 'BAYN.DE', 'DIA.MI', 'JNJ', 'PFE', 'UNH', 'ABBV', 'MRK']
     
     # Industrials (GICS 20)
-    industrials = ['SIE.DE', 'AIR.PA', 'ABBN.SW', 'CNHI.MI', 'TEN.MI']
+    industrials = ['SIE.DE', 'AIR.PA', 'ABBN.SW', 'CNHI.MI', 'TEN.MI', 'CAT', 'BA', 'GE', 'HON', 'UPS']
     
     # Materials (GICS 15)
-    materials = ['RIO', 'BHP', 'CRH.PA', 'BAS.DE', 'PRY.MI']
+    materials = ['RIO', 'BHP', 'CRH.PA', 'BAS.DE', 'PRY.MI', 'LIN', 'APD', 'FCX', 'NEM', 'DD']
     
     # Consumer Staples (GICS 30)
-    consumer_staples = ['ULVR', 'DGE', 'NESN.SW']
+    consumer_staples = ['ULVR', 'DGE', 'NESN.SW', 'PG', 'KO', 'PEP', 'WMT', 'COST', 'PM', 'MO']
     
     # Utilities (GICS 55)
-    utilities = ['ENEL.MI']
+    utilities = ['ENEL.MI', 'NEE', 'DUK', 'SO', 'D', 'AEP', 'XEL', 'SRE', 'WEC', 'DTE']
     
     # Communication Services (GICS 50)
-    communication = ['VOD', 'TIT.MI', 'DTE.DE']
+    communication = ['VOD', 'TIT.MI', 'DTE.DE', 'T', 'VZ', 'CMCSA', 'CHTR', 'TMUS', 'DIS', 'NFLX']
     
     # Real Estate (GICS 60)
-    real_estate = []
+    real_estate = ['AMT', 'CCI', 'EQIX', 'PLD', 'PSA', 'O', 'SPG', 'AVB', 'EQR', 'MAA']
     
     if symbol in info_tech:
         return 'Information Technology'
@@ -817,6 +859,8 @@ def api_test_post():
         "data": data,
         "method": request.method
     })
+
+
 
 @app.route('/api/debug/routes')
 def api_debug_routes():

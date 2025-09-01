@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
@@ -11,14 +12,20 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
     # Relazione con le posizioni del portafoglio
     portfolio_positions = db.relationship('PortfolioPosition', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<User {self.email}>'
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class PortfolioPosition(db.Model):
     """Modello per le posizioni del portafoglio"""
@@ -27,16 +34,13 @@ class PortfolioPosition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     symbol = db.Column(db.String(20), nullable=False)
-    quantity = db.Column(db.Numeric(10, 2), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    avg_price = db.Column(db.Float, nullable=False)
     purchase_date = db.Column(db.Date, nullable=False)
-    avg_price = db.Column(db.Numeric(10, 4), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    updated_at = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
     
-    # Rimuoviamo il vincolo unique per permettere più posizioni dello stesso simbolo
-    # __table_args__ = (
-    #     db.UniqueConstraint('user_id', 'symbol', name='unique_user_symbol'),
-    # )
+    user = db.relationship('User', backref=db.backref('positions', lazy=True))
     
     def __repr__(self):
         return f'<PortfolioPosition {self.symbol} x {self.quantity}>'
@@ -52,3 +56,5 @@ class PortfolioPosition(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
+
+

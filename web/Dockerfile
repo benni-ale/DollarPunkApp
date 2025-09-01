@@ -14,8 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia il codice dell'applicazione
 COPY . .
 
+# Rendi eseguibile lo script di avvio
+RUN chmod +x start.sh
+
 # Esponi la porta
 EXPOSE 5000
 
 # Comando di avvio
-CMD ["python", "app.py"]
+CMD ["./start.sh"]
