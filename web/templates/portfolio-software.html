@@ -116,9 +116,6 @@
                <button class="btn" onclick="showAddPositionModal()" style="padding:8px 16px;font-size:14px">
                  ➕ Aggiungi Posizione
                </button>
-               <button class="btn" onclick="showAddCashModal()" style="padding:8px 16px;font-size:14px;background:var(--ok);border-color:var(--ok)">
-                 💰 Aggiungi Cash
-               </button>
                <button class="btn" onclick="loadPortfolioData()" style="padding:8px 16px;font-size:14px">
                  🔄 Aggiorna
                </button>
@@ -137,9 +134,12 @@
               <div style="color:var(--muted);font-size:14px">30%</div>
             </div>
             <div class="card">
-              <h3>Cash</h3>
-              <div style="font-size:24px;font-weight:700;color:#64748b">€ 2.394</div>
-              <div style="color:var(--muted);font-size:14px">5%</div>
+              <h3>💰 Cash</h3>
+              <div id="cashValue" style="font-size:24px;font-weight:700;color:#64748b">€0</div>
+              <div id="cashPercentage" style="color:var(--muted);font-size:14px">0%</div>
+              <button class="btn" onclick="showAddCashModal()" style="margin-top:8px;padding:4px 8px;font-size:12px;background:var(--ok);border-color:var(--ok)">
+                ➕ Aggiungi
+              </button>
             </div>
             <div class="card">
               <h3>Totale</h3>
@@ -574,45 +574,27 @@
           `;
          tbody.appendChild(emptyRow);
        } else {
-         positions.forEach(position => {
+         // Filtra solo le posizioni di azioni (escludi il cash)
+         const stockPositions = positions.filter(position => position.asset_type !== 'cash');
+         
+         stockPositions.forEach(position => {
            const row = document.createElement('tr');
-           
-           // Gestisci il cash diversamente dalle azioni
-           if (position.asset_type === 'cash') {
-             row.innerHTML = `
-                <td><strong>💰 ${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">Cash</span></td>
-                <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
-                <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
-                <td>${formatCurrency(position.quantity)}</td>
-                <td>${formatDate(position.purchase_date)}</td>
-                <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
-                <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
-                <td>${formatCurrency(position.current_value)}</td>
-                <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-                <td class="neutral">0.0%</td>
-                <td>
-                  <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
-                  <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
-                </td>
-              `;
-           } else {
-             row.innerHTML = `
-                <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
-                <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
-                <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
-                <td>${position.quantity}</td>
-                <td>${formatDate(position.purchase_date)}</td>
-                <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
-                <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
-                <td>${formatCurrency(position.current_value)}</td>
-                <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
-                <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
-                <td>
-                  <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
-                  <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
-                </td>
-              `;
-           }
+           row.innerHTML = `
+              <td><strong>${position.symbol}</strong><br><span style="color:var(--muted);font-size:12px">${getStockName(position.symbol)}</span></td>
+              <td><span class="region-badge ${getRegionClass(position.region)}">${position.region}</span></td>
+              <td><span class="sector-badge ${getSectorClass(position.sector)}">${position.sector}</span></td>
+              <td>${position.quantity}</td>
+              <td>${formatDate(position.purchase_date)}</td>
+              <td>${formatLocalCurrency(position.local_avg_price, position.stock_currency)}</td>
+              <td>${formatLocalCurrency(position.local_current_price, position.stock_currency)}</td>
+              <td>${formatCurrency(position.current_value)}</td>
+              <td>${((position.current_value / summary.total_value) * 100).toFixed(1)}%</td>
+              <td class="${position.gain_loss >= 0 ? 'positive' : 'negative'}">${position.gain_loss_percent >= 0 ? '+' : ''}${position.gain_loss_percent.toFixed(1)}%</td>
+              <td>
+                <button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="showEditPositionModal(${position.id})">Modifica</button>
+                <button class="btn secondary" style="padding:4px 8px;font-size:12px;background:var(--danger);border-color:var(--danger)" onclick="removePosition(${position.id})">Rimuovi</button>
+              </td>
+            `;
            tbody.appendChild(row);
          });
        }
@@ -623,9 +605,14 @@
 
     // Update allocation cards with real data
     function updateAllocationCards(positions, totalValue) {
-      // Calculate allocation by asset class (simplified - all stocks for now)
-      const stocksValue = positions.reduce((sum, pos) => sum + pos.current_value, 0);
-      const cashValue = totalValue * 0.05; // 5% cash
+      // Calcola il valore delle azioni (escludi il cash)
+      const stockPositions = positions.filter(pos => pos.asset_type !== 'cash');
+      const stocksValue = stockPositions.reduce((sum, pos) => sum + pos.current_value, 0);
+      
+      // Calcola il valore del cash dalle posizioni cash
+      const cashPositions = positions.filter(pos => pos.asset_type === 'cash');
+      const cashValue = cashPositions.reduce((sum, pos) => sum + pos.current_value, 0);
+      
       const bondsValue = totalValue * 0.30; // 30% bonds (simulated)
       
       // Update allocation cards
@@ -653,9 +640,13 @@
           allocationCards[1].querySelector('div[style*="color:var(--muted)"]').textContent = 
             ((bondsValue / totalValue) * 100).toFixed(0) + '%';
           
-          allocationCards[2].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(cashValue);
-          allocationCards[2].querySelector('div[style*="color:var(--muted)"]').textContent = 
-            ((cashValue / totalValue) * 100).toFixed(0) + '%';
+          // Update cash card using new IDs
+          const cashElement = document.getElementById('cashValue');
+          const cashPercentageElement = document.getElementById('cashPercentage');
+          if (cashElement && cashPercentageElement) {
+            cashElement.textContent = formatCurrency(cashValue);
+            cashPercentageElement.textContent = `${((cashValue / totalValue) * 100).toFixed(1)}%`;
+          }
           
           allocationCards[3].querySelector('div[style*="font-size:24px"]').textContent = formatCurrency(totalValue);
           allocationCards[3].querySelector('div[style*="color:var(--muted)"]').textContent = '100%';
@@ -1230,9 +1221,10 @@
         geographicChart.destroy();
       }
       
-      // Raggruppa per regione
+      // Raggruppa per regione (escludi il cash)
       const regionData = {};
-      portfolioData.positions.forEach(position => {
+      const stockPositions = portfolioData.positions.filter(pos => pos.asset_type !== 'cash');
+      stockPositions.forEach(position => {
         const region = position.region || 'Altri';
         if (!regionData[region]) {
           regionData[region] = 0;
@@ -1284,9 +1276,10 @@
         sectorChart.destroy();
       }
       
-      // Raggruppa per settore
+      // Raggruppa per settore (escludi il cash)
       const sectorData = {};
-      portfolioData.positions.forEach(position => {
+      const stockPositions = portfolioData.positions.filter(pos => pos.asset_type !== 'cash');
+      stockPositions.forEach(position => {
         const sector = position.sector || 'Altri';
         if (!sectorData[sector]) {
           sectorData[sector] = 0;
@@ -1348,9 +1341,10 @@
     function updateSummaryCards() {
       if (!portfolioData || !portfolioData.positions) return;
       
-      // Top 3 Regioni
+      // Top 3 Regioni (escludi il cash)
       const regionData = {};
-      portfolioData.positions.forEach(position => {
+      const stockPositions = portfolioData.positions.filter(pos => pos.asset_type !== 'cash');
+      stockPositions.forEach(position => {
         const region = position.region || 'Altri';
         if (!regionData[region]) {
           regionData[region] = 0;
@@ -1372,9 +1366,9 @@
         `;
       }).join('');
       
-      // Top 3 Settori
+      // Top 3 Settori (escludi il cash)
       const sectorData = {};
-      portfolioData.positions.forEach(position => {
+      stockPositions.forEach(position => {
         const sector = position.sector || 'Altri';
         if (!sectorData[sector]) {
           sectorData[sector] = 0;
@@ -1396,12 +1390,12 @@
         `;
       }).join('');
       
-      // Concentrazione (Herfindahl-Hirschman Index)
-      const totalValue = portfolioData.summary.total_value;
-      const hhi = portfolioData.positions.reduce((sum, position) => {
-        const weight = position.current_value / totalValue;
+      // Concentrazione (Herfindahl-Hirschman Index) - solo per le azioni
+      const totalStockValue = stockPositions.reduce((sum, pos) => sum + pos.current_value, 0);
+      const hhi = totalStockValue > 0 ? stockPositions.reduce((sum, position) => {
+        const weight = position.current_value / totalStockValue;
         return sum + (weight * weight);
-      }, 0);
+      }, 0) : 0;
       
       let concentration = 'Bassa';
       if (hhi > 0.25) concentration = 'Alta';

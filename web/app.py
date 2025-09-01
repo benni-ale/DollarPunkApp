@@ -477,8 +477,16 @@ def get_portfolio_data(user_email, target_currency='EUR'):
             # Per il cash, il valore è sempre uguale alla quantità
             local_avg_price = 1.0  # 1 unità di cash = 1 unità di valuta
             local_current_price = 1.0  # Il cash non cambia valore
-            current_value = position["quantity"]  # Il valore del cash è la quantità
-            cost_basis = position["quantity"]  # Il costo è uguale alla quantità
+            cash_currency = symbol  # La valuta del cash è il simbolo (es: EUR, USD)
+            
+            # Se la valuta del cash è diversa dalla valuta target, converti
+            if cash_currency != target_currency:
+                exchange_rate = get_exchange_rate(cash_currency, target_currency) or 1.0
+                current_value = position["quantity"] * exchange_rate
+            else:
+                current_value = position["quantity"]  # Nessuna conversione necessaria
+            
+            cost_basis = current_value  # Il costo è uguale al valore corrente
             gain_loss = 0  # Il cash non ha guadagni/perdite
             gain_loss_percent = 0
             
@@ -493,7 +501,7 @@ def get_portfolio_data(user_email, target_currency='EUR'):
                 "gain_loss": gain_loss,
                 "gain_loss_percent": gain_loss_percent,
                 "purchase_date": purchase_date,
-                "stock_currency": target_currency,  # Il cash è nella valuta selezionata
+                "stock_currency": cash_currency,  # La valuta originale del cash
                 "target_currency": target_currency,
                 "region": "Cash",  # Area geografica per il cash
                 "sector": "Cash",  # Settore per il cash
