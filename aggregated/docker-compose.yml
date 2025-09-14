@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  aggregated:
+    build: .
+    container_name: dollarpunk_aggregated
+    volumes:
+      # Mount the processed tickers.csv as input
+      - ../output/processed/tickers.csv:/app/data/input/tickers.csv:ro
+      # Mount the output directory for aggregated results
+      - ../output/aggregated:/app/data/output/aggregated
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

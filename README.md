@@ -2,9 +2,11 @@ DIPENDENZE
 
 1 Ingestion
 2 Processing
-3 Scraping
-4 Joining 
-5 Fine Tuning (Su RunPod)
+3 Aggregation
+
+1 Scraping
+2 Joining (Scraping + Processing) Genera il train.json
+3 Training Fine Tuning (Su RunPod)
 
 1 Utils
 
